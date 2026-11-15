@@ -3,7 +3,6 @@ package com.example.plans.execution;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
@@ -13,14 +12,16 @@ import java.time.Instant;
  * Result of one retriever. Each retriever produces exactly one event type, and each event
  * type comes from exactly one retriever.
  *
- * <p>The interface is sealed, so a {@code switch} over an {@code AuditEvent} without a
- * {@code default} branch stops compiling when a new event type is added and not handled.
+ * <p>The interface is open: implementations live next to their retrievers, outside this
+ * library. Implementations should be records.
  *
- * <p>JSON: the type name is the {@code __eventType__} property and comes from the record's
- * {@link JsonTypeName} only (one source of truth). A type name this build does not know is
- * read as {@link UnknownAuditEvent}, which writes the original JSON back unchanged.
- * To add an event type: add the record, put it in {@code permits} and in {@link JsonSubTypes},
- * and give it a {@link JsonTypeName} that is never renamed afterwards.
+ * <p>JSON: the type name is the {@code __eventType__} property and comes from the
+ * implementation's {@link JsonTypeName} only. This library does not know the implementations,
+ * so each one is registered with the mapper by the library that defines it, e.g.
+ * {@code JsonMapper.builder().registerSubtypes(MyEvent.class)}. A type name the mapper does
+ * not know is read as {@link UnknownAuditEvent}, which writes the original JSON back
+ * unchanged. Never rename a {@link JsonTypeName} or a record component of an event that may
+ * already be stored.
  */
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
@@ -28,14 +29,8 @@ import java.time.Instant;
         property = AuditEvent.TYPE_PROPERTY,
         defaultImpl = UnknownAuditEvent.class,
         visible = true)
-@JsonSubTypes({
-        @JsonSubTypes.Type(DdaBalanceEvent.class),
-        @JsonSubTypes.Type(InvPositionsEvent.class),
-        @JsonSubTypes.Type(SweepOrderEvent.class)
-})
 @JsonPropertyOrder(AuditEvent.TYPE_PROPERTY)
-public sealed interface AuditEvent
-        permits DdaBalanceEvent, InvPositionsEvent, SweepOrderEvent, UnknownAuditEvent {
+public interface AuditEvent {
 
     String TYPE_PROPERTY = "__eventType__";
 
@@ -46,12 +41,13 @@ public sealed interface AuditEvent
     AuditStatus status();
 
     /**
-     * The type-specific part: the derived properties after this event, computed from the
-     * execution the event is applied to. Only called for events whose status
-     * {@linkplain AuditStatus#carriesData() carries data}. Status and the event list are
-     * handled by {@link PlanExecution#apply(AuditEvent)}, not here.
+     * The type-specific part: returns {@code input} with the derived properties this event
+     * writes, using {@code input}'s {@code with...} methods. Only the derived properties of the
+     * result are kept; status and the event list are set by
+     * {@link PlanExecution#apply(AuditEvent)}. Only called when the status
+     * {@linkplain AuditStatus#carriesData() carries data}.
      */
-    PlanExecution.Derived derive(PlanExecution input);
+    PlanExecution derive(PlanExecution input);
 
     /** {@code planExecOut = auditEvent.applyTo(planExecOut)}. */
     default PlanExecution applyTo(PlanExecution execution) {
@@ -61,7 +57,11 @@ public sealed interface AuditEvent
     /** The JSON type name, taken from {@link JsonTypeName}. */
     @JsonProperty(value = TYPE_PROPERTY, access = JsonProperty.Access.READ_ONLY)
     default String eventType() {
-        return getClass().getAnnotation(JsonTypeName.class).value();
+        JsonTypeName name = getClass().getAnnotation(JsonTypeName.class);
+        if (name == null) {
+            throw new IllegalStateException(getClass().getName() + " needs @JsonTypeName");
+        }
+        return name.value();
     }
 
     @JsonIgnore

@@ -4,26 +4,25 @@ package com.example.plans.execution;
  * Every status a {@link PlanExecution} can be in: stage, transient (retry) and completion
  * statuses in one enum. Each value carries a {@link Kind}, so the merge rule asks
  * {@code isFailure()} instead of listing constants.
+ *
+ * <p>Statuses of a new retriever are added here, so a new retriever means a change of this
+ * library as well.
  */
 public enum AuditStatus {
 
     SCHEDULED(Kind.STAGE),
     STARTED(Kind.STAGE),
 
-    DDA_BALANCE_RETRIEVED(Kind.STAGE),
-    INV_POSITIONS_RETRIEVED(Kind.STAGE),
-    SWEEP_ORDER_PLACED(Kind.STAGE),
+    PROP_ONE_RETRIEVED(Kind.STAGE),
+    PROP_TWO_RETRIEVED(Kind.STAGE),
 
-    DDA_BALANCE_RETRY(Kind.TRANSIENT),
-    INV_POSITIONS_RETRY(Kind.TRANSIENT),
-    SWEEP_ORDER_RETRY(Kind.TRANSIENT),
+    PROP_ONE_RETRY(Kind.TRANSIENT),
+    PROP_TWO_RETRY(Kind.TRANSIENT),
 
     COMPLETED(Kind.SUCCESS),
-    NOTHING_TO_SWEEP(Kind.SUCCESS),
 
-    DDA_BALANCE_FAILED(Kind.FAILURE),
-    INV_POSITIONS_FAILED(Kind.FAILURE),
-    SWEEP_ORDER_FAILED(Kind.FAILURE);
+    PROP_ONE_FAILED(Kind.FAILURE),
+    PROP_TWO_FAILED(Kind.FAILURE);
 
     public enum Kind {
         /** Progress inside the saga; the event carries data. */

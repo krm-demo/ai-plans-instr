@@ -9,13 +9,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * An event whose {@code __eventType__} this build does not know, typically written by a
- * newer build during a rolling deployment. It keeps the original JSON object (field order,
- * nulls and nested values included) and writes it back unchanged, so saving the execution
- * does not lose it.
+ * An event whose {@code __eventType__} is not registered with the mapper: written by a newer
+ * build, or by a library this service does not have on its classpath. It keeps the original
+ * JSON object (field order, nulls and nested values included) and writes it back unchanged,
+ * so saving the execution does not lose it.
  *
  * <p>It does not change the status or the derived properties. A worker that finds one should
- * leave the execution to a newer worker: see {@link PlanExecution#hasUnknownEvents()}.
+ * leave the execution to a worker that knows it: see {@link PlanExecution#hasUnknownEvents()}.
  *
  * @param raw the original JSON object, including {@code __eventType__}
  */
@@ -55,7 +55,7 @@ public record UnknownAuditEvent(Map<String, Object> raw) implements AuditEvent {
     }
 
     @Override
-    public PlanExecution.Derived derive(PlanExecution input) {
-        return input.derived();
+    public PlanExecution derive(PlanExecution input) {
+        return input;
     }
 }
