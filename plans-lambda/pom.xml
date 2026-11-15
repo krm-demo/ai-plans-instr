@@ -14,7 +14,7 @@
     <name>plans-lambda</name>
 
     <properties>
-        <start-class>com.example.plans.lambda.PlansLambdaApplication</start-class>
+        <start-class>plansinstr.lambda.PlansLambdaApplication</start-class>
         <!-- CI overrides this with -Dbuild.number=...; it ends up in restInfo.runtimeInfo.buildNumber -->
         <build.number>local</build.number>
     </properties>
