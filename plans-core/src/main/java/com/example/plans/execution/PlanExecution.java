@@ -24,8 +24,11 @@ import java.util.UUID;
  * its JSON and the column always hold the same value.
  *
  * @param executionId    id of this run
- * @param plan           snapshot of the plan instructions taken when the run was scheduled; a
- *                       later edit of the plan does not change a running execution
+ * @param planInstr      the plan instructions as they were when this run was scheduled, embedded
+ *                       by value: the execution never joins or refers to the
+ *                       {@code plan_instructions} table, so a later edit or deletion of the plan
+ *                       cannot change or break it. The next run copies the plan instructions
+ *                       current at that moment.
  * @param scheduledAt    when the run was scheduled
  * @param auditStatus    derived: last status, except that the first failure sticks
  * @param derivedPropOne derived; written by exactly one event type
@@ -35,7 +38,7 @@ import java.util.UUID;
  */
 public record PlanExecution(
         UUID executionId,
-        PlanInstructions plan,
+        PlanInstructions planInstr,
         Instant scheduledAt,
         AuditStatus auditStatus,
         BigDecimal derivedPropOne,
@@ -50,7 +53,7 @@ public record PlanExecution(
 
     public PlanExecution {
         Objects.requireNonNull(executionId, "executionId");
-        Objects.requireNonNull(plan, "plan");
+        Objects.requireNonNull(planInstr, "planInstr");
         Objects.requireNonNull(scheduledAt, "scheduledAt");
         Objects.requireNonNull(auditStatus, "auditStatus");
         derivedPropOne = numeric18x2("derivedPropOne", derivedPropOne);
@@ -58,9 +61,9 @@ public record PlanExecution(
         auditEvents = auditEvents == null ? List.of() : List.copyOf(auditEvents);
     }
 
-    /** A new, not yet stored execution of {@code plan}. */
-    public static PlanExecution schedule(UUID executionId, PlanInstructions plan, Instant scheduledAt) {
-        return new PlanExecution(executionId, plan, scheduledAt, AuditStatus.SCHEDULED,
+    /** A new, not yet stored execution of {@code planInstr}. */
+    public static PlanExecution schedule(UUID executionId, PlanInstructions planInstr, Instant scheduledAt) {
+        return new PlanExecution(executionId, planInstr, scheduledAt, AuditStatus.SCHEDULED,
                 null, null, List.of(), null);
     }
 
@@ -77,7 +80,7 @@ public record PlanExecution(
         List<AuditEvent> events = new ArrayList<>(auditEvents.size() + 1);
         events.addAll(auditEvents);
         events.add(event);
-        return new PlanExecution(executionId, plan, scheduledAt,
+        return new PlanExecution(executionId, planInstr, scheduledAt,
                 AuditStatus.merge(auditStatus, incoming),
                 derived.derivedPropOne(), derived.derivedPropTwo(),
                 events, version);
@@ -98,7 +101,7 @@ public record PlanExecution(
      * some other way, so it can check a row read from the database.
      */
     public PlanExecution replay() {
-        return new PlanExecution(executionId, plan, scheduledAt, AuditStatus.SCHEDULED,
+        return new PlanExecution(executionId, planInstr, scheduledAt, AuditStatus.SCHEDULED,
                 null, null, List.of(), version).applyAll(auditEvents);
     }
 
@@ -114,13 +117,13 @@ public record PlanExecution(
 
     /** For {@link AuditEvent#derive}: a copy with {@code derivedPropOne} replaced. */
     public PlanExecution withDerivedPropOne(BigDecimal derivedPropOne) {
-        return new PlanExecution(executionId, plan, scheduledAt, auditStatus,
+        return new PlanExecution(executionId, planInstr, scheduledAt, auditStatus,
                 derivedPropOne, derivedPropTwo, auditEvents, version);
     }
 
     /** For {@link AuditEvent#derive}: a copy with {@code derivedPropTwo} replaced. */
     public PlanExecution withDerivedPropTwo(BigDecimal derivedPropTwo) {
-        return new PlanExecution(executionId, plan, scheduledAt, auditStatus,
+        return new PlanExecution(executionId, planInstr, scheduledAt, auditStatus,
                 derivedPropOne, derivedPropTwo, auditEvents, version);
     }
 

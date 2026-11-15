@@ -36,7 +36,7 @@ record PropOneEvent(Instant at, AuditStatus status, BigDecimal value, String err
 
     @Override
     public PlanExecution derive(PlanExecution input) {
-        ThresholdsInfo thresholds = input.plan().thresholdInfo();
+        ThresholdsInfo thresholds = input.planInstr().thresholdInfo();
         BigDecimal thresholdMax = thresholds == null ? null : thresholds.thresholdMax();
         return input.withDerivedPropOne(thresholdMax == null ? null : value.subtract(thresholdMax));
     }

@@ -174,7 +174,7 @@ class PlanExecutionTest {
         @Override public java.time.Instant at() { return TestPlans.T0; }
         @Override public AuditStatus status() { return AuditStatus.PROP_TWO_RETRIEVED; }
         @Override public PlanExecution derive(PlanExecution input) {
-            return new PlanExecution(UUID.randomUUID(), input.plan(), input.scheduledAt(), AuditStatus.COMPLETED,
+            return new PlanExecution(UUID.randomUUID(), input.planInstr(), input.scheduledAt(), AuditStatus.COMPLETED,
                     input.derivedPropOne(), new BigDecimal("7"), List.of(), 99L);
         }
     }
