@@ -12,7 +12,7 @@ plans-core/                     the library (goes to Maven Central)
   persistence/PlanJdbcClient    load, save, lookup, search (Spring JdbcClient, no JPA)
   persistence/UuidV7Generator   time-ordered plan_id
   function/PlanFunctions        Lambda functions: loadPlan, savePlan, lookupPlan, searchPlans
-plans-exec/                     plan execution poller and saga stages (design notes so far)
+plans-exec/                     plan execution: Postgres poller, reactive saga stages, retrievers
 plans-lambda/                   the deployable Lambda (shaded jar)
   RuntimeInfoConfig             host name, start time, build number
   MigrationFunctions            migrateDatabase (runs Flyway)
