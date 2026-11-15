@@ -31,7 +31,7 @@ You do these steps once. After that, every GitHub release deploys everything.
     - `GPG_PASSPHRASE` (the passphrase of your key)
     - `AWS_ROLE_ARN` (from step 9)
 11. Add this **variable**: `AWS_REGION`, for example `us-east-1`.
-12. In `pom.xml`, replace `io.github.yourname`, `yourname`, `Your Name` and the license with your own values. Do the same in `core/pom.xml` and `lambda/pom.xml` for the `groupId`.
+12. In `pom.xml`, replace `io.github.yourname`, `yourname`, `Your Name` and the license with your own values. Do the same in `plans-core/pom.xml` and `plans-lambda/pom.xml` for the `groupId`.
 
 ## D. Release
 

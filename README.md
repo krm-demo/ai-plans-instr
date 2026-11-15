@@ -6,13 +6,13 @@ A Java library and AWS Lambda functions that save and read `PlanInstructions` in
 
 ```
 pom.xml                         parent: versions, Maven Central release profile
-core/                           the library (goes to Maven Central)
+plans-core/                     the library (goes to Maven Central)
   model/                        PlanInstructions, DdaAccInfo, InvAccInfo, ThresholdsInfo,
                                 RestInfo, RuntimeInfo, PlanType, PlanStatus, PlanSearchCriteria
   persistence/PlanJdbcClient    load, save, lookup, search (Spring JdbcClient, no JPA)
   persistence/UuidV7Generator   time-ordered plan_id
   function/PlanFunctions        Lambda functions: loadPlan, savePlan, lookupPlan, searchPlans
-lambda/                         the deployable Lambda (shaded jar)
+plans-lambda/                   the deployable Lambda (shaded jar)
   RuntimeInfoConfig             host name, start time, build number
   MigrationFunctions            migrateDatabase (runs Flyway)
   resources/db/migration/       SQL schema

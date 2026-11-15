@@ -57,8 +57,6 @@
     </dependencies>
 
     <build>
-        <!-- Stable file name: target/plans-lambda-shaded.jar (used by infra/template.yaml) -->
-        <finalName>plans-lambda</finalName>
         <resources>
             <!-- only build.properties is filtered, so ${DB_URL} in application.yml stays untouched -->
             <resource>
@@ -85,6 +83,8 @@
                     <createDependencyReducedPom>false</createDependencyReducedPom>
                     <shadedArtifactAttached>true</shadedArtifactAttached>
                     <shadedClassifierName>shaded</shadedClassifierName>
+                    <!-- Stable name without the version: target/plans-lambda-shaded.jar (used by infra/template.yaml) -->
+                    <outputFile>${project.build.directory}/${project.artifactId}-shaded.jar</outputFile>
                     <filters>
                         <filter>
                             <artifact>*:*</artifact>
