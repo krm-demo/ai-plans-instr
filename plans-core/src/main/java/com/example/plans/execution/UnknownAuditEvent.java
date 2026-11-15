@@ -1,7 +1,11 @@
 package com.example.plans.execution;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.jsontype.TypeSerializer;
+import tools.jackson.databind.ser.std.StdSerializer;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -17,8 +21,12 @@ import java.util.Map;
  * <p>It does not change the status or the derived properties. A worker that finds one should
  * leave the execution to a worker that knows it: see {@link PlanExecution#hasUnknownEvents()}.
  *
+ * <p>Written by {@link Serializer}, not {@code @JsonValue}: Jackson 3 wraps a polymorphic
+ * {@code @JsonValue} in a type array ({@code ["UnknownAuditEvent", {...}]}).
+ *
  * @param raw the original JSON object, including {@code __eventType__}
  */
+@JsonSerialize(using = UnknownAuditEvent.Serializer.class)
 public record UnknownAuditEvent(Map<String, Object> raw) implements AuditEvent {
 
     public UnknownAuditEvent {
@@ -31,10 +39,23 @@ public record UnknownAuditEvent(Map<String, Object> raw) implements AuditEvent {
         return new UnknownAuditEvent(raw);
     }
 
-    @JsonValue
-    @Override
-    public Map<String, Object> raw() {
-        return raw;
+    /** Writes {@link #raw()} as it is; it already holds {@code __eventType__}, so no type id is added. */
+    public static final class Serializer extends StdSerializer<UnknownAuditEvent> {
+
+        public Serializer() {
+            super(UnknownAuditEvent.class);
+        }
+
+        @Override
+        public void serialize(UnknownAuditEvent value, JsonGenerator gen, SerializationContext ctxt) {
+            gen.writePOJO(value.raw());
+        }
+
+        @Override
+        public void serializeWithType(UnknownAuditEvent value, JsonGenerator gen, SerializationContext ctxt,
+                                      TypeSerializer typeSer) {
+            serialize(value, gen, ctxt);
+        }
     }
 
     @Override
