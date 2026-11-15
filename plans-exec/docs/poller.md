@@ -462,9 +462,24 @@ gaps to close when this becomes code:
 6. **`@Transactional` on `tryClaimBatch`** is called from a lambda inside the same bean, so the
    Spring proxy is bypassed and no transaction is started. It still works because the claim is
    one statement, but do not rely on the annotation there.
-7. **Columns.** `security_symbol`/`account_no` belong to the older example; the current record
-   keeps the plan snapshot in the JSONB payload and copies `audit_status` and the
-   `numeric(18,2)` derived amounts into columns (see the PR #3 discussion).
-8. **Next execution.** When an execution finishes, the next one is created from the plan
-   instructions current at that moment. Insert it in the same transaction as the final update
+7. **Columns, no join.** `security_symbol`/`account_no` belong to the older example. The
+   current record embeds the whole `PlanInstructions` by value as `planInstr` inside the JSONB
+   payload. There is no `plan_id` foreign key and no join to `plan_instructions`, so editing or
+   deleting a plan never affects an execution. Only `audit_status`, the `numeric(18,2)` derived
+   amounts and the queue columns are copied out of the payload, for polling and querying.
+
+   ```sql
+   CREATE TABLE plan_execution (
+       execution_id     UUID PRIMARY KEY,          -- UUIDv7
+       scheduled_at     TIMESTAMPTZ NOT NULL,
+       visible_at       TIMESTAMPTZ NOT NULL,      -- lease, see item 1
+       audit_status     TEXT NOT NULL,
+       derived_prop_one NUMERIC(18,2),
+       derived_prop_two NUMERIC(18,2),
+       payload          JSONB NOT NULL,           -- whole PlanExecution, incl. planInstr and auditEvents
+       version          BIGINT NOT NULL
+   );
+   ```
+8. **Next execution.** When an execution finishes, the next one gets a copy of the plan
+   instructions current at that moment as its `planInstr`. Insert it in the same transaction as the final update
    of the finished one, so a crash between the two cannot break the chain.
