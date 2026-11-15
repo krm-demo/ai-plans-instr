@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  One-time setup. Lets the GitHub Actions of ONE repository deploy into this AWS account
+  without any stored access keys.
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Description: Your repository as owner/name, for example yourname/plans
+  CreateOidcProvider:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: >-
+      Choose false only if this AWS account already has the identity provider
+      token.actions.githubusercontent.com (the stack fails with "already exists" otherwise).
+
+Conditions:
+  CreateProvider: !Equals [!Ref CreateOidcProvider, 'true']
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+
+  DeployRole:
+    Type: AWS::IAM::Role
+    DependsOn: GitHubOidcProvider
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Sub arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              # Only releases (tags) of this one repository can use the role.
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubRepo}:ref:refs/tags/*
+      # Broad on purpose, so the first deploy just works (it creates VPC, RDS, IAM roles, Lambda).
+      # Narrow it down later.
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+Outputs:
+  DeployRoleArn:
+    Description: Save this value as the GitHub secret AWS_ROLE_ARN
+    Value: !GetAtt DeployRole.Arn

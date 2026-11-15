@@ -1,0 +1,15 @@
+spring:
+  main:
+    web-application-type: none
+  flyway:
+    enabled: false   # migrations only run through the migrateDatabase function
+  datasource:
+    # Set on the Lambda as environment variables (or inject from Secrets Manager).
+    url: ${DB_URL}            # e.g. jdbc:postgresql://<rds-proxy-endpoint>:5432/plans
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      # One invocation at a time per Lambda instance, so one connection is enough.
+      maximum-pool-size: 1
+      minimum-idle: 0
+      connection-timeout: 10000
