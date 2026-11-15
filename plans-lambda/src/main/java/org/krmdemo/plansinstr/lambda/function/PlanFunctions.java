@@ -5,8 +5,8 @@ import org.krmdemo.plansinstr.core.model.PlanInstructions;
 import org.krmdemo.plansinstr.core.model.PlanSearchCriteria;
 import org.krmdemo.plansinstr.core.model.RestInfo;
 import org.krmdemo.plansinstr.core.model.RuntimeInfo;
-import org.krmdemo.plansinstr.core.persistence.PlanJdbcClient;
 import org.krmdemo.plansinstr.core.persistence.PlanNotFoundException;
+import org.krmdemo.plansinstr.core.persistence.jdbc.PlanJdbcClient;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
@@ -45,7 +45,7 @@ public class PlanFunctions {
             // restInfo is always set here; anything the caller sent for it is replaced.
             RestInfo restInfo = new RestInfo(
                     userAgent(message.getHeaders()), clock.instant(), runtimeInfo);
-            return plans.save(plan.withRestInfo(restInfo));
+            return plans.save(plan.withRestInfo(restInfo), "savePlan");
         };
     }
 

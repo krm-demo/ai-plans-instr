@@ -2,30 +2,34 @@ package org.krmdemo.plansinstr.exec;
 
 import org.krmdemo.plansinstr.core.model.PlanExecution;
 import org.krmdemo.plansinstr.core.model.enums.AuditStatus;
-import org.krmdemo.plansinstr.core.model.events.UnknownAuditEvent;
+import org.krmdemo.plansinstr.core.persistence.jdbc.VersionedEntity;
+import org.krmdemo.plansinstr.core.persistence.jdbc.VersionedEntityJdbcClient;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.json.JsonMapper;
 
 import javax.sql.DataSource;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
  * {@link PlanExecutionStore} on the Postgres table {@code plan_execution}
  * (see {@code plans/exec/db/plan_execution.sql}).
  *
- * <p>The whole execution is the JSONB {@code payload}; status, derived amounts and
- * {@code finished} are copied into columns on every write. {@code version} is a column only:
- * the column value is put into the record when a row is read.
+ * <p>A row is a {@link VersionedEntity} with the whole execution as its JSONB {@code payload};
+ * status, derived amounts and {@code finished} are copied into columns on every write. The
+ * execution's {@code version} is the envelope's: it is not stored inside the payload and is put
+ * into the record when a row is read. {@code last_updated_reason} is the audit status that was
+ * written, or {@code CLAIMED}.
  *
  * <p>Claiming is one statement: {@code SELECT … FOR UPDATE SKIP LOCKED} picks due rows that no
  * one else is locking, and the {@code UPDATE} moves their {@code visible_at} to the end of the
@@ -35,42 +39,26 @@ public final class JdbcPlanExecutionStore implements PlanExecutionStore {
 
     private static final String CLAIM = """
             WITH due AS (
-                SELECT execution_id
+                SELECT id
                 FROM plan_execution
                 WHERE NOT finished AND visible_at <= :now
-                ORDER BY visible_at, execution_id
+                ORDER BY visible_at, id
                 LIMIT :limit
                 FOR UPDATE SKIP LOCKED
             )
             UPDATE plan_execution pe
             SET visible_at = :leaseEnd,
-                version = pe.version + 1
+                version = pe.version + 1,
+                last_updated_at = :now,
+                last_updated_reason = 'CLAIMED'
             FROM due
-            WHERE pe.execution_id = due.execution_id
-            RETURNING pe.payload, pe.version, pe.visible_at
-            """;
-
-    private static final String INSERT = """
-            INSERT INTO plan_execution (execution_id, scheduled_at, visible_at, finished, audit_status,
-                                        derived_prop_one, derived_prop_two, payload, version)
-            VALUES (:id, :scheduledAt, :scheduledAt, :finished, :status, :one, :two, CAST(:payload AS jsonb), 0)
-            """;
-
-    private static final String UPDATE = """
-            UPDATE plan_execution
-            SET visible_at = :visibleAt,
-                finished = :finished,
-                audit_status = :status,
-                derived_prop_one = :one,
-                derived_prop_two = :two,
-                payload = CAST(:payload AS jsonb),
-                version = version + 1
-            WHERE execution_id = :id AND version = :version
+            WHERE pe.id = due.id
+            RETURNING pe.id, pe.version, pe.last_updated_at, pe.last_updated_reason, pe.payload
             """;
 
     private final JdbcClient jdbc;
+    private final VersionedEntityJdbcClient<PlanExecution> entities;
     private final TransactionTemplate tx;
-    private final JsonMapper json;
     private final Clock clock;
 
     /**
@@ -79,23 +67,18 @@ public final class JdbcPlanExecutionStore implements PlanExecutionStore {
      */
     public JdbcPlanExecutionStore(DataSource dataSource, JsonMapper json, Clock clock) {
         this.jdbc = JdbcClient.create(dataSource);
+        this.entities = new VersionedEntityJdbcClient<>(jdbc, json, clock, "plan_execution", PlanExecution.class);
         this.tx = new TransactionTemplate(new DataSourceTransactionManager(dataSource));
-        this.json = json;
         this.clock = clock;
     }
 
     @Override
     public PlanExecution insert(PlanExecution execution) {
-        jdbc.sql(INSERT)
-                .param("id", execution.executionId())
-                .param("scheduledAt", utc(execution.scheduledAt()))
-                .param("finished", isFinished(execution))
-                .param("status", execution.auditStatus().name())
-                .param("one", execution.derivedPropOne())
-                .param("two", execution.derivedPropTwo())
-                .param("payload", json.writeValueAsString(execution.withVersion(null)))
-                .update();
-        return execution.withVersion(0L);
+        Map<String, Object> columns = columns(execution, execution.scheduledAt(), isFinished(execution));
+        columns.put("scheduled_at", execution.scheduledAt());
+        VersionedEntity<PlanExecution> stored = entities.insert(
+                execution.executionId(), execution.withVersion(null), reason(execution), columns);
+        return execution.withVersion((long) stored.version());
     }
 
     @Override
@@ -105,7 +88,7 @@ public final class JdbcPlanExecutionStore implements PlanExecutionStore {
                 .param("now", utc(now))
                 .param("leaseEnd", utc(now.plus(lease)))
                 .param("limit", limit)
-                .query(this::mapRow)
+                .query((rs, rowNum) -> toExecution(entities.mapRow(rs, rowNum)))
                 .list());
     }
 
@@ -127,25 +110,35 @@ public final class JdbcPlanExecutionStore implements PlanExecutionStore {
         if (execution.version() == null) {
             throw new IllegalArgumentException("execution " + execution.executionId() + " has no version");
         }
-        int updated = jdbc.sql(UPDATE)
-                .param("id", execution.executionId())
-                .param("version", execution.version())
-                .param("visibleAt", utc(visibleAt))
-                .param("finished", finished)
-                .param("status", execution.auditStatus().name())
-                .param("one", execution.derivedPropOne())
-                .param("two", execution.derivedPropTwo())
-                .param("payload", json.writeValueAsString(execution.withVersion(null)))
-                .update();
-        if (updated != 1) {
+        try {
+            VersionedEntity<PlanExecution> stored = entities.update(
+                    execution.executionId(), Math.toIntExact(execution.version()), execution.withVersion(null),
+                    reason(execution), columns(execution, visibleAt, finished));
+            return execution.withVersion((long) stored.version());
+        } catch (OptimisticLockingFailureException e) {
             throw new LeaseLostException("execution " + execution.executionId()
                     + " is no longer at version " + execution.version());
         }
-        return execution.withVersion(execution.version() + 1);
     }
 
-    private PlanExecution mapRow(ResultSet rs, int rowNum) throws SQLException {
-        return json.readValue(rs.getString("payload"), PlanExecution.class).withVersion(rs.getLong("version"));
+    /** The copies of payload fields that the table keeps in columns of its own. */
+    private static Map<String, Object> columns(PlanExecution execution, Instant visibleAt, boolean finished) {
+        Map<String, Object> columns = new LinkedHashMap<>();   // null values are allowed
+        columns.put("visible_at", visibleAt);
+        columns.put("finished", finished);
+        columns.put("audit_status", execution.auditStatus().name());
+        columns.put("derived_prop_one", execution.derivedPropOne());
+        columns.put("derived_prop_two", execution.derivedPropTwo());
+        return columns;
+    }
+
+    /** {@code last_updated_reason} of a write: the status the execution has reached. */
+    private static String reason(PlanExecution execution) {
+        return execution.auditStatus().name();
+    }
+
+    private static PlanExecution toExecution(VersionedEntity<PlanExecution> entity) {
+        return entity.payload().withVersion((long) entity.version());
     }
 
     /** Finished executions are never claimed again: a success, or the (sticky) first failure. */
