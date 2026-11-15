@@ -9,20 +9,17 @@ import com.example.plans.model.PlanType;
 import com.example.plans.model.RestInfo;
 import com.example.plans.model.RuntimeInfo;
 import com.example.plans.model.ThresholdsInfo;
+import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.DockerClientFactory;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.utility.DockerImageName;
 import tools.jackson.databind.json.JsonMapper;
+
+import javax.sql.DataSource;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -41,41 +38,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Runs PlanJdbcClient against a real Postgres (Docker) using the production Flyway migration.
- * Skipped when Docker is not available.
+ * Runs PlanJdbcClient against a real Postgres started in-process by Zonky's embedded-postgres
+ * (no Docker needed) using the production Flyway migration. The Postgres version is chosen by
+ * the property postgres.binaries.version in the parent pom.
  */
 class PlanJdbcClientTest {
 
-    private static GenericContainer<?> postgres;
-    private static DriverManagerDataSource dataSource;
+    private static EmbeddedPostgres postgres;
+    private static DataSource dataSource;
 
     private JdbcClient jdbc;
     private PlanJdbcClient plans;
     private MutableClock clock;
 
     @BeforeAll
-    static void startPostgres() {
-        Assumptions.assumeTrue(DockerClientFactory.instance().isDockerAvailable(),
-                "Docker is not available - skipping Postgres tests");
-        postgres = new GenericContainer<>(DockerImageName.parse("postgres:17-alpine"))
-                .withEnv("POSTGRES_DB", "plans")
-                .withEnv("POSTGRES_USER", "plans")
-                .withEnv("POSTGRES_PASSWORD", "plans")
-                .withExposedPorts(5432)
-                .waitingFor(Wait.forLogMessage(".*database system is ready to accept connections.*\\n", 2)
-                        .withStartupTimeout(Duration.ofMinutes(2)));
-        postgres.start();
-
-        dataSource = new DriverManagerDataSource(
-                "jdbc:postgresql://" + postgres.getHost() + ":" + postgres.getMappedPort(5432) + "/plans",
-                "plans", "plans");
+    static void startPostgres() throws Exception {
+        postgres = EmbeddedPostgres.start();
+        dataSource = postgres.getPostgresDatabase();
         Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load().migrate();
     }
 
     @AfterAll
-    static void stopPostgres() {
+    static void stopPostgres() throws Exception {
         if (postgres != null) {
-            postgres.stop();
+            postgres.close();
         }
     }
 
