@@ -43,9 +43,9 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-              # Only releases (tags) of this one repository can use the role.
-              StringLike:
-                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubRepo}:ref:refs/tags/*
+                # Only pushes to the main branch of this one repository can use the role
+                # (pull requests and other branches cannot deploy).
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubRepo}:ref:refs/heads/main
       # Broad on purpose, so the first deploy just works (it creates VPC, RDS, IAM roles, Lambda).
       # Narrow it down later.
       ManagedPolicyArns:

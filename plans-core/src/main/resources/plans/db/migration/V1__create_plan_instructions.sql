@@ -1,4 +1,4 @@
--- Applied by the migrateDatabase Lambda (Flyway) after every deploy.
+-- Shipped inside plans-core (classpath:plans/db/migration). The migrateDatabase Lambda and the tests apply it with Flyway.
 -- Never edit a released migration; add V2__..., V3__... files instead.
 
 CREATE TABLE plan_instructions (

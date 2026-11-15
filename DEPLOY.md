@@ -1,48 +1,60 @@
-# How to deploy (one time setup, then one click)
+# How to set everything up (one time), then every push to main builds and deploys
 
-You do these steps once. After that, every GitHub release deploys everything.
+You do these steps once. After that:
 
-## A. Maven Central
+- **every push to `main`** builds, runs the tests, publishes the report site and deploys to AWS (`ci.yml`);
+- **every GitHub release** uploads the library to Maven Central (`release.yml`).
 
-1. Open https://central.sonatype.com and sign in with GitHub.
-2. Open **Namespaces**. You should see `io.github.<your-github-name>`. Use this as `groupId`.
-3. Open your account menu and click **Generate User Token**. Save the username and the password.
-4. Make a signing key on your computer:
+Never paste a password, token or key into a chat. Put them only into the GitHub secrets below.
+
+## A. GitHub: report site (2 minutes, free)
+
+1. Repository **Settings > Pages**. Under **Source** choose **GitHub Actions**.
+2. Push to `main` (or merge a pull request). The badges in `README.md` start to work after the first green run.
+
+## B. Maven Central
+
+3. Sign in at https://central.sonatype.com with GitHub. Under **Namespaces** you should see `io.github.krm-demo`.
+4. Account menu > **Generate User Token**. Save the username and the password of the token.
+5. Make a **new** signing key. Do not reuse a key that was ever written into a file in a repository.
    ```
    gpg --full-generate-key
    gpg --list-secret-keys --keyid-format long      # copy the key id
    gpg --keyserver keyserver.ubuntu.com --send-keys <KEY_ID>
-   gpg --armor --export-secret-keys <KEY_ID>       # copy the whole text block
+   ```
+6. In the repository open **Settings > Secrets and variables > Actions** and add these **secrets**
+   (with the GitHub CLI each command asks for the value, so it does not stay in your shell history):
+   ```
+   gh secret set CENTRAL_USERNAME --repo krm-demo/ai-plans-instr
+   gh secret set CENTRAL_PASSWORD --repo krm-demo/ai-plans-instr
+   gh secret set GPG_PASSPHRASE   --repo krm-demo/ai-plans-instr
+   gpg --armor --export-secret-keys <KEY_ID> | gh secret set GPG_PRIVATE_KEY --repo krm-demo/ai-plans-instr
    ```
 
-## B. AWS
+## C. AWS (optional, costs money while the database runs, see below)
 
-5. Sign in to the AWS console. Choose your region (top right).
-6. Open **CloudFormation > Create stack > With new resources**.
-7. Upload the file `infra/github-oidc.yaml`. Set `GitHubRepo` to `yourname/plans`.
-8. Tick the box that says IAM resources will be created. Click **Create stack**.
-9. When it is done, open the **Outputs** tab. Copy `DeployRoleArn`.
+7. Sign in to the AWS console and choose your region (top right).
+8. **CloudFormation > Create stack > With new resources**. Upload `infra/github-oidc.yaml`.
+   Set `GitHubRepo` to `krm-demo/ai-plans-instr`. Tick the box that says IAM resources will be created.
+   (If the stack says the provider "already exists", create it again with `CreateOidcProvider` = `false`.)
+9. When it is done, open the **Outputs** tab and copy `DeployRoleArn`.
+10. In GitHub add the **secret** `AWS_ROLE_ARN` (the value from step 9) and these **variables**:
+    - `AWS_REGION`, for example `us-east-1`
+    - `AWS_DEPLOY` = `true` (this switches the deployment on; delete it or set `false` to switch it off)
+11. Set a monthly budget of about $10 in the AWS **Budgets** service before the first deployment.
 
-## C. GitHub (repository > Settings > Secrets and variables > Actions)
+The role can only be used by pushes to the `main` branch of this repository.
 
-10. Add these **secrets**:
-    - `CENTRAL_USERNAME` and `CENTRAL_PASSWORD` (from step 3)
-    - `GPG_PRIVATE_KEY` (the text block from step 4)
-    - `GPG_PASSPHRASE` (the passphrase of your key)
-    - `AWS_ROLE_ARN` (from step 9)
-11. Add this **variable**: `AWS_REGION`, for example `us-east-1`.
-12. In `pom.xml`, replace `io.github.yourname`, `yourname`, `Your Name` and the license with your own values. Do the same in `plans-core/pom.xml` and `plans-lambda/pom.xml` for the `groupId`.
+## D. Release to Maven Central
 
-## D. Release
+12. On GitHub: **Releases > Draft a new release**. Create the tag, for example `v0.1.0`, and click **Publish release**.
+13. Watch **Actions > release**. It builds, tests and uploads the library (jar, sources, javadoc, signatures).
+14. Open https://central.sonatype.com/publishing/deployments, check the upload and click **Publish**.
+    (The upload does not publish by itself on purpose. Published versions can never be changed or removed.)
 
-13. On GitHub open **Releases > Draft a new release**. Make a new tag, for example `v0.1.0`. Click **Publish release**.
-14. Open the **Actions** tab and watch the run. It builds, uploads to Central, deploys to AWS and updates the database.
-15. Open https://central.sonatype.com/publishing/deployments. Check the upload. Click **Publish**. (This is manual on purpose for the first release.)
+## E. Try the deployed functions
 
-## E. Test it
-
-16. In the AWS console open **CloudFormation > stack `plans` > Outputs**. Copy `ApiUrl`.
-17. Every call must be signed with your AWS credentials. Use `awscurl`:
+15. **CloudFormation > stack `plans` > Outputs** shows `ApiUrl`. Every call must be signed with AWS credentials:
     ```
     pip install awscurl
     awscurl --service execute-api --region us-east-1 -X POST \
@@ -52,12 +64,14 @@ You do these steps once. After that, every GitHub release deploys everything.
            "invAccInfo":{"invAccNum":"456","occdCode":"X"},"currency":"USD"}' \
       <ApiUrl>/plans/save
     ```
-18. The answer must contain `restInfo` with your user agent, the time and the build number.
-    If `userAgent` is `null`, tell me. It means the HTTP headers did not reach the function.
+16. The answer must contain `restInfo` with your user agent, the time and the build number.
+    If `userAgent` is `null`, the HTTP headers did not reach the function.
 
 ## Good to know
 
-- The database costs money while it runs. To stop it, delete the stack `plans` in CloudFormation. It makes a final snapshot first.
-- If step 8 says "already exists", the account already has the GitHub identity provider. Create the stack again with `CreateOidcProvider` = `false`.
-- If the `plans` stack says the Postgres version was not found, run `aws rds describe-db-engine-versions --engine postgres` and set `PostgresVersion` in `infra/template.yaml`.
+- Database cost: about $15 a month when it runs all month (details in the chat history). Delete the stack
+  `plans` in CloudFormation to stop it; it keeps a final snapshot, delete that too when you do not need it.
+- If the stack says the Postgres version was not found, run `aws rds describe-db-engine-versions --engine postgres`
+  and set `PostgresVersion` in `infra/template.yaml`.
 - The Lambdas have no internet access. They only talk to the database.
+- Versions are simple: `0.1.0-SNAPSHOT` in the poms, and a release `vX.Y.Z` sets the version from its tag.

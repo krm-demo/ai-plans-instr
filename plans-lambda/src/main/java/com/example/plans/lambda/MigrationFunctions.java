@@ -21,7 +21,7 @@ public class MigrationFunctions {
         return ignored -> {
             MigrateResult result = Flyway.configure()
                     .dataSource(dataSource)
-                    .locations("classpath:db/migration")
+                    .locations("classpath:plans/db/migration")
                     .load()
                     .migrate();
             return "Applied " + result.migrationsExecuted + " migration(s), schema version "

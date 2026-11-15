@@ -1,0 +1,163 @@
+name: ci
+run-name: ci ${{ github.ref_name }} №${{ github.run_number }}
+
+# Every push to main (and every pull request into main):
+#   build + tests + coverage -> report site on GitHub Pages -> deploy to AWS (when enabled)
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+# a new push cancels the older run of the same pull request, but never a running deployment on main
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build number is "<run number>-<short commit id>"
+        run: echo "BUILD_NUMBER=${{ github.run_number }}-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      # tests (embedded Postgres), JaCoCo coverage, sources + javadoc jars, shaded Lambda jar
+      - name: Build and test
+        run: mvn -B verify -Dbuild.number="$BUILD_NUMBER"
+
+      # runs even when the build failed, so a red build still shows which test failed
+      - name: Test and coverage summary, badges and report site
+        if: always()
+        run: |
+          python3 .github/scripts/ci-report.py \
+            --jacoco plans-core/target/site/jacoco/jacoco.xml \
+            --surefire plans-core/target/surefire-reports \
+            --out site --build "$BUILD_NUMBER" --sha "$GITHUB_SHA" --repo "$GITHUB_REPOSITORY" \
+            >> "$GITHUB_STEP_SUMMARY"
+          if [ -d plans-core/target/site/jacoco ]; then cp -r plans-core/target/site/jacoco site/jacoco; fi
+          APIDOCS=$(find plans-core/target -type d -name apidocs | head -1)
+          if [ -n "$APIDOCS" ]; then cp -r "$APIDOCS" site/apidocs; fi
+
+      - name: Artifacts of this build (jars)
+        if: success()
+        run: |
+          {
+            echo ""
+            echo "### Jars"
+            echo '```'
+            ls -lh plans-core/target/*.jar plans-lambda/target/*.jar
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: jars
+          path: |
+            plans-core/target/*.jar
+            plans-lambda/target/plans-lambda-shaded.jar
+          retention-days: 14
+
+      - uses: actions/upload-pages-artifact@v3
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && hashFiles('site/index.html') != ''
+        with:
+          path: site
+
+  # Report site: https://<owner>.github.io/<repo>/ (the badges in README.md read from it).
+  # One-time setting: repository Settings > Pages > Source = "GitHub Actions".
+  pages:
+    needs: build
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.build.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Hint when Pages is not enabled yet
+        if: steps.deployment.outcome == 'failure'
+        run: echo "::warning::Publishing the report site failed. Enable it once in Settings > Pages > Source = GitHub Actions."
+
+  # Deployment to AWS, only after a green build of main, and only when you switch it on:
+  # repository variable AWS_DEPLOY = true (see DEPLOY.md).
+  deploy-aws:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # the artifact keeps its folders, so the jar lands in plans-lambda/target/, where
+      # infra/template.yaml expects it
+      - uses: actions/download-artifact@v4
+        with:
+          name: jars
+          path: .
+
+      - name: Check that the Lambda jar is where the template expects it
+        run: ls -l plans-lambda/target/plans-lambda-shaded.jar
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: aws-actions/setup-sam@v2
+
+      - name: Deploy database, Lambdas and API
+        run: |
+          sam deploy \
+            --template-file infra/template.yaml \
+            --stack-name plans \
+            --capabilities CAPABILITY_IAM \
+            --resolve-s3 \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
+
+      - name: Update the database schema
+        run: |
+          out() { aws cloudformation describe-stacks --stack-name plans \
+                    --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
+          invoke() {  # $1 = function name, $2 = result file
+            ERR=$(aws lambda invoke --function-name "$1" --cli-binary-format raw-in-base64-out \
+                    --payload '{}' --query FunctionError --output text "$2")
+            cat "$2"; echo
+            [ "$ERR" = "None" ]
+          }
+          invoke "$(out MigrateFunctionName)" /tmp/migrate.json
+
+      - name: Smoke test - search must answer with a JSON list
+        run: |
+          FN=$(aws cloudformation describe-stacks --stack-name plans \
+                 --query "Stacks[0].Outputs[?OutputKey=='SearchFunctionName'].OutputValue" --output text)
+          ERR=$(aws lambda invoke --function-name "$FN" --cli-binary-format raw-in-base64-out \
+                  --payload '{"limit": 1}' --query FunctionError --output text /tmp/search.json)
+          cat /tmp/search.json; echo
+          [ "$ERR" = "None" ]
+          {
+            echo "### Deployed to AWS"
+            echo "API: $(aws cloudformation describe-stacks --stack-name plans \
+                  --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text)"
+            echo "Build: ${{ github.run_number }}-${GITHUB_SHA::7}"
+          } >> "$GITHUB_STEP_SUMMARY"

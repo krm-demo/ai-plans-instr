@@ -55,7 +55,7 @@ class PlanJdbcClientTest {
     static void startPostgres() throws Exception {
         postgres = EmbeddedPostgres.start();
         dataSource = postgres.getPostgresDatabase();
-        Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load().migrate();
+        Flyway.configure().dataSource(dataSource).locations("classpath:plans/db/migration").load().migrate();
     }
 
     @AfterAll

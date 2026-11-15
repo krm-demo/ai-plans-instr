@@ -4,33 +4,33 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.yourname</groupId>
+    <groupId>io.github.krm-demo</groupId>
     <artifactId>plans-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <!-- Maven Central requires this metadata. Replace the placeholders with your own values. -->
+    <!-- Maven Central requires this metadata -->
     <name>plans</name>
     <description>PlanInstructions model and Postgres persistence for plan-instruction Lambdas</description>
-    <url>https://github.com/yourname/plans</url>
+    <url>https://github.com/krm-demo/ai-plans-instr</url>
     <licenses>
         <license>
-            <name>Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
         </license>
     </licenses>
     <developers>
         <developer>
-            <name>Your Name</name>
-            <url>https://github.com/yourname</url>
+            <name>Aleksey Kurmanov</name>
+            <url>https://github.com/krm-demo</url>
         </developer>
     </developers>
     <scm child.scm.connection.inherit.append.path="false"
          child.scm.developerConnection.inherit.append.path="false"
          child.scm.url.inherit.append.path="false">
-        <connection>scm:git:https://github.com/yourname/plans.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/yourname/plans.git</developerConnection>
-        <url>https://github.com/yourname/plans</url>
+        <connection>scm:git:https://github.com/krm-demo/ai-plans-instr.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/krm-demo/ai-plans-instr.git</developerConnection>
+        <url>https://github.com/krm-demo/ai-plans-instr</url>
     </scm>
 
     <modules>
@@ -41,12 +41,23 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
         <spring-boot.version>4.1.0</spring-boot.version>
         <spring-cloud.version>2025.1.3</spring-cloud.version>
-        <!-- false: after the upload you press "Publish" in the Central portal (safer for a first release) -->
-        <central.autoPublish>false</central.autoPublish>
+
         <!-- Postgres version used by the tests (Zonky embedded binaries). Try 18.x here when it exists. -->
         <postgres.binaries.version>17.6.0</postgres.binaries.version>
+
+        <!-- build plugins (same versions as in core-utils where there is an overlap) -->
+        <maven.surefire.plugin.version>3.5.4</maven.surefire.plugin.version>
+        <maven.jacoco.plugin.version>0.8.14</maven.jacoco.plugin.version>
+        <maven.source.plugin.version>3.3.1</maven.source.plugin.version>
+        <maven.javadoc.plugin.version>3.11.2</maven.javadoc.plugin.version>
+        <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
+        <central.publishing.plugin.version>0.12.0</central.publishing.plugin.version>
+
+        <!-- false: after the upload you press "Publish" in the Central portal (safer for a first release) -->
+        <central.autoPublish>false</central.autoPublish>
     </properties>
 
     <dependencyManagement>
@@ -76,44 +87,20 @@
     </dependencyManagement>
 
     <profiles>
-        <!-- mvn deploy -pl plans-core -am -Prelease : sources, javadoc, signatures, upload to Central -->
+        <!--
+          mvn deploy -pl plans-core -am -Prelease
+          Adds signatures (GPG) and uploads to Maven Central.
+          The sources and javadoc jars are part of every build of plans-core (see its pom), so
+          the release profile only adds what must not run on every commit.
+        -->
         <profile>
             <id>release</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>3.3.1</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.11.2</version>
-                        <configuration>
-                            <doclint>none</doclint>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.7</version>
+                        <version>${maven.gpg.plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -127,7 +114,7 @@
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>0.12.0</version>
+                        <version>${central.publishing.plugin.version}</version>
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>

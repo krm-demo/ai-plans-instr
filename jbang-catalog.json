@@ -1,0 +1,9 @@
+{
+  "catalogs": {},
+  "aliases": {
+    "plans": {
+      "script-ref": "src/scripts/jbang/PlansCli.java",
+      "description": "Command line for plan instructions: load, save, lookup and search in Postgres"
+    }
+  }
+}

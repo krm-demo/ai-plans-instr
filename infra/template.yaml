@@ -192,3 +192,5 @@ Outputs:
     Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
   MigrateFunctionName:
     Value: !Ref MigrateDatabaseFunction
+  SearchFunctionName:
+    Value: !Ref SearchPlansFunction

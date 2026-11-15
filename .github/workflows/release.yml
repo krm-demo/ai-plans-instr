@@ -1,17 +1,21 @@
-name: Release
+name: release
 
-# Runs when you publish a release on GitHub (tag like v0.1.0).
+# Publish a release on GitHub (tag v0.1.0, v0.2.0, ...) and this workflow
+#   1. builds and tests the exact tagged commit,
+#   2. uploads plans-core (jar + sources + javadoc, signed) to Maven Central,
+#   3. attaches the jars to the GitHub release.
+# Deploying to AWS is done by ci.yml on every push to main, not here.
 on:
   release:
-    types: [published]
+    types: [ published ]
 
 permissions:
-  contents: read
-  id-token: write   # lets the job sign in to AWS without access keys
+  contents: write   # needed to attach the jars to the release
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -31,39 +35,20 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           mvn -B -q versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false
 
-      - name: Build and test (also creates the Lambda jar)
-        run: mvn -B verify -Dbuild.number="${{ github.run_number }}-${GITHUB_SHA:0:7}"
+      - name: Build and test
+        run: mvn -B verify -Dbuild.number="release-${GITHUB_REF_NAME}"
 
-      - name: Upload the library to Maven Central
+      - name: Upload plans-core to Maven Central
         run: mvn -B deploy -pl plans-core -am -Prelease -DskipTests
         env:
           CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-
-      - uses: aws-actions/setup-sam@v2
-
-      - name: Deploy database, Lambdas and API to AWS
+      - name: Attach the jars to the GitHub release
         run: |
-          sam deploy \
-            --template-file infra/template.yaml \
-            --stack-name plans \
-            --capabilities CAPABILITY_IAM \
-            --resolve-s3 \
-            --no-confirm-changeset \
-            --no-fail-on-empty-changeset
-
-      - name: Update the database schema
-        run: |
-          FN=$(aws cloudformation describe-stacks --stack-name plans \
-            --query "Stacks[0].Outputs[?OutputKey=='MigrateFunctionName'].OutputValue" --output text)
-          ERR=$(aws lambda invoke --function-name "$FN" \
-            --cli-binary-format raw-in-base64-out --payload '{}' \
-            --query FunctionError --output text /tmp/migrate.json)
-          cat /tmp/migrate.json
-          [ "$ERR" = "None" ]
+          gh release upload "$GITHUB_REF_NAME" \
+            plans-core/target/plans-core-*.jar \
+            plans-lambda/target/plans-lambda-shaded.jar --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
