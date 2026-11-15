@@ -1,0 +1,194 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Plans - private network, Postgres database, Lambda functions and an IAM-protected HTTP API
+
+Parameters:
+  DbInstanceClass:
+    Type: String
+    Default: db.t4g.micro
+  PostgresVersion:
+    Type: String
+    Default: '17'
+    Description: >-
+      Major version of Postgres. If CloudFormation says the version is not found, list the
+      valid ones with: aws rds describe-db-engine-versions --engine postgres
+
+Globals:
+  Function:
+    Runtime: java21
+    Architectures: [arm64]
+    Handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest
+    CodeUri: ../lambda/target/plans-lambda-shaded.jar
+    MemorySize: 1024
+    Timeout: 30
+    VpcConfig:
+      SecurityGroupIds:
+        - !Ref LambdaSecurityGroup
+      SubnetIds:
+        - !Ref SubnetA
+        - !Ref SubnetB
+    Environment:
+      Variables:
+        DB_URL: !Sub jdbc:postgresql://${Database.Endpoint.Address}:5432/plans
+        DB_USER: plans
+        DB_PASSWORD: !Sub '{{resolve:secretsmanager:${DbSecret}:SecretString:password}}'
+
+Resources:
+  # ---------- Network: two private subnets, no internet access ----------
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.20.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.20.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+
+  SubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.20.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Plans Lambda functions
+      VpcId: !Ref Vpc
+
+  DbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Postgres - only the Lambda functions may connect
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+
+  # ---------- Database ----------
+  DbSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Master password of the plans database
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "plans"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludePunctuation: true
+
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Plans database subnets
+      SubnetIds:
+        - !Ref SubnetA
+        - !Ref SubnetB
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      Engine: postgres
+      EngineVersion: !Ref PostgresVersion
+      DBInstanceClass: !Ref DbInstanceClass
+      AllocatedStorage: '20'
+      StorageType: gp3
+      StorageEncrypted: true
+      DBName: plans
+      MasterUsername: plans
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DbSecret}:SecretString:password}}'
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      VPCSecurityGroups:
+        - !Ref DbSecurityGroup
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+
+  # ---------- HTTP API: every call must be signed with AWS credentials (IAM) ----------
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Auth:
+        EnableIamAuthorizer: true
+        DefaultAuthorizer: AWS_IAM
+
+  # ---------- Lambda functions: one per operation ----------
+  LoadPlanFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          SPRING_CLOUD_FUNCTION_DEFINITION: loadPlan
+      Events:
+        Http:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /plans/load
+            Method: POST
+
+  SavePlanFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          SPRING_CLOUD_FUNCTION_DEFINITION: savePlan
+      Events:
+        Http:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /plans/save
+            Method: POST
+
+  LookupPlanFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          SPRING_CLOUD_FUNCTION_DEFINITION: lookupPlan
+      Events:
+        Http:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /plans/lookup
+            Method: POST
+
+  SearchPlansFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          SPRING_CLOUD_FUNCTION_DEFINITION: searchPlans
+      Events:
+        Http:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /plans/search
+            Method: POST
+
+  # Not public: the release workflow invokes it after every deploy.
+  MigrateDatabaseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 300
+      Environment:
+        Variables:
+          SPRING_CLOUD_FUNCTION_DEFINITION: migrateDatabase
+          SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: '2'
+
+Outputs:
+  ApiUrl:
+    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
+  MigrateFunctionName:
+    Value: !Ref MigrateDatabaseFunction
