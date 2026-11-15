@@ -34,8 +34,8 @@
     </scm>
 
     <modules>
-        <module>core</module>
-        <module>lambda</module>
+        <module>plans-core</module>
+        <module>plans-lambda</module>
     </modules>
 
     <properties>
@@ -67,7 +67,7 @@
     </dependencyManagement>
 
     <profiles>
-        <!-- mvn deploy -pl core -am -Prelease : sources, javadoc, signatures, upload to Central -->
+        <!-- mvn deploy -pl plans-core -am -Prelease : sources, javadoc, signatures, upload to Central -->
         <profile>
             <id>release</id>
             <build>

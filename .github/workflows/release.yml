@@ -35,7 +35,7 @@ jobs:
         run: mvn -B verify -Dbuild.number="${{ github.run_number }}-${GITHUB_SHA:0:7}"
 
       - name: Upload the library to Maven Central
-        run: mvn -B deploy -pl core -am -Prelease -DskipTests
+        run: mvn -B deploy -pl plans-core -am -Prelease -DskipTests
         env:
           CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
