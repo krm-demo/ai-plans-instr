@@ -39,6 +39,15 @@ public final class UuidV7Generator {
         return new UUID(msb, lsb);
     }
 
+    /**
+     * The smallest UUIDv7 of a millisecond. Ids created at or after {@code epochMillis} are
+     * {@code >=} it and ids created before are {@code <} it, so a range of creation times is a
+     * range of ids.
+     */
+    public static UUID firstOf(long epochMillis) {
+        return new UUID((epochMillis << 16) | 0x7000L, 0x8000_0000_0000_0000L);
+    }
+
     /** Extracts the creation time (epoch milliseconds) embedded in a UUIDv7. */
     public static long timestampMillis(UUID uuid) {
         return uuid.getMostSignificantBits() >>> 16;

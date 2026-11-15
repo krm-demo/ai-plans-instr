@@ -11,8 +11,12 @@ plans-core/                     the library (goes to Maven Central), org.krmdemo
                                 RuntimeInfo, PlanSearchCriteria, PlanApi, PlanExecution
   model/enums/                  PlanType, PlanStatus, AuditStatus
   model/events/                 AuditEvent, UnknownAuditEvent
-  persistence/PlanJdbcClient    load, save, lookup, search (Spring JdbcClient, no JPA)
-  persistence/UuidV7Generator   time-ordered plan_id
+  persistence/UuidV7Generator   time-ordered ids
+  persistence/jdbc/             Postgres (Spring JdbcClient, no JPA):
+    VersionedEntity             the envelope of every stored row: id, version, lastUpdatedAt,
+                                lastUpdatedReason, payload
+    VersionedEntityJdbcClient   insert, update with version check, find, delete for one table
+    PlanJdbcClient              plans: load, save, lookup, search
 plans-exec/                     plan execution, org.krmdemo.plansinstr.exec:
                                 Postgres poller, reactive saga stages, retrievers
   model/events/                 PropOneEvent, PropTwoEvent

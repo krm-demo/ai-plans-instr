@@ -26,7 +26,7 @@ final class InMemoryPlanExecutionStore implements PlanExecutionStore {
 
     @Override
     public synchronized PlanExecution insert(PlanExecution execution) {
-        PlanExecution stored = execution.withVersion(0L);
+        PlanExecution stored = execution.withVersion(1L);
         rows.put(stored.executionId(), stored);
         finished.put(stored.executionId(), false);
         visibleAt.put(stored.executionId(), stored.scheduledAt());

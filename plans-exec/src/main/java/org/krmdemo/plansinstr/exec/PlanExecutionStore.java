@@ -16,7 +16,7 @@ import java.util.Optional;
  */
 public interface PlanExecutionStore {
 
-    /** Stores a new execution; it becomes due at its {@code scheduledAt}. Returns it with version 0. */
+    /** Stores a new execution; it becomes due at its {@code scheduledAt}. Returns it with version 1. */
     PlanExecution insert(PlanExecution execution);
 
     /**

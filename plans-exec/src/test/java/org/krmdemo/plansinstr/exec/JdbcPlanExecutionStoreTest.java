@@ -106,14 +106,14 @@ class JdbcPlanExecutionStoreTest {
 
         List<PlanExecution> first = store.claimDue(10, Duration.ofMinutes(5));
         assertEquals(List.of(due.executionId()), first.stream().map(PlanExecution::executionId).toList());
-        assertEquals(1L, first.getFirst().version());
+        assertEquals(2L, first.getFirst().version());   // 1 at the insert, 2 after the claim
 
         assertTrue(store.claimDue(10, Duration.ofMinutes(5)).isEmpty(), "leased");
 
         clock.advance(Duration.ofMinutes(6));   // lease over: claimable again, with a new version
         List<PlanExecution> again = store.claimDue(10, Duration.ofMinutes(5));
         assertEquals(1, again.size());
-        assertEquals(2L, again.getFirst().version());
+        assertEquals(3L, again.getFirst().version());
     }
 
     @Test
@@ -147,9 +147,14 @@ class JdbcPlanExecutionStoreTest {
         assertEquals(progressed.withVersion(reread.version()), reread);
         assertInstanceOf(PropOneEvent.class, reread.auditEvents().get(0));
         assertInstanceOf(UnknownAuditEvent.class, reread.auditEvents().get(1));
-        Map<String, Object> columns = jdbc.sql("SELECT audit_status, derived_prop_one FROM plan_execution").query().singleRow();
+        Map<String, Object> columns = jdbc.sql("SELECT audit_status, derived_prop_one, version, last_updated_reason"
+                + " FROM plan_execution").query().singleRow();
         assertEquals("PROP_ONE_RETRIEVED", columns.get("audit_status"));
         assertEquals(new BigDecimal("230.25"), columns.get("derived_prop_one"));
+        // the envelope: insert 1, claim 2, checkpoint 3, claim 4
+        assertEquals(4, columns.get("version"));
+        assertEquals(4L, reread.version());
+        assertEquals("CLAIMED", columns.get("last_updated_reason"));
     }
 
     @Test
