@@ -35,6 +35,7 @@
 
     <modules>
         <module>plans-core</module>
+        <module>plans-exec</module>
         <module>plans-lambda</module>
     </modules>
 

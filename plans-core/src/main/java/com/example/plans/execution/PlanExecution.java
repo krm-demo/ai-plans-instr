@@ -115,6 +115,12 @@ public record PlanExecution(
         return auditEvents.stream().anyMatch(UnknownAuditEvent.class::isInstance);
     }
 
+    /** For the repository: a copy with the stored row's {@code version}. */
+    public PlanExecution withVersion(Long version) {
+        return new PlanExecution(executionId, planInstr, scheduledAt, auditStatus,
+                derivedPropOne, derivedPropTwo, auditEvents, version);
+    }
+
     /** For {@link AuditEvent#derive}: a copy with {@code derivedPropOne} replaced. */
     public PlanExecution withDerivedPropOne(BigDecimal derivedPropOne) {
         return new PlanExecution(executionId, planInstr, scheduledAt, auditStatus,
