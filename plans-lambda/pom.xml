@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.github.yourname</groupId>
+        <groupId>io.github.krm-demo</groupId>
         <artifactId>plans-parent</artifactId>
         <version>0.1.0-SNAPSHOT</version>
     </parent>
@@ -14,14 +14,14 @@
     <name>plans-lambda</name>
 
     <properties>
-        <start-class>com.example.plans.lambda.PlansLambdaApplication</start-class>
+        <start-class>org.krmdemo.plansinstr.lambda.PlansLambdaApplication</start-class>
         <!-- CI overrides this with -Dbuild.number=...; it ends up in restInfo.runtimeInfo.buildNumber -->
         <build.number>local</build.number>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.github.yourname</groupId>
+            <groupId>io.github.krm-demo</groupId>
             <artifactId>plans-core</artifactId>
             <version>${project.version}</version>
         </dependency>

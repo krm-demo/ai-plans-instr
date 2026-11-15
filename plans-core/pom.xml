@@ -5,20 +5,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.github.yourname</groupId>
+        <groupId>io.github.krm-demo</groupId>
         <artifactId>plans-parent</artifactId>
         <version>0.1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>plans-core</artifactId>
     <name>plans-core</name>
-    <description>PlanInstructions model, Postgres repository and function beans</description>
+    <description>PlanInstructions and PlanExecution model, AuditEvent contract and Postgres repository</description>
 
     <dependencies>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-messaging</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-jdbc</artifactId>
