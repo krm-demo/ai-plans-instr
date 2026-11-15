@@ -6,14 +6,18 @@ A Java library and AWS Lambda functions that save and read `PlanInstructions` in
 
 ```
 pom.xml                         parent: versions, Maven Central release profile
-plans-core/                     the library (goes to Maven Central)
-  model/                        PlanInstructions, DdaAccInfo, InvAccInfo, ThresholdsInfo,
-                                RestInfo, RuntimeInfo, PlanType, PlanStatus, PlanSearchCriteria
+plans-core/                     the library (goes to Maven Central), org.krmdemo.plansinstr.core
+  model/                        PlanInstructions, DdaAccInfo, InvAccInfo, ThresholdsInfo, RestInfo,
+                                RuntimeInfo, PlanSearchCriteria, PlanApi, PlanExecution
+  model/enums/                  PlanType, PlanStatus, AuditStatus
+  model/events/                 AuditEvent, UnknownAuditEvent
   persistence/PlanJdbcClient    load, save, lookup, search (Spring JdbcClient, no JPA)
   persistence/UuidV7Generator   time-ordered plan_id
+plans-exec/                     plan execution, org.krmdemo.plansinstr.exec:
+                                Postgres poller, reactive saga stages, retrievers
+  model/events/                 PropOneEvent, PropTwoEvent
+plans-lambda/                   the deployable Lambda (shaded jar), org.krmdemo.plansinstr.lambda
   function/PlanFunctions        Lambda functions: loadPlan, savePlan, lookupPlan, searchPlans
-plans-exec/                     plan execution: Postgres poller, reactive saga stages, retrievers
-plans-lambda/                   the deployable Lambda (shaded jar)
   RuntimeInfoConfig             host name, start time, build number
   MigrationFunctions            migrateDatabase (runs Flyway)
   resources/db/migration/       SQL schema
