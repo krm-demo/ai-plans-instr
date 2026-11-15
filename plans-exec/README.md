@@ -1,9 +1,9 @@
 # plans-exec
 
 Runs plan executions: polls due `PlanExecution` rows from Postgres, runs them through saga
-stages of retrievers, and stores the result. Retrievers and their `AuditEvent` records will
-live here; `PlanExecution`, `AuditEvent`, `UnknownAuditEvent` and `AuditStatus` live in
-`plans-core`.
+stages of retrievers, and stores the result. Retrievers and the `AuditEvent` records live
+here (for now the examples `PropOneEvent` and `PropTwoEvent`); `PlanInstructions`,
+`PlanExecution`, `AuditEvent`, `UnknownAuditEvent` and `AuditStatus` live in `plans-core`.
 
 ## Code
 
@@ -56,3 +56,16 @@ Flux<PlanExecution> ──► orchestrator (flatMap, up to N executions at once)
 Design notes from Nov 12–13, 2026: *SweepJdbcClient & SweepSagaStage Architecture (PGMQ Long
 Poller + Reactor Flux SAGA)*, *Reactive Pipeline Configuration, Updated Saga Stages & JUnit 5
 Tests*, *Zonky Embedded Postgres Multi-Threaded JUnit 5 Test (SKIP LOCKED + UUIDv7)*.
+
+## Manual Postgres scripts
+
+`src/test/resources/manual-pg/` holds SQL that is run by hand against a database, together
+with the test that proves it on example rows.
+
+| File | What it is |
+|---|---|
+| `fix_attempts_scalar.sql` | removes the legacy counter `"attempts"` from `CHECK_ONE` events in `cash_sweep_audit.audit_events` (JSON stored as text); array-valued `"attempts"` and all other events stay as they are |
+| `data.sql` | example rows for that script; each row carries the JSON the script must leave, or `NULL` when the row must not be touched |
+| `FixAttemptsScalarSqlTest` | loads `data.sql` into Zonky Postgres, runs the script as one batch and checks the preview, the update count, the verification, the event order, a second run, and a row with malformed JSON |
+
+The table and the `CHECK_ONE` event belong to another service; nothing else in this module uses them.
