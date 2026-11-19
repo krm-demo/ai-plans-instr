@@ -23,7 +23,7 @@ import java.util.stream.Stream;
  * enum source on GitHub ({@code #L<first>-L<constant>}), read from the source on each run.
  *
  * <p>Runs in the Maven build ({@code exec-maven-plugin}, phase {@code process-test-classes}), so
- * the diagrams always match the source. By hand: {@code mvn -pl plans-core process-test-classes}.
+ * the diagrams always match the source. On its own: {@code mvn -pl plans-core test-compile exec:java@state-charts}.
  * It lives in the test sources: build tooling, not part of the published jar.
  *
  * <p>Template model: {@code hrefs['X']} and {@code titles['X']} per constant {@code X};

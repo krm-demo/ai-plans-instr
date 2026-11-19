@@ -66,6 +66,7 @@
               doc-files/, with links to the current lines of AuditStatus.java. Runs after the test
               classes compile (the generator is in src/test/java) and before the tests, so
               AuditStatusDiagramTest checks fresh output. Commit the regenerated SVGs.
+              On its own (from the repo root): mvn -pl plans-core test-compile exec:java@state-charts
             -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -73,7 +74,7 @@
                 <version>3.5.0</version>
                 <executions>
                     <execution>
-                        <id>generate-state-charts</id>
+                        <id>state-charts</id>
                         <phase>process-test-classes</phase>
                         <goals>
                             <goal>java</goal>

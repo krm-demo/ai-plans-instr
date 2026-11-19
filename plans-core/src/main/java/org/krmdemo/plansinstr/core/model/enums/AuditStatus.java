@@ -29,6 +29,7 @@ import java.util.Set;
  * <p>In the diagrams every status links back to its javadoc and constant here. The diagrams are
  * rendered from the Thymeleaf templates in {@code plans-core/src/main/statechart/} during the
  * Maven build ({@code StateChartGenerator}), so they follow this file; commit the regenerated SVGs.
+ * On their own: {@code mvn -pl plans-core test-compile exec:java@state-charts}.
  *
  * @see <a href="doc-files/audit-status-horizontal.svg">State chart diagram (horizontal)</a>
  * @see <a href="doc-files/audit-status-vertical.svg">State chart diagram (vertical)</a>

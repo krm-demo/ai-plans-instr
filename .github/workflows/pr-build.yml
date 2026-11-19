@@ -32,10 +32,13 @@ jobs:
       - name: Build and test
         run: mvn -B verify
 
+      - name: Regenerate state charts on their own
+        run: mvn -B -pl plans-core exec:java@state-charts
+
       - name: Generated state charts are committed
         run: |
           if ! git diff --exit-code -- '*/doc-files/*.svg'; then
-            echo "::error::The state-chart SVGs are out of date. Run 'mvn -pl plans-core process-test-classes' and commit them."
+            echo "::error::The state-chart SVGs are out of date. Run 'mvn -pl plans-core test-compile exec:java@state-charts' and commit them."
             exit 1
           fi
 

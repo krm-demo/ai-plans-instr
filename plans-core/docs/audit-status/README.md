@@ -76,10 +76,11 @@ The diagrams are generated during the Maven build. The Thymeleaf templates in
 there is a `th:href="${hrefs['X']}"`. `StateChartGenerator` (in the test sources, so it does not
 ship) reads `AuditStatus.java`, works out each status's lines, and renders the templates into
 `doc-files/`. Maven runs it in the `process-test-classes` phase, right before the tests.
-To run only the generator:
+To run only the generator (the `state-charts` execution of `exec-maven-plugin`; `test-compile`
+first because the generator is in the test sources):
 
 ```
-mvn -pl plans-core process-test-classes
+mvn -pl plans-core test-compile exec:java@state-charts
 ```
 
 Commit the regenerated SVGs. CI fails when the committed ones differ from what the build

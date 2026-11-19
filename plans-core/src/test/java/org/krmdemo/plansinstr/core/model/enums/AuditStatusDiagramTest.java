@@ -17,13 +17,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Keeps the state-chart diagrams in {@code doc-files/} in step with {@link AuditStatus}: every
  * constant is drawn and links to its own line. On failure, regenerate the diagrams with
- * {@code mvn -pl plans-core process-test-classes}.
+ * {@code mvn -pl plans-core test-compile exec:java@state-charts}.
  */
 class AuditStatusDiagramTest {
 
     private static final Path ENUMS = Path.of("src/main/java/org/krmdemo/plansinstr/core/model/enums");
     private static final Path SOURCE = ENUMS.resolve("AuditStatus.java");
-    private static final String REGENERATE = " (run: mvn -pl plans-core process-test-classes)";
+    private static final String REGENERATE = " (run: mvn -pl plans-core test-compile exec:java@state-charts)";
 
     @ParameterizedTest(name = "{0}")
     @ValueSource(strings = {"audit-status-horizontal.svg", "audit-status-vertical.svg"})
