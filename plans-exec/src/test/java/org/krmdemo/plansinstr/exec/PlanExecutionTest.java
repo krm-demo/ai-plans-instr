@@ -205,7 +205,7 @@ class PlanExecutionTest {
     /** Record patterns with a default branch: the interface is open, so default is required. */
     static String describe(AuditEvent event) {
         return switch (event) {
-            case PropOneEvent(var at, var status, var value, var error) when status.isFailure() ->
+            case PropOneEvent(var at, var status, var value, var error) when status.isFailed() ->
                     "prop one failed: " + error;
             case PropOneEvent(var at, var status, var value, var error) -> "prop one " + value;
             case UnknownAuditEvent(var raw) -> "unknown " + raw.get("__eventType__");

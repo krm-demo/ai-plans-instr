@@ -3,10 +3,15 @@ package org.krmdemo.plansinstr.core.model.enums;
 import org.krmdemo.plansinstr.core.model.PlanExecution;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
 /**
- * Every status a {@link PlanExecution} can be in. Each value carries a {@link Kind}, so the
- * merge rule asks {@code isFailure()} instead of listing constants.
+ * Every status a {@link PlanExecution} can be in. Each status is in exactly one of
+ * {@link #TRANSIENT_STATUSES}, {@link #SUCCESS_STATUSES} and {@link #FAILED_STATUSES} (checked when
+ * the class loads), so the merge rule asks {@code isFailed()} instead of listing constants.
  *
  * <p>The state machine (diagrams below; write-up in {@code plans-core/docs/audit-status/}):
  * <pre>
@@ -28,54 +33,85 @@ import java.math.BigDecimal;
  */
 public enum AuditStatus {
 
-    SCHEDULED(Kind.STAGE),
-    CHECK_ONE_PASSED(Kind.STAGE),
-    CHECK_ONE_FAILED(Kind.FAILURE),
-    CHECK_ONE_TIMEOUT(Kind.FAILURE),
+    SCHEDULED,
+    CHECK_ONE_PASSED,
+    CHECK_ONE_FAILED,
+    CHECK_ONE_TIMEOUT,
 
-    LOW_BALANCE(Kind.STAGE),
-    CHECK_LOW_PASSED(Kind.STAGE),
-    CHECK_LOW_FAILED(Kind.FAILURE),
-    CHECK_LOW_TIMEOUT(Kind.FAILURE),
-    SWEPT_IN(Kind.SUCCESS),
+    LOW_BALANCE,
+    CHECK_LOW_PASSED,
+    CHECK_LOW_FAILED,
+    CHECK_LOW_TIMEOUT,
+    SWEPT_IN,
 
-    HIGH_BALANCE(Kind.STAGE),
-    CHECK_HIGH_PASSED(Kind.STAGE),
-    CHECK_HIGH_FAILED(Kind.FAILURE),
-    CHECK_HIGH_TIMEOUT(Kind.FAILURE),
-    SWEPT_OUT(Kind.SUCCESS);
+    HIGH_BALANCE,
+    CHECK_HIGH_PASSED,
+    CHECK_HIGH_FAILED,
+    CHECK_HIGH_TIMEOUT,
+    SWEPT_OUT;
 
-    public enum Kind {
-        /** Progress inside the saga ("transient" in the diagram); the event carries data. */
-        STAGE,
-        /** Execution finished successfully. */
-        SUCCESS,
-        /** Execution failed for good ("grounded"); the first one sticks. */
-        FAILURE
+    /** Progress inside the saga: the execution goes on. Events with these statuses carry data. */
+    public static final Set<AuditStatus> TRANSIENT_STATUSES = Collections.unmodifiableSet(EnumSet.of(
+            SCHEDULED, CHECK_ONE_PASSED,
+            LOW_BALANCE, CHECK_LOW_PASSED,
+            HIGH_BALANCE, CHECK_HIGH_PASSED));
+
+    /** The execution finished successfully. */
+    public static final Set<AuditStatus> SUCCESS_STATUSES = Collections.unmodifiableSet(EnumSet.of(
+            SWEPT_IN, SWEPT_OUT));
+
+    /** The execution failed for good ("grounded" in the diagram); the first failure sticks. */
+    public static final Set<AuditStatus> FAILED_STATUSES = Collections.unmodifiableSet(EnumSet.of(
+            CHECK_ONE_FAILED, CHECK_ONE_TIMEOUT,
+            CHECK_LOW_FAILED, CHECK_LOW_TIMEOUT,
+            CHECK_HIGH_FAILED, CHECK_HIGH_TIMEOUT));
+
+    /** Successes and failures: the execution will not be claimed again. */
+    public static final Set<AuditStatus> FINAL_STATUSES = Collections.unmodifiableSet(
+            union(SUCCESS_STATUSES, FAILED_STATUSES));
+
+    static {
+        // The three sets must split the values exactly: a new constant missing from every set
+        // (or put in two) fails here, when the class loads, not later in a merge.
+        EnumSet<AuditStatus> seen = EnumSet.noneOf(AuditStatus.class);
+        for (Set<AuditStatus> group : List.of(TRANSIENT_STATUSES, SUCCESS_STATUSES, FAILED_STATUSES)) {
+            for (AuditStatus status : group) {
+                if (!seen.add(status)) {
+                    throw new IllegalStateException(status + " is in more than one status set");
+                }
+            }
+        }
+        if (!seen.equals(EnumSet.allOf(AuditStatus.class))) {
+            throw new IllegalStateException("in no status set: " + EnumSet.complementOf(seen));
+        }
     }
 
-    private final Kind kind;
-
-    AuditStatus(Kind kind) {
-        this.kind = kind;
+    private static EnumSet<AuditStatus> union(Set<AuditStatus> a, Set<AuditStatus> b) {
+        EnumSet<AuditStatus> union = EnumSet.copyOf(a);
+        union.addAll(b);
+        return union;
     }
 
-    public Kind kind() {
-        return kind;
+    public boolean isTransient() {
+        return TRANSIENT_STATUSES.contains(this);
     }
 
-    public boolean isFailure() {
-        return kind == Kind.FAILURE;
+    public boolean isSuccess() {
+        return SUCCESS_STATUSES.contains(this);
+    }
+
+    public boolean isFailed() {
+        return FAILED_STATUSES.contains(this);
     }
 
     /** A success or a failure: the execution will not be claimed again. */
     public boolean isFinal() {
-        return kind == Kind.SUCCESS || kind == Kind.FAILURE;
+        return FINAL_STATUSES.contains(this);
     }
 
     /** Whether an event with this status carries data that derived properties are computed from. */
     public boolean carriesData() {
-        return kind == Kind.STAGE || kind == Kind.SUCCESS;
+        return isTransient() || isSuccess();
     }
 
     /**
@@ -135,7 +171,7 @@ public enum AuditStatus {
         if (incoming == null) {
             return current;
         }
-        if (current != null && current.isFailure()) {
+        if (current != null && current.isFailed()) {
             return current;
         }
         return incoming;

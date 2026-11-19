@@ -67,7 +67,7 @@ public interface AuditEvent {
     }
 
     @JsonIgnore
-    default boolean isFailure() {
-        return status() != null && status().isFailure();
+    default boolean isFailed() {
+        return status() != null && status().isFailed();
     }
 }

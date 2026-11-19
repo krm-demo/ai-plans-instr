@@ -1,7 +1,6 @@
 package org.krmdemo.plansinstr.exec;
 
 import org.krmdemo.plansinstr.core.model.PlanExecution;
-import org.krmdemo.plansinstr.core.model.enums.AuditStatus;
 import org.krmdemo.plansinstr.core.persistence.jdbc.VersionedEntity;
 import org.krmdemo.plansinstr.core.persistence.jdbc.VersionedEntityJdbcClient;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -143,8 +142,7 @@ public final class JdbcPlanExecutionStore implements PlanExecutionStore {
 
     /** Finished executions are never claimed again: a success, or the (sticky) first failure. */
     static boolean isFinished(PlanExecution execution) {
-        AuditStatus.Kind kind = execution.auditStatus().kind();
-        return kind == AuditStatus.Kind.SUCCESS || kind == AuditStatus.Kind.FAILURE;
+        return execution.auditStatus().isFinal();
     }
 
     private static OffsetDateTime utc(Instant instant) {

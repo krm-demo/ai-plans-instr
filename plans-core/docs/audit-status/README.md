@@ -97,58 +97,17 @@ In the diagram it means what it means in a circuit: execution drops to zero pote
 there. It replaces the UML final-state bullseye ◉ for the failure exits, so the two success
 endings and the six failure endings look different at a glance.
 
-## Enum as drawn
+## Enum
 
-```java
-package org.krmdemo.plansinstr.core.model.enums;
+The source is [`AuditStatus.java`](../../src/main/java/org/krmdemo/plansinstr/core/model/enums/AuditStatus.java).
+Its constants carry no data. Their roles come from three static sets that split all values
+exactly (checked when the class loads):
 
-public enum AuditStatus {
+| set | statuses | predicate |
+|---|---|---|
+| `TRANSIENT_STATUSES` | `SCHEDULED`, `CHECK_ONE_PASSED`, `LOW_BALANCE`, `CHECK_LOW_PASSED`, `HIGH_BALANCE`, `CHECK_HIGH_PASSED` | `isTransient()` |
+| `SUCCESS_STATUSES` | `SWEPT_IN`, `SWEPT_OUT` | `isSuccess()` |
+| `FAILED_STATUSES` | the six `*_FAILED` / `*_TIMEOUT` | `isFailed()` |
+| `FINAL_STATUSES` | success ∪ failed | `isFinal()` |
 
-    SCHEDULED(Kind.STAGE),
-    CHECK_ONE_PASSED(Kind.STAGE),
-    CHECK_ONE_FAILED(Kind.FAILURE),
-    CHECK_ONE_TIMEOUT(Kind.FAILURE),
-
-    LOW_BALANCE(Kind.STAGE),
-    CHECK_LOW_PASSED(Kind.STAGE),
-    CHECK_LOW_FAILED(Kind.FAILURE),
-    CHECK_LOW_TIMEOUT(Kind.FAILURE),
-    SWEPT_IN(Kind.SUCCESS),
-
-    HIGH_BALANCE(Kind.STAGE),
-    CHECK_HIGH_PASSED(Kind.STAGE),
-    CHECK_HIGH_FAILED(Kind.FAILURE),
-    CHECK_HIGH_TIMEOUT(Kind.FAILURE),
-    SWEPT_OUT(Kind.SUCCESS);
-
-    public enum Kind {
-        /** Progress inside the saga ("transient" in the diagram). */
-        STAGE,
-        /** Execution finished successfully. */
-        SUCCESS,
-        /** Execution failed for good (grounded); the first one sticks. */
-        FAILURE
-    }
-
-    private final Kind kind;
-
-    AuditStatus(Kind kind) {
-        this.kind = kind;
-    }
-
-    public Kind kind() {
-        return kind;
-    }
-
-    public boolean isFailure() {
-        return kind == Kind.FAILURE;
-    }
-
-    public boolean isFinal() {
-        return kind == Kind.SUCCESS || kind == Kind.FAILURE;
-    }
-}
-```
-
-In the current enum, `Kind.TRANSIENT` means "a retriever will be retried". The diagram uses
-"transient" for any non-final step, so the sketch above maps those steps to `Kind.STAGE`.
+The transitions are methods too: `balance(…)`, `checkPassed()`, `swept()`, `failure(timeout)`.

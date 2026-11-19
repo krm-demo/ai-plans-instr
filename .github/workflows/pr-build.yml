@@ -1,10 +1,12 @@
 name: pr-build
 run-name: pr-build ${{ github.head_ref || github.ref_name }}
 
-# Build and test every pull request, whatever its target branch (stacked PRs included).
-# Replaced by ci.yml once that lands on main.
+# Build and test every pull request, whatever its target branch (stacked PRs included),
+# and every push to main (direct commits). Replaced by ci.yml once that lands on main.
 on:
   pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:

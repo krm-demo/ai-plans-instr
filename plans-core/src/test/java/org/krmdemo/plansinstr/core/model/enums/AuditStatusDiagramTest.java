@@ -35,11 +35,11 @@ class AuditStatusDiagramTest {
 
         assertTrue(javadoc.contains("@see <a href=\"doc-files/" + svgName + "\">"),
                 "AuditStatus javadoc has no @see link to " + svgName);
-        assertTrue(svg.contains("AuditStatus.java#L" + lineOf(source, "public enum AuditStatus") + "\""),
+        assertTrue(svg.contains("AuditStatus.java#L" + lineOf(source, "public enum AuditStatus ") + "\""),
                 svgName + ": the title does not link to the enum declaration" + REGENERATE);
 
         for (AuditStatus status : AuditStatus.values()) {
-            int line = lineOf(source, "    " + status.name() + "(Kind.");
+            int line = lineOf(source, "    " + status.name() + ",", "    " + status.name() + ";");
             Matcher links = Pattern.compile(
                     "AuditStatus\\.java#L(\\d+)\" target=\"_top\" data-status=\"" + status.name() + "\"").matcher(svg);
             assertTrue(links.find(), svgName + ": " + status + " is not drawn" + REGENERATE);
@@ -48,12 +48,15 @@ class AuditStatusDiagramTest {
         }
     }
 
-    private static int lineOf(List<String> source, String prefix) {
+    /** The 1-based line of the first line that starts with any of the prefixes. */
+    private static int lineOf(List<String> source, String... prefixes) {
         for (int i = 0; i < source.size(); i++) {
-            if (source.get(i).startsWith(prefix)) {
-                return i + 1;
+            for (String prefix : prefixes) {
+                if (source.get(i).startsWith(prefix)) {
+                    return i + 1;
+                }
             }
         }
-        throw new AssertionError("not found in AuditStatus.java: " + prefix);
+        throw new AssertionError("not found in AuditStatus.java: " + List.of(prefixes));
     }
 }

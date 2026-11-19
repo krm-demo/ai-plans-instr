@@ -30,7 +30,7 @@ def read_lines():
     lines, decl = {}, None
     with open(ENUM_PATH, encoding="utf-8") as f:
         for n, text in enumerate(f, start=1):
-            m = re.match(r"^    ([A-Z][A-Z0-9_]*)\(Kind\.", text)
+            m = re.match(r"^    ([A-Z][A-Z0-9_]*)\s*[,;]", text)
             if m:
                 lines[m.group(1)] = n
             elif decl is None and re.match(r"^public enum AuditStatus\b", text):

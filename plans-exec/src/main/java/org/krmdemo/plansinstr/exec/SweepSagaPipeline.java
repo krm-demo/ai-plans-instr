@@ -130,7 +130,7 @@ public final class SweepSagaPipeline implements AutoCloseable {
         }
         Mono<PlanExecution> run = Mono.just(claimed);
         for (SweepSagaStage stage : stages) {
-            run = run.flatMap(execution -> execution.auditStatus().isFailure()
+            run = run.flatMap(execution -> execution.auditStatus().isFailed()
                     ? Mono.just(execution)
                     : stage.apply(execution).flatMap(this::checkpoint));
         }
