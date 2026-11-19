@@ -8,7 +8,7 @@ import java.math.BigDecimal;
  * Every status a {@link PlanExecution} can be in. Each value carries a {@link Kind}, so the
  * merge rule asks {@code isFailure()} instead of listing constants.
  *
- * <p>The state machine (see {@code plans-core/docs/audit-status/}):
+ * <p>The state machine (diagrams below; write-up in {@code plans-core/docs/audit-status/}):
  * <pre>
  * SCHEDULED ─► CHECK_ONE_PASSED ─┬─ balance &lt; T ─► LOW_BALANCE  ─► CHECK_LOW_PASSED  ─► SWEPT_IN
  *     │                          └─ balance ≥ T ─► HIGH_BALANCE ─► CHECK_HIGH_PASSED ─► SWEPT_OUT
@@ -18,6 +18,13 @@ import java.math.BigDecimal;
  * {@link #swept}, {@link #failure}), so events do not repeat the diagram.
  *
  * <p>Statuses are stored by name: never rename a constant that may already be stored.
+ *
+ * <p>In the diagrams every status links back to its constant here. After changing this enum run
+ * {@code python3 plans-core/docs/audit-status/generate.py}; {@code AuditStatusDiagramTest}
+ * fails until the diagrams match.
+ *
+ * @see <a href="doc-files/audit-status-horizontal.svg">State chart diagram (horizontal)</a>
+ * @see <a href="doc-files/audit-status-vertical.svg">State chart diagram (vertical)</a>
  */
 public enum AuditStatus {
 
