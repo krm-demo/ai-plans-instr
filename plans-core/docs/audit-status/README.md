@@ -6,8 +6,9 @@ checkpoints, a split on the balance threshold `T`, and two successful endings: `
 
 > **Status:** design proposal. The `AuditStatus` enum in
 > `plans-core/src/main/java/org/krmdemo/plansinstr/core/model/enums/AuditStatus.java` still holds
-> the current `SCHEDULED` / `PROP_*` / `COMPLETED` values. Moving it to the statuses below also
-> changes `PropOneEvent`, `PropTwoEvent`, the poller (which claims `SCHEDULED` rows) and the tests.
+> the current `SCHEDULED` / `PROP_*` / `COMPLETED` values. The initial status stays `SCHEDULED`,
+> so the poller (which claims `SCHEDULED` rows) is unaffected. Moving to the statuses below
+> changes `PropOneEvent`, `PropTwoEvent` and the tests.
 
 ## Initial conditions
 
@@ -15,7 +16,7 @@ Statuses:
 
 | status | role |
 |---|---|
-| `STARTED` | initial |
+| `SCHEDULED` | initial |
 | `CHECK_ONE_PASSED` | transient |
 | `CHECK_ONE_FAILED`, `CHECK_ONE_TIMEOUT` | failure, final |
 | `LOW_BALANCE`, `HIGH_BALANCE` | transient |
@@ -27,7 +28,7 @@ Statuses:
 
 There are three checkpoints where processing can fail and *ground out*:
 
-1. Initial verification: `STARTED` → `CHECK_ONE_FAILED` / `CHECK_ONE_TIMEOUT`
+1. Initial verification: `SCHEDULED` → `CHECK_ONE_FAILED` / `CHECK_ONE_TIMEOUT`
 2. Low-balance verification: `LOW_BALANCE` → `CHECK_LOW_FAILED` / `CHECK_LOW_TIMEOUT`
 3. High-balance verification: `HIGH_BALANCE` → `CHECK_HIGH_FAILED` / `CHECK_HIGH_TIMEOUT`
 
@@ -36,7 +37,7 @@ Each failure pair is drawn as one stacked box with an electrical ground symbol u
 ## Transitions
 
 ```
-STARTED ──► CHECK_ONE_PASSED ──┬─ balance < T ─► LOW_BALANCE  ─► CHECK_LOW_PASSED  ─► SWEPT_IN
+SCHEDULED ► CHECK_ONE_PASSED ──┬─ balance < T ─► LOW_BALANCE  ─► CHECK_LOW_PASSED  ─► SWEPT_IN
    │                           │                     │
    ⏚ CHECK_ONE_FAILED/TIMEOUT  │                     ⏚ CHECK_LOW_FAILED/TIMEOUT
                                └─ balance ≥ T ─► HIGH_BALANCE ─► CHECK_HIGH_PASSED ─► SWEPT_OUT
@@ -83,7 +84,7 @@ package org.krmdemo.plansinstr.core.model.enums;
 
 public enum AuditStatus {
 
-    STARTED(Kind.STAGE),
+    SCHEDULED(Kind.STAGE),
     CHECK_ONE_PASSED(Kind.STAGE),
     CHECK_ONE_FAILED(Kind.FAILURE),
     CHECK_ONE_TIMEOUT(Kind.FAILURE),
