@@ -6,6 +6,7 @@ import org.krmdemo.plansinstr.core.model.events.UnknownAuditEvent;
 import org.krmdemo.plansinstr.core.persistence.UuidV7Generator;
 import org.krmdemo.plansinstr.exec.model.events.PropOneEvent;
 import org.krmdemo.plansinstr.exec.model.events.PropTwoEvent;
+import org.krmdemo.plansinstr.exec.model.events.SweepEvent;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -51,7 +52,7 @@ class JdbcPlanExecutionStoreTest {
     private static DataSource dataSource;
 
     private final JsonMapper json = JsonMapper.builder()
-            .registerSubtypes(PropOneEvent.class, PropTwoEvent.class)
+            .registerSubtypes(PropOneEvent.class, PropTwoEvent.class, SweepEvent.class)
             .build();
     private final UuidV7Generator ids = new UuidV7Generator();
     private TestData.MutableClock clock;
@@ -124,11 +125,11 @@ class JdbcPlanExecutionStoreTest {
         clock.advance(Duration.ofMinutes(6));
         PlanExecution theirs = store.claimDue(1, Duration.ofMinutes(5)).getFirst();
 
-        PlanExecution progressed = PropOneEvent.retrieved(T0, "730.25").applyTo(mine);
+        PlanExecution progressed = PropOneEvent.passed(T0, "730.25").applyTo(mine);
         assertThrows(PlanExecutionStore.LeaseLostException.class,
                 () -> store.checkpoint(progressed, Duration.ofMinutes(5)));
 
-        PlanExecution stored = store.checkpoint(PropOneEvent.retrieved(T0, "730.25").applyTo(theirs), Duration.ofMinutes(5));
+        PlanExecution stored = store.checkpoint(PropOneEvent.passed(T0, "730.25").applyTo(theirs), Duration.ofMinutes(5));
         assertEquals(theirs.version() + 1, stored.version());
     }
 
@@ -138,7 +139,7 @@ class JdbcPlanExecutionStoreTest {
         scheduled(Duration.ZERO);
         PlanExecution claimed = store.claimDue(1, Duration.ofMinutes(5)).getFirst();
         PlanExecution progressed = claimed.applyAll(List.of(
-                PropOneEvent.retrieved(T0, "730.25"),
+                PropOneEvent.passed(T0, "730.25"),
                 new UnknownAuditEvent(Map.of("__eventType__", "FROM_NEWER_BUILD", "x", 1))));
 
         store.checkpoint(progressed, Duration.ZERO);   // lease 0: claimable again right away
@@ -149,7 +150,7 @@ class JdbcPlanExecutionStoreTest {
         assertInstanceOf(UnknownAuditEvent.class, reread.auditEvents().get(1));
         Map<String, Object> columns = jdbc.sql("SELECT audit_status, derived_prop_one, version, last_updated_reason"
                 + " FROM plan_execution").query().singleRow();
-        assertEquals("PROP_ONE_RETRIEVED", columns.get("audit_status"));
+        assertEquals("CHECK_ONE_PASSED", columns.get("audit_status"));
         assertEquals(new BigDecimal("230.25"), columns.get("derived_prop_one"));
         // the envelope: insert 1, claim 2, checkpoint 3, claim 4
         assertEquals(4, columns.get("version"));
@@ -162,7 +163,7 @@ class JdbcPlanExecutionStoreTest {
     void completeAndNext() {
         scheduled(Duration.ZERO);
         PlanExecution claimed = store.claimDue(1, Duration.ofMinutes(5)).getFirst();
-        PlanExecution done = PropTwoEvent.completed(T0, "1").applyTo(claimed);
+        PlanExecution done = SweepEvent.swept(T0, AuditStatus.CHECK_HIGH_PASSED).applyTo(claimed);
         PlanExecution next = PlanExecution.schedule(ids.next(clock.millis()), TestData.planInstr("600.00"), T0);
 
         store.complete(done, Optional.of(next));

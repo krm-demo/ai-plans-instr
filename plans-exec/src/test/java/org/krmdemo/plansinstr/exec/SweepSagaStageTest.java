@@ -34,12 +34,13 @@ class SweepSagaStageTest {
 
     private static TestRetriever<PropOneEvent> propOne(String name, long delayMs, String value) {
         return new TestRetriever<>(name, Duration.ofMillis(delayMs),
-                in -> PropOneEvent.retrieved(T0, value), (in, e) -> PropOneEvent.failed(T0, e));
+                in -> PropOneEvent.passed(T0, value), (in, e) -> PropOneEvent.failed(T0, e));
     }
 
     private static TestRetriever<PropTwoEvent> propTwo(String name, long delayMs, String value) {
         return new TestRetriever<>(name, Duration.ofMillis(delayMs),
-                in -> PropTwoEvent.completed(T0, value), (in, e) -> PropTwoEvent.failed(T0, e));
+                in -> PropTwoEvent.passed(T0, AuditStatus.HIGH_BALANCE, value),
+                (in, e) -> PropTwoEvent.failed(T0, AuditStatus.HIGH_BALANCE, e));
     }
 
     private SweepSagaStage stage(int maxConcurrency, Duration timeout, List<? extends Retriever<? extends AuditEvent>> retrievers) {
@@ -99,20 +100,20 @@ class SweepSagaStageTest {
         PlanExecution out = stage.apply(input).block();
 
         PropOneEvent failed = assertInstanceOf(PropOneEvent.class, out.auditEvents().get(0));
-        assertEquals(AuditStatus.PROP_ONE_FAILED, failed.status());
+        assertEquals(AuditStatus.CHECK_ONE_FAILED, failed.status());
         assertTrue(failed.error().contains("downstream 503"), failed.error());
-        assertEquals(AuditStatus.PROP_ONE_FAILED, out.auditStatus());   // first failure sticks
+        assertEquals(AuditStatus.CHECK_ONE_FAILED, out.auditStatus());   // first failure sticks
         assertEquals(new BigDecimal("5.00"), out.derivedPropTwo());
     }
 
     @Test
-    @DisplayName("a retriever slower than the timeout becomes its failure event")
+    @DisplayName("a retriever slower than the timeout becomes its timeout event")
     void timeout() {
         SweepSagaStage stage = stage(1, Duration.ofMillis(100), List.of(propOne("slow", 1000, "1")));
 
         PlanExecution out = stage.apply(input).block();
 
-        assertEquals(AuditStatus.PROP_ONE_FAILED, out.auditStatus());
+        assertEquals(AuditStatus.CHECK_ONE_TIMEOUT, out.auditStatus());
         assertTrue(((PropOneEvent) out.auditEvents().get(0)).error().contains("Timeout"));
     }
 

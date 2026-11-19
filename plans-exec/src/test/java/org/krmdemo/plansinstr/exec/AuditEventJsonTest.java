@@ -3,8 +3,11 @@ package org.krmdemo.plansinstr.exec;
 import org.krmdemo.plansinstr.core.model.PlanExecution;
 import org.krmdemo.plansinstr.core.model.events.AuditEvent;
 import org.krmdemo.plansinstr.core.model.events.UnknownAuditEvent;
+import org.krmdemo.plansinstr.core.model.enums.AuditStatus;
+import org.krmdemo.plansinstr.exec.model.events.BalanceEvent;
 import org.krmdemo.plansinstr.exec.model.events.PropOneEvent;
 import org.krmdemo.plansinstr.exec.model.events.PropTwoEvent;
+import org.krmdemo.plansinstr.exec.model.events.SweepEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.core.type.TypeReference;
@@ -23,28 +26,30 @@ class AuditEventJsonTest {
 
     /** plans-exec defines the events and registers them; plans-core does not know them. */
     private final JsonMapper json = JsonMapper.builder()
-            .registerSubtypes(PropOneEvent.class, PropTwoEvent.class)
+            .registerSubtypes(PropOneEvent.class, BalanceEvent.class, PropTwoEvent.class, SweepEvent.class)
             .build();
 
     @Test
     @DisplayName("PlanExecution with its events survives a JSON round trip")
     void planExecutionRoundTrip() {
-        PlanExecution out = scheduled().applyAll(List.of(
-                PropOneEvent.retry(at(1), "timeout"),
-                PropOneEvent.retrieved(at(2), "730.25"),
-                PropTwoEvent.completed(at(3), "400")));
+        PlanExecution checked = PropOneEvent.passed(at(1), "730.25").applyTo(scheduled());
+        PlanExecution out = checked.applyAll(List.of(
+                BalanceEvent.of(at(2), checked),
+                PropTwoEvent.passed(at(3), AuditStatus.HIGH_BALANCE, "400"),
+                SweepEvent.swept(at(4), AuditStatus.CHECK_HIGH_PASSED)));
 
         PlanExecution back = json.readValue(json.writeValueAsString(out), PlanExecution.class);
 
         assertEquals(out, back);
         assertEquals(back, back.replay());
         assertEquals("400.00", back.derivedPropTwo().toPlainString());
+        assertEquals(AuditStatus.SWEPT_OUT, back.auditStatus());
     }
 
     @Test
     @DisplayName("the type name is written exactly once per event, first")
     void typeNameWrittenOnce() {
-        String text = json.writeValueAsString(PropOneEvent.retrieved(at(1), "730.25"));
+        String text = json.writeValueAsString(PropOneEvent.passed(at(1), "730.25"));
 
         assertTrue(text.startsWith("{\"__eventType__\":\"PROP_ONE\""), text);
         assertEquals(1, occurrences(text, "__eventType__"), text);
@@ -60,7 +65,7 @@ class AuditEventJsonTest {
         String withUnknown = """
                 {"auditEvents":[
                   {"__eventType__":"PROP_ONE","at":"2026-11-15T14:00:01Z",
-                   "status":"PROP_ONE_RETRIEVED","value":730.25},
+                   "status":"CHECK_ONE_PASSED","value":730.25},
                   %s
                 ]}""".formatted(newer);
 
@@ -78,7 +83,7 @@ class AuditEventJsonTest {
     @Test
     @DisplayName("a mapper without the event library reads its events as unknown, without loss")
     void mapperWithoutEventLibrary() {
-        PlanExecution out = PropOneEvent.retrieved(at(1), "730.25").applyTo(scheduled());
+        PlanExecution out = PropOneEvent.passed(at(1), "730.25").applyTo(scheduled());
         String stored = json.writeValueAsString(out);
 
         JsonMapper plain = JsonMapper.builder().build();

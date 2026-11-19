@@ -38,16 +38,17 @@ code closes (lease, version check, declared-order fold, no `block()`, per-retrie
 ```
 schedule ──► plan_execution row (SCHEDULED, scheduled_at)
                 │
-poller ─────────┤ claim due rows: FOR UPDATE SKIP LOCKED → STARTED (+ lease)
+poller ─────────┤ claim due, unfinished rows: FOR UPDATE SKIP LOCKED (+ lease)
                 ▼
 Flux<PlanExecution> ──► orchestrator (flatMap, up to N executions at once)
                             │
                             ├─ stage 1: retrievers in parallel on the same input,
                             │           events folded in declared order: pe = event.applyTo(pe)
                             ├─ checkpoint (version check, extend lease)
-                            ├─ stage 2 … (needs stage 1's derived values)
+                            ├─ balance split → LOW_BALANCE / HIGH_BALANCE, branch check, sweep
+                            │           (each stage needs the one before)
                             ├─ checkpoint
-                            └─ COMPLETED / first failure ──► schedule the next execution
+                            └─ SWEPT_IN / SWEPT_OUT / first failure ──► schedule the next execution
                                                              (same transaction)
 ```
 
