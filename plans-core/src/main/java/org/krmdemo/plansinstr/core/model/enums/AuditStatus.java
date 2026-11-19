@@ -26,9 +26,9 @@ import java.util.Set;
  *
  * <p><img src="doc-files/audit-status-horizontal.svg" width="640" alt="AuditStatus state chart diagram">
  *
- * <p>In the diagrams every status links back to its constant here. After changing this enum run
- * {@code python3 plans-core/docs/audit-status/generate.py}; {@code AuditStatusDiagramTest}
- * fails until the diagrams match.
+ * <p>In the diagrams every status links back to its javadoc and constant here. The diagrams are
+ * rendered from the Thymeleaf templates in {@code plans-core/src/main/statechart/} during the
+ * Maven build ({@code StateChartGenerator}), so they follow this file; commit the regenerated SVGs.
  *
  * @see <a href="doc-files/audit-status-horizontal.svg">State chart diagram (horizontal)</a>
  * @see <a href="doc-files/audit-status-vertical.svg">State chart diagram (vertical)</a>

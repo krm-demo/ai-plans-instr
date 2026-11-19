@@ -14,6 +14,11 @@
     <name>plans-core</name>
     <description>PlanInstructions and PlanExecution model, AuditEvent contract and Postgres repository</description>
 
+    <properties>
+        <!-- default for the state-chart generator's <skip> below -->
+        <maven.test.skip>false</maven.test.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -41,10 +46,50 @@
             <artifactId>embedded-postgres</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- build tooling: renders the state-chart SVG templates (StateChartGenerator) -->
+        <dependency>
+            <groupId>org.thymeleaf</groupId>
+            <artifactId>thymeleaf</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!--
+              Renders src/main/statechart/*.svg (Thymeleaf templates) into AuditStatus's javadoc
+              doc-files/, with links to the current lines of AuditStatus.java. Runs after the test
+              classes compile (the generator is in src/test/java) and before the tests, so
+              AuditStatusDiagramTest checks fresh output. Commit the regenerated SVGs.
+            -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-state-charts</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.krmdemo.plansinstr.core.statechart.StateChartGenerator</mainClass>
+                            <classpathScope>test</classpathScope>
+                            <arguments>
+                                <argument>${project.basedir}</argument>
+                            </arguments>
+                            <!-- -Dmaven.test.skip=true skips compiling the generator too -->
+                            <skip>${maven.test.skip}</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

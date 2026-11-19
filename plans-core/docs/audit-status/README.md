@@ -65,20 +65,25 @@ render SVG.
 
 ### Links between the diagram and the code
 
-- **Diagram → code:** every status box (each half of a failure pair too) links to its constant in
-  `AuditStatus.java` on GitHub, down to the line. The title links to the enum itself. Links work
+- **Diagram → code:** every status box (each half of a failure pair too) links to its javadoc and
+  constant in `AuditStatus.java` on GitHub, as a highlighted line range. The title links to the enum itself. Links work
   when the SVG is opened on its own, for example from the javadoc, the IDE or a browser tab.
   GitHub's preview shows SVGs as images, so they are not clickable there.
 - **Code → diagram:** the enum's javadoc has `@see` links to both SVGs.
 
-The diagrams are generated: after changing `AuditStatus.java` run
+The diagrams are generated during the Maven build. The Thymeleaf templates in
+[`plans-core/src/main/statechart/`](../../src/main/statechart/) hold the layout; each status link
+there is a `th:href="${hrefs['X']}"`. `StateChartGenerator` (in the test sources, so it does not
+ship) reads `AuditStatus.java`, works out each status's lines, and renders the templates into
+`doc-files/`. Maven runs it in the `process-test-classes` phase, right before the tests.
+To run only the generator:
 
 ```
-python3 plans-core/docs/audit-status/generate.py
+mvn -pl plans-core process-test-classes
 ```
 
-and commit the result (it needs `rsvg-convert` for the PNGs). `AuditStatusDiagramTest` fails
-when a status is missing from a diagram or its line link is out of date.
+Commit the regenerated SVGs. CI fails when the committed ones differ from what the build
+produces. The PNG previews here are not regenerated; they only change when the layout does.
 
 ### Notation
 
