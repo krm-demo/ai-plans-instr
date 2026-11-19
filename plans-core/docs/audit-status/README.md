@@ -52,14 +52,33 @@ Two layouts of the same machine. Pick whichever fits the page around it.
 
 **Horizontal**: flow runs left to right. Swept-Out is the upper lane and Swept-In the lower one.
 
-![AuditStatus, horizontal](audit-status-horizontal.svg)
+![AuditStatus, horizontal](../../src/main/java/org/krmdemo/plansinstr/core/model/enums/doc-files/audit-status-horizontal.svg)
 
 **Vertical**: flow runs top to bottom. Swept-In is the left lane and Swept-Out the right one.
 
-![AuditStatus, vertical](audit-status-vertical.svg)
+![AuditStatus, vertical](../../src/main/java/org/krmdemo/plansinstr/core/model/enums/doc-files/audit-status-vertical.svg)
 
-PNG copies (`audit-status-horizontal.png`, `audit-status-vertical.png`) are next to the SVGs
-for places that do not render SVG.
+The SVGs live in the enum's javadoc `doc-files/` folder, so the `@see` links in
+`AuditStatus.java` open them from the IDE and from the published javadoc. PNG copies
+(`audit-status-horizontal.png`, `audit-status-vertical.png`) are here, for places that do not
+render SVG.
+
+### Links between the diagram and the code
+
+- **Diagram → code:** every status box (each half of a failure pair too) links to its constant in
+  `AuditStatus.java` on GitHub, down to the line. The title links to the enum itself. Links work
+  when the SVG is opened on its own, for example from the javadoc, the IDE or a browser tab.
+  GitHub's preview shows SVGs as images, so they are not clickable there.
+- **Code → diagram:** the enum's javadoc has `@see` links to both SVGs.
+
+The diagrams are generated: after changing `AuditStatus.java` run
+
+```
+python3 plans-core/docs/audit-status/generate.py
+```
+
+and commit the result (it needs `rsvg-convert` for the PNGs). `AuditStatusDiagramTest` fails
+when a status is missing from a diagram or its line link is out of date.
 
 ### Notation
 
