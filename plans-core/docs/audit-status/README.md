@@ -4,11 +4,12 @@ A state diagram for a balance-driven version of `AuditStatus`. It shows three ve
 checkpoints, a split on the balance threshold `T`, and two successful endings: `SWEPT_IN` and
 `SWEPT_OUT`.
 
-> **Status:** design proposal. The `AuditStatus` enum in
-> `plans-core/src/main/java/org/krmdemo/plansinstr/core/model/enums/AuditStatus.java` still holds
-> the current `SCHEDULED` / `PROP_*` / `COMPLETED` values. The initial status stays `SCHEDULED`,
-> so the poller (which claims `SCHEDULED` rows) is unaffected. Moving to the statuses below
-> changes `PropOneEvent`, `PropTwoEvent` and the tests.
+> **Status:** implemented. `AuditStatus` (plans-core) holds these statuses and their transitions
+> (`balance`, `checkPassed`, `swept`, `failure`). In plans-exec the saga runs four stages:
+> `PropOneEvent` (check one), `BalanceEvent` (the split, via `BalanceRetriever`), `PropTwoEvent`
+> (check low / check high) and `SweepEvent` (`SWEPT_IN` / `SWEPT_OUT`). A retriever timeout
+> becomes the checkpoint's `*_TIMEOUT` status. The poller claims every due, unfinished execution,
+> so a run that stopped halfway is picked up again after its lease.
 
 ## Initial conditions
 

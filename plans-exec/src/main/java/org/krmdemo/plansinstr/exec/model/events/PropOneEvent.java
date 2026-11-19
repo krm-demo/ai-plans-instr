@@ -11,8 +11,11 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Example event. Derives {@code derivedPropOne} as {@code value - thresholdMax} of the plan,
- * like a DDA balance minus the threshold; {@code null} when the plan has no threshold.
+ * Check one: the initial verification, which also retrieves the balance. Derives
+ * {@code derivedPropOne} as {@code value - thresholdMax} of the plan (balance − T), which
+ * {@link BalanceEvent} splits on; {@code null} when the plan has no threshold.
+ *
+ * <p>Statuses: {@code CHECK_ONE_PASSED}, {@code CHECK_ONE_FAILED}, {@code CHECK_ONE_TIMEOUT}.
  *
  * <p>Register it with the mapper: {@code JsonMapper.builder().registerSubtypes(PropOneEvent.class)}.
  */
@@ -27,20 +30,21 @@ public record PropOneEvent(Instant at, AuditStatus status, BigDecimal value, Str
         }
     }
 
-    public static PropOneEvent retrieved(Instant at, String value) {
-        return new PropOneEvent(at, AuditStatus.PROP_ONE_RETRIEVED, new BigDecimal(value), null);
-    }
-
-    public static PropOneEvent retry(Instant at, String error) {
-        return new PropOneEvent(at, AuditStatus.PROP_ONE_RETRY, null, error);
+    public static PropOneEvent passed(Instant at, String value) {
+        return new PropOneEvent(at, AuditStatus.CHECK_ONE_PASSED, new BigDecimal(value), null);
     }
 
     public static PropOneEvent failed(Instant at, String error) {
-        return new PropOneEvent(at, AuditStatus.PROP_ONE_FAILED, null, error);
+        return new PropOneEvent(at, AuditStatus.CHECK_ONE_FAILED, null, error);
     }
 
+    public static PropOneEvent timeout(Instant at, String error) {
+        return new PropOneEvent(at, AuditStatus.CHECK_ONE_TIMEOUT, null, error);
+    }
+
+    /** {@code CHECK_ONE_TIMEOUT} for a timeout, {@code CHECK_ONE_FAILED} for anything else. */
     public static PropOneEvent failed(Instant at, Throwable cause) {
-        return failed(at, String.valueOf(cause));
+        return Failures.isTimeout(cause) ? timeout(at, String.valueOf(cause)) : failed(at, String.valueOf(cause));
     }
 
     @Override

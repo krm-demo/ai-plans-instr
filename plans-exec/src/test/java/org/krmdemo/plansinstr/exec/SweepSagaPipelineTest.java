@@ -7,6 +7,7 @@ import org.krmdemo.plansinstr.core.model.enums.PlanStatus;
 import org.krmdemo.plansinstr.core.model.events.UnknownAuditEvent;
 import org.krmdemo.plansinstr.exec.model.events.PropOneEvent;
 import org.krmdemo.plansinstr.exec.model.events.PropTwoEvent;
+import org.krmdemo.plansinstr.exec.model.events.SweepEvent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,9 +40,13 @@ class SweepSagaPipelineTest {
     private final AtomicReference<PlanInstructions> currentPlan = new AtomicReference<>(TestData.planInstr("500.00"));
 
     private final TestRetriever<PropOneEvent> propOne = new TestRetriever<>("propOne", Duration.ZERO,
-            in -> PropOneEvent.retrieved(T0, "730.25"), (in, e) -> PropOneEvent.failed(T0, e));
+            in -> PropOneEvent.passed(T0, "730.25"), (in, e) -> PropOneEvent.failed(T0, e));
+    private final BalanceRetriever balance = new BalanceRetriever(clock);
     private final TestRetriever<PropTwoEvent> propTwo = new TestRetriever<>("propTwo", Duration.ZERO,
-            in -> PropTwoEvent.completed(T0, in.derivedPropOne().toPlainString()), (in, e) -> PropTwoEvent.failed(T0, e));
+            in -> PropTwoEvent.passed(T0, in.auditStatus(), in.derivedPropOne().toPlainString()),
+            (in, e) -> PropTwoEvent.failed(T0, in.auditStatus(), e));
+    private final TestRetriever<SweepEvent> sweep = new TestRetriever<>("sweep", Duration.ZERO,
+            in -> SweepEvent.swept(T0, in.auditStatus()), (in, e) -> SweepEvent.failed(T0, in.auditStatus(), e));
 
     @AfterEach
     void tearDown() {
@@ -56,11 +61,13 @@ class SweepSagaPipelineTest {
                 properties, scheduler, clock);
     }
 
-    /** Stage 1 retrieves prop one; stage 2 needs stage 1's derived value. */
-    private List<SweepSagaStage> twoStages() {
+    /** Check one, the balance split, the branch check, the sweep: each needs the one before. */
+    private List<SweepSagaStage> allStages() {
         return List.of(
-                new SweepSagaStage("one", List.of(propOne), 4, Duration.ofSeconds(1), scheduler),
-                new SweepSagaStage("two", List.of(propTwo), 4, Duration.ofSeconds(1), scheduler));
+                new SweepSagaStage("checkOne", List.of(propOne), 4, Duration.ofSeconds(1), scheduler),
+                new SweepSagaStage("balance", List.of(balance), 1, Duration.ofSeconds(1), scheduler),
+                new SweepSagaStage("checkBranch", List.of(propTwo), 4, Duration.ofSeconds(1), scheduler),
+                new SweepSagaStage("sweep", List.of(sweep), 1, Duration.ofSeconds(1), scheduler));
     }
 
     private PlanExecution claimOne(SweepSagaPipeline pipeline) {
@@ -70,17 +77,18 @@ class SweepSagaPipelineTest {
     @Test
     @DisplayName("an execution runs through the stages, is completed and the next one is scheduled")
     void endToEnd() {
-        SweepSagaPipeline pipeline = pipeline(twoStages(), Duration.ofDays(1));
+        SweepSagaPipeline pipeline = pipeline(allStages(), Duration.ofDays(1));
         PlanExecution scheduled = pipeline.schedule(currentPlan.get(), T0).block();
         currentPlan.set(TestData.planInstr("600.00"));   // the plan is edited while it is scheduled
 
         PlanExecution done = pipeline.execute(claimOne(pipeline)).block();
 
-        assertEquals(AuditStatus.COMPLETED, done.auditStatus());
+        assertEquals(AuditStatus.SWEPT_OUT, done.auditStatus());           // 730.25 ≥ 500
         assertEquals(new BigDecimal("230.25"), done.derivedPropOne());     // computed with its own planInstr (500)
-        assertEquals(new BigDecimal("230.25"), done.derivedPropTwo());     // stage 2 used stage 1's value
-        assertEquals(List.of("insert " + scheduled.executionId(), "checkpoint PROP_ONE_RETRIEVED",
-                "checkpoint COMPLETED", "complete COMPLETED"), store.log.subList(0, 4));
+        assertEquals(new BigDecimal("230.25"), done.derivedPropTwo());     // a later stage used stage 1's value
+        assertEquals(List.of("insert " + scheduled.executionId(), "checkpoint CHECK_ONE_PASSED",
+                "checkpoint HIGH_BALANCE", "checkpoint CHECK_HIGH_PASSED", "checkpoint SWEPT_OUT",
+                "complete SWEPT_OUT"), store.log.subList(0, 6));
         assertTrue(store.finished.get(done.executionId()));
 
         PlanExecution next = store.rows.values().stream()
@@ -89,6 +97,19 @@ class SweepSagaPipelineTest {
         assertEquals(new BigDecimal("600.00"), next.planInstr().thresholdInfo().thresholdMax()); // current plan copied
         assertEquals(AuditStatus.SCHEDULED, next.auditStatus());
         assertFalse(store.finished.get(next.executionId()));
+    }
+
+    @Test
+    @DisplayName("a balance below the plan's threshold ends SWEPT_IN")
+    void lowBalanceEndsSweptIn() {
+        SweepSagaPipeline pipeline = pipeline(allStages(), null);
+        pipeline.schedule(TestData.planInstr("800.00"), T0).block();
+
+        PlanExecution done = pipeline.execute(claimOne(pipeline)).block();
+
+        assertEquals(AuditStatus.SWEPT_IN, done.auditStatus());
+        assertEquals(new BigDecimal("-69.75"), done.derivedPropOne());
+        assertTrue(store.log.contains("checkpoint LOW_BALANCE"), store.log.toString());
     }
 
     @Test
@@ -103,7 +124,7 @@ class SweepSagaPipelineTest {
 
         PlanExecution done = pipeline.execute(claimOne(pipeline)).block();
 
-        assertEquals(AuditStatus.PROP_ONE_FAILED, done.auditStatus());
+        assertEquals(AuditStatus.CHECK_ONE_FAILED, done.auditStatus());
         assertEquals(0, propTwo.calls.get());
         assertTrue(store.finished.get(done.executionId()));
         assertEquals(1, store.rows.size());   // no next run (policy returned empty)
@@ -112,7 +133,7 @@ class SweepSagaPipelineTest {
     @Test
     @DisplayName("a cancelled plan is not rescheduled")
     void cancelledPlanNotRescheduled() {
-        SweepSagaPipeline pipeline = pipeline(twoStages(), Duration.ofDays(1));
+        SweepSagaPipeline pipeline = pipeline(allStages(), Duration.ofDays(1));
         pipeline.schedule(currentPlan.get(), T0).block();
         currentPlan.set(TestData.planInstr("500.00", PlanStatus.CANCELLED));
 
@@ -124,7 +145,7 @@ class SweepSagaPipelineTest {
     @Test
     @DisplayName("an execution with unknown events is left alone for a newer worker")
     void unknownEventsLeftAlone() {
-        SweepSagaPipeline pipeline = pipeline(twoStages(), Duration.ofDays(1));
+        SweepSagaPipeline pipeline = pipeline(allStages(), Duration.ofDays(1));
         PlanExecution withUnknown = new UnknownAuditEvent(Map.of("__eventType__", "FROM_NEWER_BUILD"))
                 .applyTo(PlanExecution.schedule(java.util.UUID.randomUUID(), currentPlan.get(), T0));
 
@@ -135,7 +156,7 @@ class SweepSagaPipelineTest {
     @Test
     @DisplayName("started pipeline polls, executes and completes scheduled executions by itself")
     void startedPipeline() throws InterruptedException {
-        try (SweepSagaPipeline pipeline = pipeline(twoStages(), null)) {
+        try (SweepSagaPipeline pipeline = pipeline(allStages(), null)) {
             for (int i = 0; i < 5; i++) {
                 pipeline.schedule(currentPlan.get(), T0).block();
             }
@@ -148,6 +169,6 @@ class SweepSagaPipelineTest {
             }
         }
         assertFalse(store.finished.containsValue(false), "all executions should be finished: " + store.log);
-        assertEquals(5, store.rows.values().stream().filter(pe -> pe.auditStatus() == AuditStatus.COMPLETED).count());
+        assertEquals(5, store.rows.values().stream().filter(pe -> pe.auditStatus() == AuditStatus.SWEPT_OUT).count());
     }
 }

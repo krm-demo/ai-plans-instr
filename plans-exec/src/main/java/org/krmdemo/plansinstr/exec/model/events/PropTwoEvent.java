@@ -10,7 +10,11 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Example event. Derives {@code derivedPropTwo}; {@code COMPLETED} marks the end of the saga.
+ * The branch check: check low in {@code LOW_BALANCE}, check high in {@code HIGH_BALANCE}.
+ * Derives {@code derivedPropTwo}. The factories take {@code from}, the execution's status
+ * when the check ran, and pick the branch's status from it:
+ * {@code CHECK_LOW_PASSED} / {@code CHECK_LOW_FAILED} / {@code CHECK_LOW_TIMEOUT} or the
+ * {@code CHECK_HIGH_*} ones.
  *
  * <p>Register it with the mapper: {@code JsonMapper.builder().registerSubtypes(PropTwoEvent.class)}.
  */
@@ -25,20 +29,23 @@ public record PropTwoEvent(Instant at, AuditStatus status, BigDecimal value, Str
         }
     }
 
-    public static PropTwoEvent retrieved(Instant at, String value) {
-        return new PropTwoEvent(at, AuditStatus.PROP_TWO_RETRIEVED, new BigDecimal(value), null);
+    /**
+     * @throws IllegalStateException when {@code from} is not {@code LOW_BALANCE} or {@code HIGH_BALANCE}
+     */
+    public static PropTwoEvent passed(Instant at, AuditStatus from, String value) {
+        return new PropTwoEvent(at, from.checkPassed(), new BigDecimal(value), null);
     }
 
-    public static PropTwoEvent completed(Instant at, String value) {
-        return new PropTwoEvent(at, AuditStatus.COMPLETED, new BigDecimal(value), null);
+    public static PropTwoEvent failed(Instant at, AuditStatus from, String error) {
+        return new PropTwoEvent(at, from.failure(false), null, error);
     }
 
-    public static PropTwoEvent failed(Instant at, String error) {
-        return new PropTwoEvent(at, AuditStatus.PROP_TWO_FAILED, null, error);
+    public static PropTwoEvent timeout(Instant at, AuditStatus from, String error) {
+        return new PropTwoEvent(at, from.failure(true), null, error);
     }
 
-    public static PropTwoEvent failed(Instant at, Throwable cause) {
-        return failed(at, String.valueOf(cause));
+    public static PropTwoEvent failed(Instant at, AuditStatus from, Throwable cause) {
+        return new PropTwoEvent(at, from.failure(Failures.isTimeout(cause)), null, String.valueOf(cause));
     }
 
     @Override
