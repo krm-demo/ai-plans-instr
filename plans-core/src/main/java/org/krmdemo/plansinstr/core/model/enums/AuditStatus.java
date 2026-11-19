@@ -24,6 +24,8 @@ import java.util.Set;
  *
  * <p>Statuses are stored by name: never rename a constant that may already be stored.
  *
+ * <p><img src="doc-files/audit-status-horizontal.svg" width="640" alt="AuditStatus state chart diagram">
+ *
  * <p>In the diagrams every status links back to its constant here. After changing this enum run
  * {@code python3 plans-core/docs/audit-status/generate.py}; {@code AuditStatusDiagramTest}
  * fails until the diagrams match.
@@ -33,21 +35,35 @@ import java.util.Set;
  */
 public enum AuditStatus {
 
+    /** Initial: the execution is waiting to be claimed and run. */
     SCHEDULED,
+    /** Initial verification passed; the balance is known. */
     CHECK_ONE_PASSED,
+    /** Initial verification failed (final). */
     CHECK_ONE_FAILED,
+    /** Initial verification timed out (final). */
     CHECK_ONE_TIMEOUT,
 
+    /** The balance is below the threshold T: the Swept-In branch. */
     LOW_BALANCE,
+    /** Low-balance verification passed; ready to sweep in. */
     CHECK_LOW_PASSED,
+    /** Low-balance verification failed (final). */
     CHECK_LOW_FAILED,
+    /** Low-balance verification timed out (final). */
     CHECK_LOW_TIMEOUT,
+    /** Success: the funds were swept in (final). */
     SWEPT_IN,
 
+    /** The balance is at or above the threshold T: the Swept-Out branch. */
     HIGH_BALANCE,
+    /** High-balance verification passed; ready to sweep out. */
     CHECK_HIGH_PASSED,
+    /** High-balance verification failed (final). */
     CHECK_HIGH_FAILED,
+    /** High-balance verification timed out (final). */
     CHECK_HIGH_TIMEOUT,
+    /** Success: the funds were swept out (final). */
     SWEPT_OUT;
 
     /** Progress inside the saga: the execution goes on. Events with these statuses carry data. */
