@@ -2,8 +2,7 @@
   <!--/* Thymeleaf template (XML mode), rendered by StateChartGenerator during the Maven build
        into AuditStatus's javadoc doc-files/. Links come from AuditStatus.java:
        hrefs['X'] / titles['X'] select status X's javadoc and constant; enumHref / enumTitle
-       point at the enum declaration. Opens as a plain SVG too (natural template). */-->
-  <!-- generated from plans-core/src/main/statechart/audit-status-vertical.svg by StateChartGenerator: do not edit -->
+       point at the enum declaration. Opens as a plain SVG too (natural template). */--><!-- generated from plans-core/src/main/statechart/audit-status-vertical.svg by StateChartGenerator: do not edit -->
   <style>
     a { cursor: pointer; }
     a:hover .box { stroke-width: 3.5; }
