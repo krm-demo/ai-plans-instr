@@ -35,35 +35,91 @@ import java.util.Set;
  */
 public enum AuditStatus {
 
-    /** Initial: the execution is waiting to be claimed and run. */
+    /**
+     * Initial status of a new {@link PlanExecution}, set by {@link PlanExecution#schedule}.
+     * The poller claims it once {@link PlanExecution#scheduledAt()} is due.
+     * Initial verification runs next: {@link #CHECK_ONE_PASSED} or the {@link #CHECK_ONE_FAILED} pair.
+     */
     SCHEDULED,
-    /** Initial verification passed; the balance is known. */
+    /**
+     * Initial verification passed, and the balance is known.
+     * It is stored as balance − {@link org.krmdemo.plansinstr.core.model.ThresholdsInfo#thresholdMax() T} in {@link PlanExecution#derivedPropOne()}.
+     * Next comes the balance split: {@link #balance(java.math.BigDecimal)}.
+     */
     CHECK_ONE_PASSED,
-    /** Initial verification failed (final). */
+    /**
+     * Initial verification failed: the execution is grounded here and never claimed again.
+     * Reached through {@link #failure(boolean) failure(false)}; see also {@link #CHECK_ONE_TIMEOUT}.
+     * It is in {@link #FAILED_STATUSES}, and as the first failure it sticks (see {@link #merge}).
+     */
     CHECK_ONE_FAILED,
-    /** Initial verification timed out (final). */
+    /**
+     * Initial verification timed out: the execution is grounded here and never claimed again.
+     * Reached through {@link #failure(boolean) failure(true)}; see also {@link #CHECK_ONE_FAILED}.
+     * It is in {@link #FAILED_STATUSES}, and as the first failure it sticks (see {@link #merge}).
+     */
     CHECK_ONE_TIMEOUT,
 
-    /** The balance is below the threshold T: the Swept-In branch. */
+    /**
+     * The balance is below the threshold {@link org.krmdemo.plansinstr.core.model.ThresholdsInfo#thresholdMax() T}: the Swept-In branch.
+     * Chosen by {@link #balance(java.math.BigDecimal)} when {@link PlanExecution#derivedPropOne()} is negative.
+     * Low-balance verification runs next; {@link #checkPassed()} leads to {@link #CHECK_LOW_PASSED}.
+     */
     LOW_BALANCE,
-    /** Low-balance verification passed; ready to sweep in. */
+    /**
+     * Low-balance verification passed; the execution is ready to sweep in.
+     * Its result is in {@link PlanExecution#derivedPropTwo()}.
+     * {@link #swept()} leads to {@link #SWEPT_IN}.
+     */
     CHECK_LOW_PASSED,
-    /** Low-balance verification failed (final). */
+    /**
+     * Low-balance verification failed: the execution is grounded here and never claimed again.
+     * Reached through {@link #failure(boolean) failure(false)}; see also {@link #CHECK_LOW_TIMEOUT}.
+     * It is in {@link #FAILED_STATUSES}, and as the first failure it sticks (see {@link #merge}).
+     */
     CHECK_LOW_FAILED,
-    /** Low-balance verification timed out (final). */
+    /**
+     * Low-balance verification timed out: the execution is grounded here and never claimed again.
+     * Reached through {@link #failure(boolean) failure(true)}; see also {@link #CHECK_LOW_FAILED}.
+     * It is in {@link #FAILED_STATUSES}, and as the first failure it sticks (see {@link #merge}).
+     */
     CHECK_LOW_TIMEOUT,
-    /** Success: the funds were swept in (final). */
+    /**
+     * Success: the funds were swept in. This ends the Swept-In branch.
+     * Reached from {@link #CHECK_LOW_PASSED} through {@link #swept()}.
+     * It is in {@link #SUCCESS_STATUSES} and {@link #FINAL_STATUSES}, so the next execution gets scheduled.
+     */
     SWEPT_IN,
 
-    /** The balance is at or above the threshold T: the Swept-Out branch. */
+    /**
+     * The balance is at or above the threshold {@link org.krmdemo.plansinstr.core.model.ThresholdsInfo#thresholdMax() T}: the Swept-Out branch.
+     * Chosen by {@link #balance(java.math.BigDecimal)} when {@link PlanExecution#derivedPropOne()} is zero or positive.
+     * High-balance verification runs next; {@link #checkPassed()} leads to {@link #CHECK_HIGH_PASSED}.
+     */
     HIGH_BALANCE,
-    /** High-balance verification passed; ready to sweep out. */
+    /**
+     * High-balance verification passed; the execution is ready to sweep out.
+     * Its result is in {@link PlanExecution#derivedPropTwo()}.
+     * {@link #swept()} leads to {@link #SWEPT_OUT}.
+     */
     CHECK_HIGH_PASSED,
-    /** High-balance verification failed (final). */
+    /**
+     * High-balance verification failed: the execution is grounded here and never claimed again.
+     * Reached through {@link #failure(boolean) failure(false)}; see also {@link #CHECK_HIGH_TIMEOUT}.
+     * It is in {@link #FAILED_STATUSES}, and as the first failure it sticks (see {@link #merge}).
+     */
     CHECK_HIGH_FAILED,
-    /** High-balance verification timed out (final). */
+    /**
+     * High-balance verification timed out: the execution is grounded here and never claimed again.
+     * Reached through {@link #failure(boolean) failure(true)}; see also {@link #CHECK_HIGH_FAILED}.
+     * It is in {@link #FAILED_STATUSES}, and as the first failure it sticks (see {@link #merge}).
+     */
     CHECK_HIGH_TIMEOUT,
-    /** Success: the funds were swept out (final). */
+    /**
+     * Success: the funds were swept out. This ends the Swept-Out branch.
+     * Reached from {@link #CHECK_HIGH_PASSED} through {@link #swept()}.
+     * It is in {@link #SUCCESS_STATUSES} and {@link #FINAL_STATUSES}, so the next execution gets scheduled.
+     */
     SWEPT_OUT;
 
     /** Progress inside the saga: the execution goes on. Events with these statuses carry data. */

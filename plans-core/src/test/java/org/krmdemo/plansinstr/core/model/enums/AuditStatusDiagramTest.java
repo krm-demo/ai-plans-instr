@@ -40,12 +40,25 @@ class AuditStatusDiagramTest {
 
         for (AuditStatus status : AuditStatus.values()) {
             int line = lineOf(source, "    " + status.name() + ",", "    " + status.name() + ";");
+            int first = javadocStart(source, line);
             Matcher links = Pattern.compile(
-                    "AuditStatus\\.java#L(\\d+)\" target=\"_top\" data-status=\"" + status.name() + "\"").matcher(svg);
+                    "AuditStatus\\.java#L(\\d+)-L(\\d+)\" target=\"_top\" data-status=\"" + status.name() + "\"").matcher(svg);
             assertTrue(links.find(), svgName + ": " + status + " is not drawn" + REGENERATE);
-            assertEquals(line, Integer.parseInt(links.group(1)),
-                    svgName + ": " + status + " links to the wrong line" + REGENERATE);
+            assertEquals(first + "-" + line, links.group(1) + "-" + links.group(2),
+                    svgName + ": " + status + " does not select its javadoc and constant" + REGENERATE);
         }
+    }
+
+    /** The 1-based line of the {@code /**} that opens the javadoc right above {@code line}. */
+    private static int javadocStart(List<String> source, int line) {
+        int i = line - 2;   // 0-based index of the line above
+        if (i < 0 || !source.get(i).strip().equals("*/")) {
+            throw new AssertionError("AuditStatus.java line " + line + ": the constant has no javadoc");
+        }
+        while (i >= 0 && !source.get(i).strip().startsWith("/**")) {
+            i--;
+        }
+        return i + 1;
     }
 
     /** The 1-based line of the first line that starts with any of the prefixes. */

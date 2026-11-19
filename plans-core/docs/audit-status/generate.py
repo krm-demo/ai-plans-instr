@@ -27,13 +27,20 @@ SRC_URL = "https://github.com/krm-demo/ai-plans-instr/blob/main/plans-core/" + E
 
 
 def read_lines():
-    lines, decl = {}, None
+    """Status -> (first line of its javadoc, or of the constant when it has none; constant line)."""
+    lines, decl, doc_start = {}, None, None
     with open(ENUM_PATH, encoding="utf-8") as f:
         for n, text in enumerate(f, start=1):
+            stripped = text.strip()
             m = re.match(r"^    ([A-Z][A-Z0-9_]*)\s*[,;]", text)
             if m:
-                lines[m.group(1)] = n
-            elif decl is None and re.match(r"^public enum AuditStatus\b", text):
+                lines[m.group(1)] = (doc_start or n, n)
+                doc_start = None
+            elif stripped.startswith("/**"):
+                doc_start = n
+            elif not stripped.startswith("*"):
+                doc_start = None
+            if decl is None and re.match(r"^public enum AuditStatus\b", text):
                 decl = n
     return lines, decl
 
@@ -43,12 +50,14 @@ USED = set()
 
 
 def href(status):
+    """Selects the status's javadoc and constant on GitHub: #L<first>-L<constant>."""
     USED.add(status)
-    return f"{SRC_URL}#L{LINES[status]}"
+    first, line = LINES[status]
+    return f"{SRC_URL}#L{first}-L{line}" if first != line else f"{SRC_URL}#L{line}"
 
 
 def link(status, inner):
-    n = LINES[status]
+    n = LINES[status][1]
     return (f'  <a href="{href(status)}" target="_top" data-status="{status}">\n'
             f'    <title>AuditStatus.{status}, AuditStatus.java line {n}</title>\n{inner}\n  </a>')
 
