@@ -36,7 +36,6 @@ jobs:
         run: |
           if ! git diff --exit-code -- '*/doc-files/*.svg'; then
             echo "::error::The state-chart SVGs are out of date. Run 'mvn -pl plans-core process-test-classes' and commit them."
-            echo "STATECHART-B64:$(tar -C plans-core/src/main/java/org/krmdemo/plansinstr/core/model/enums -cz doc-files | base64 -w0)"   # TEMP
             exit 1
           fi
 
