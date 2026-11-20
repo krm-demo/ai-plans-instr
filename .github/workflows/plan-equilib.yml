@@ -1,0 +1,70 @@
+name: plan-equilib
+run-name: plan-equilib ${{ github.ref_name }}
+
+# Builds plan-equilib on every push to main that touches it, and deploys the jar to its Lambda.
+# AWS sign-in without keys: the role plan-equilib-deploy trusts only pushes to main of this repository
+# and may only replace the code of this one function (see plan-equilib/deploy/setup.sh).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'plan-equilib/**'
+      - '.github/workflows/plan-equilib.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: plan-equilib-deploy
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  FUNCTION: plan-equilib
+  DEPLOY_ROLE: arn:aws:iam::560574854768:role/plan-equilib-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build and test
+        run: mvn -B -pl plan-equilib -am verify
+
+      - name: Example pictures are committed
+        run: |
+          if ! git diff --exit-code -- plan-equilib/docs; then
+            echo "::error::plan-equilib/docs is out of date. Run 'mvn -pl plan-equilib compile exec:java@docs' and commit it."
+            exit 1
+          fi
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy the jar
+        run: |
+          aws lambda update-function-code --function-name "$FUNCTION" \
+            --zip-file fileb://plan-equilib/target/plan-equilib.jar --query 'CodeSize' --output text
+          aws lambda wait function-updated-v2 --function-name "$FUNCTION"
+
+      - name: Smoke test
+        run: |
+          URL=$(aws lambda get-function-url-config --function-name "$FUNCTION" --query FunctionUrl --output text)
+          curl -fsS -o /tmp/equilib.svg -w '%{http_code} %{content_type} %{size_download} bytes\n' "${URL}?size=M&frames=12"
+          grep -q 'class="f d"' /tmp/equilib.svg
+          {
+            echo "### plan-equilib deployed"
+            echo "$URL"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -37,6 +37,7 @@
         <module>plans-core</module>
         <module>plans-exec</module>
         <module>plans-lambda</module>
+        <module>plan-equilib</module>
     </modules>
 
     <properties>
