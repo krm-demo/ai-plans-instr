@@ -47,6 +47,8 @@ if ! aws iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[]
   aws iam create-open-id-connect-provider --url https://token.actions.githubusercontent.com \
     --client-id-list sts.amazonaws.com --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
 fi
+# GitHub may put immutable ids into the subject: repo:<owner>@<owner id>/<repo>@<repo id>:ref:… (it does for krm-demo).
+SUB_REPO="krm-demo@$(gh api repos/$REPO --jq .owner.id)/${REPO#*/}@$(gh api repos/$REPO --jq .id)"
 aws iam create-role --role-name plan-equilib-deploy --assume-role-policy-document "{
   \"Version\": \"2012-10-17\",
   \"Statement\": [{
@@ -55,7 +57,8 @@ aws iam create-role --role-name plan-equilib-deploy --assume-role-policy-documen
     \"Action\": \"sts:AssumeRoleWithWebIdentity\",
     \"Condition\": {
       \"StringEquals\": {\"token.actions.githubusercontent.com:aud\": \"sts.amazonaws.com\",
-                         \"token.actions.githubusercontent.com:sub\": \"repo:$REPO:ref:refs/heads/main\"}}}]}"
+                         \"token.actions.githubusercontent.com:sub\": [\"repo:$SUB_REPO:ref:refs/heads/main\",
+                                                                     \"repo:$REPO:ref:refs/heads/main\"]}}}]}"
 aws iam put-role-policy --role-name plan-equilib-deploy --policy-name update-plan-equilib --policy-document "{
   \"Version\": \"2012-10-17\",
   \"Statement\": [{
