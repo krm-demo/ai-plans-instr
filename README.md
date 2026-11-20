@@ -29,7 +29,14 @@ infra/template.yaml             AWS: network, Postgres, Lambdas, HTTP API
 infra/github-oidc.yaml          AWS one-time: lets GitHub deploy without keys
 .github/workflows/release.yml   release workflow
 DEPLOY.md                       step by step guide
+drain-to.sh, drain-to-java      copy this repo into another folder, see drain-to.md
 ```
+
+## Tools
+
+- [drain-to](drain-to.md): copies the files tracked by git into another folder, for
+  example a copy of this repo on a work laptop. `.git` is skipped on both sides.
+  There are two versions: `drain-to.sh` (bash + git) and `drain-to-java` (JDK 17+).
 
 ## Table `plan_instructions`
 

@@ -1,0 +1,565 @@
+#!/usr/bin/env -S java --source 17
+//
+// drain-to-java — Java twin of drain-to.sh: copy (merge or mirror) the
+// git-tracked files of this checkout into another folder, never touching
+// .git on either side.
+//
+// Runs as a script thanks to the shebang above (JDK 17+, no build step,
+// no dependencies). The file must NOT be renamed to *.java: with a .java
+// extension the java launcher rejects the '#!' line.
+// Run with '--help' for details.
+//
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+
+public class DrainTo {
+
+    // ------------------------------------------------------------- options
+    static String prog = "drain-to-java";
+    static boolean dry, mirror, update, pull = true;
+
+    // -------------------------------------------------------------- colors
+    static String R = "", B = "", D = "", RED = "", GRN = "", YEL = "", BLU = "", MAG = "", CYN = "";
+
+    // Always UTF-8 (like bash), whatever the JVM's default console encoding is.
+    static final PrintStream out = new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
+    static final PrintStream err = new PrintStream(new FileOutputStream(FileDescriptor.err), true, StandardCharsets.UTF_8);
+    static final LinkOption NOFOLLOW = LinkOption.NOFOLLOW_LINKS;
+
+    /** Thrown to stop with an exit code; message already formatted. */
+    static final class Exit extends RuntimeException {
+        final int code;
+        Exit(int code, String msg) { super(msg); this.code = code; }
+    }
+
+    static Exit die(String msg)  { return new Exit(1, msg); }
+    static Exit udie(String msg) { return new Exit(2, msg); }
+
+    static void warn(String msg) { err.println(B + YEL + "warning:" + R + " " + msg); }
+    static void step(String msg) { out.println(B + BLU + "==>" + R + " " + B + msg + R); }
+
+    public static void main(String[] args) {
+        try {
+            System.exit(run(args));
+        } catch (Exit e) {
+            if (e.code == 2) {
+                err.println(B + prog + ":" + R + " " + e.getMessage());
+                err.println("Run '" + prog + " --help' for usage.");
+            } else {
+                err.println(B + RED + "error:" + R + " " + e.getMessage());
+            }
+            System.exit(e.code);
+        } catch (IOException | UncheckedIOException e) {
+            err.println(B + RED + "error:" + R + " " + e);
+            System.exit(1);
+        }
+    }
+
+    static int run(String[] args) throws IOException {
+        Path script = scriptPath();
+        if (script != null) prog = script.getFileName().toString();
+
+        // ------------------------------------------------------- arguments
+        String destArg = null, badArg = null, color = "auto";
+        boolean help = args.length == 0;
+        for (int i = 0; i < args.length; i++) {
+            String a = args[i];
+            switch (a) {
+                case "-n", "--dry-run" -> dry = true;
+                case "-m", "--mirror"  -> mirror = true;
+                case "-u", "--update"  -> update = true;
+                case "--no-pull"       -> pull = false;
+                case "--no-color"      -> color = "never";
+                case "-h", "--help"    -> help = true;
+                case "--" -> {
+                    if (i + 1 < args.length) {
+                        String v = args[++i];
+                        if (destArg == null) destArg = v; else badArg = "only one destination is allowed";
+                    }
+                }
+                default -> {
+                    if (a.startsWith("-")) { if (badArg == null) badArg = "unknown option: " + a; }
+                    else if (destArg == null) destArg = a;
+                    else badArg = "only one destination is allowed (got '" + destArg + "' and '" + a + "')";
+                }
+            }
+        }
+        setupColors(color);
+        if (help) { usage(); return 0; }
+        if (badArg != null) throw udie(badArg);
+        if (destArg == null) throw udie("destination folder is missing");
+
+        // ---------------------------------------------------------- source
+        Path from = script != null && script.getParent() != null ? script.getParent() : Path.of("");
+        Res top = git(from.toAbsolutePath(), true, "rev-parse", "--show-toplevel");
+        if (top == null || top.code != 0)
+            throw die(prog + " must live inside a git checkout (could not find the repo root)");
+        Path src = Path.of(top.text().strip()).toRealPath();
+
+        // ----------------------------------------------------- destination
+        // Resolve to an absolute physical path even if it does not exist yet.
+        Path anc = Path.of(destArg).toAbsolutePath();
+        List<String> rest = new ArrayList<>();
+        while (!Files.exists(anc, NOFOLLOW) && !Files.isSymbolicLink(anc)) {
+            rest.add(0, anc.getFileName().toString());
+            anc = anc.getParent();
+            if (anc == null) throw die("cannot resolve destination '" + destArg + "'");
+        }
+        if (!Files.isDirectory(anc)) {
+            if (rest.isEmpty()) throw die("destination '" + destArg + "' exists but is not a folder");
+            throw die("cannot create '" + destArg + "': '" + anc + "' is not a folder");
+        }
+        Path ancReal;
+        try { ancReal = anc.toRealPath(); }
+        catch (IOException e) { throw die("cannot access '" + anc + "' (permission denied?)"); }
+        Path dest = ancReal;
+        for (String part : rest) dest = dest.resolve(part);
+        dest = dest.normalize();
+
+        if (dest.equals(src))
+            throw die("destination is this checkout itself (" + src + ") — refusing.");
+        if (dest.startsWith(src))
+            throw die("destination '" + dest + "' is inside this checkout (" + src + ") — that would dirty it, refusing.");
+        if (src.startsWith(dest))
+            throw die("this checkout (" + src + ") is inside the destination '" + dest + "' — refusing.");
+
+        boolean destExists = rest.isEmpty();
+        if (!destExists) {
+            if (!Files.isWritable(ancReal) || !Files.isExecutable(ancReal))
+                throw die("destination '" + dest + "' does not exist and cannot be created: no write permission in '" + ancReal + "'");
+        } else if (!Files.isWritable(dest) || !Files.isExecutable(dest)) {
+            throw die("destination folder '" + dest + "' is not writable");
+        }
+
+        // ------------------------------------------------ 1. must be clean
+        step("Checking that " + src + " is clean");
+        Res st = git(src, false, "status", "--porcelain", "--untracked-files=normal");
+        if (st.code != 0) throw die("git status failed");
+        if (!st.text().isBlank()) {
+            err.print(git(src, true, "status", "--short").text());
+            throw die("source checkout is dirty — commit, stash or clean it first.");
+        }
+
+        // ----------------------------------------- 2. git pull, or bail out
+        if (pull && dry) {
+            step("Dry run: skipping git pull");
+        } else if (pull) {
+            Res up = git(src, true, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}");
+            if (up.code != 0)
+                throw die("current branch has no upstream — set one (git branch -u origin/<branch>) or use --no-pull.");
+            step("git pull");
+            if (gitInherit(src, "pull") != 0) {
+                if (git(src, true, "rev-parse", "-q", "--verify", "MERGE_HEAD").code == 0) {
+                    gitInherit(src, "merge", "--abort");
+                } else if (Files.isDirectory(gitPath(src, "rebase-merge")) || Files.isDirectory(gitPath(src, "rebase-apply"))) {
+                    gitInherit(src, "rebase", "--abort");
+                }
+                throw die("git pull failed (conflict, diverged branches or network). Nothing was copied; checkout restored.");
+            }
+        }
+
+        // ---------------------------------------------------- 3. file lists
+        Res ls = git(src, false, "ls-files", "-z", "--recurse-submodules");
+        if (ls.code != 0) throw die("git ls-files failed");
+        TreeSet<String> tracked = new TreeSet<>();
+        for (String p : ls.text().split("\0")) if (!p.isEmpty()) tracked.add(p);
+        Set<String> srcDirs = ancestors(tracked);
+
+        TreeSet<String> delFiles = new TreeSet<>();
+        List<String> delDirs = new ArrayList<>();
+        Set<String> gone = new HashSet<>();
+        if (mirror && destExists) {
+            TreeSet<String> destFiles = new TreeSet<>(), destDirs = new TreeSet<>();
+            List<String> gitPaths = new ArrayList<>();
+            final Path root = dest;
+            Files.walkFileTree(root, new SimpleFileVisitor<>() {
+                @Override public FileVisitResult preVisitDirectory(Path d, BasicFileAttributes a) {
+                    if (d.equals(root)) return FileVisitResult.CONTINUE;
+                    String rel = rel(root, d);
+                    if (d.getFileName().toString().equals(".git")) { gitPaths.add(rel); return FileVisitResult.SKIP_SUBTREE; }
+                    destDirs.add(rel);
+                    return FileVisitResult.CONTINUE;
+                }
+                @Override public FileVisitResult visitFile(Path f, BasicFileAttributes a) {
+                    String rel = rel(root, f);
+                    if (f.getFileName().toString().equals(".git")) gitPaths.add(rel);   // worktree/submodule .git file
+                    else if (a.isRegularFile() || a.isSymbolicLink()) destFiles.add(rel);
+                    return FileVisitResult.CONTINUE;
+                }
+                @Override public FileVisitResult visitFileFailed(Path f, IOException e) {
+                    warn("cannot read '" + f + "': " + e.getMessage());
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+            List<String> kept = new ArrayList<>(gitPaths);
+            for (String f : destFiles) { if (tracked.contains(f)) kept.add(f); else delFiles.add(f); }
+            Set<String> keepDirs = ancestors(kept);
+            keepDirs.addAll(srcDirs);
+            for (String d : destDirs) if (!keepDirs.contains(d)) delDirs.add(d);
+            delDirs.sort(Collections.reverseOrder());                                 // deepest first
+            gone.addAll(delFiles);
+            gone.addAll(delDirs);
+        }
+
+        // -------------------------------------------------------- 4. header
+        String mode = mirror ? "mirror" : "merge";
+        if (update) mode += ", update-only";
+        if (dry) mode += ", " + YEL + B + "DRY RUN" + R;
+        out.println();
+        out.println("  " + D + "From:" + R + " " + src + File.separator);
+        out.println("  " + D + "To:" + R + "   " + dest + File.separator);
+        out.println("  " + D + "Mode:" + R + " " + mode);
+        out.println("  " + D + "Files:" + R + " " + tracked.size() + " tracked");
+        out.println();
+
+        if (!destExists) {
+            if (dry) step("Would create " + dest);
+            else {
+                try { Files.createDirectories(dest); }
+                catch (IOException e) { throw die("could not create destination folder '" + dest + "'"); }
+                step("Created " + dest);
+            }
+        }
+
+        Copier c = new Copier(src, dest, dry && mirror ? gone : Set.of());
+
+        // -------------------------------------------- 5. mirror: deletions
+        for (String p : delFiles) {
+            c.del(p);
+            c.delF++;
+            if (!dry) Files.deleteIfExists(dest.resolve(p));
+        }
+        for (String p : delDirs) {
+            try {
+                if (!dry) Files.deleteIfExists(dest.resolve(p));
+                c.del(p + "/");
+                c.delD++;
+            } catch (DirectoryNotEmptyException e) {
+                warn("could not remove folder '" + p + "' (not empty?)");
+            }
+        }
+
+        // ------------------------------------------------------ 6. copying
+        for (String p : tracked) c.copy(p);
+
+        // ------------------------------------------------------ 7. summary
+        out.println();
+        out.println(B + "Summary" + R + (dry ? " " + YEL + "(dry run — nothing was changed)" + R : ""));
+        line(GRN, "added", c.addF + " file(s), " + c.addD + " folder(s)");
+        line(YEL, "changed", c.chg + " file(s)");
+        if (c.perm > 0) line(YEL, "perms", c.perm + " file(s) (executable bit only)");
+        line(RED, "deleted", c.delF + " file(s), " + c.delD + " folder(s)");
+        if (c.skip > 0) line(D, "skipped", c.skip + " file(s) newer in destination");
+        line(D, "unchanged", c.same + " file(s)");
+        if (c.conf > 0) {
+            line(MAG + B, "conflicts", c.conf + " — see '!' lines above; those paths were left as is");
+            return 1;
+        }
+        out.println();
+        if (c.addF + c.addD + c.chg + c.perm + c.delF + c.delD == 0)
+            out.println("  " + GRN + "✔ Destination is already up to date." + R);
+        else if (dry)
+            out.println("  " + YEL + "Re-run without -n to apply." + R);
+        else
+            out.println("  " + GRN + "✔ Done." + R);
+        return 0;
+    }
+
+    // ===================================================================
+    /** Copies one tracked path at a time and keeps the counters. */
+    static final class Copier {
+        final Path src, dest;
+        final Set<String> gone;                  // paths a dry-run mirror would have deleted
+        final Set<String> created = new HashSet<>();
+        int addF, addD, chg, perm, delF, delD, skip, conf, same;
+
+        Copier(Path src, Path dest, Set<String> gone) { this.src = src; this.dest = dest; this.gone = gone; }
+
+        void add(String p, String note)  { out.println("  " + GRN + "+" + R + " " + p + note); }
+        void chg(String p, String note)  { out.println("  " + YEL + "~" + R + " " + p + note); }
+        void del(String p)               { out.println("  " + RED + "-" + R + " " + p); }
+        void skp(String p, String note)  { out.println("  " + D + "= " + p + note + R); }
+        void conf(String p, String why)  { out.println("  " + B + MAG + "!" + R + " " + p + " " + MAG + "(" + why + ")" + R); conf++; }
+
+        enum State { NONE, LINK, DIR, FILE }
+
+        State state(String p) {
+            Path t = dest.resolve(p);
+            if (Files.isSymbolicLink(t)) return State.LINK;
+            if (Files.isDirectory(t, NOFOLLOW)) return gone.contains(p) ? State.NONE : State.DIR;
+            if (Files.exists(t, NOFOLLOW)) return State.FILE;
+            return State.NONE;
+        }
+
+        /** Make sure all parent folders of p exist in dest; false on a conflict. */
+        boolean ensureParent(String p) throws IOException {
+            int slash = p.lastIndexOf('/');
+            if (slash < 0) return true;
+            String dir = p.substring(0, slash);
+            Path dp = dest.resolve(dir);
+            if (Files.isDirectory(dp, NOFOLLOW)) return true;
+            String cur = "";
+            for (String part : dir.split("/")) {
+                cur = cur.isEmpty() ? part : cur + "/" + part;
+                Path path = dest.resolve(cur);
+                if (Files.isDirectory(path, NOFOLLOW)) continue;
+                if ((Files.exists(path, NOFOLLOW) || Files.isSymbolicLink(path)) && !gone.contains(cur)) {
+                    conf(p, "'" + cur + "' is a file in the destination");
+                    return false;
+                }
+                if (!created.add(cur)) continue;
+                if (!dry) {
+                    try { Files.createDirectory(path); }
+                    catch (IOException e) { conf(p, "cannot create folder '" + cur + "'"); return false; }
+                }
+                add(cur + "/", "");
+                addD++;
+            }
+            return true;
+        }
+
+        void copy(String p) throws IOException {
+            Path s = src.resolve(p), t = dest.resolve(p);
+            if (Files.isDirectory(s, NOFOLLOW)) { warn("skipping '" + p + "': submodule is not checked out"); return; }
+            if (!ensureParent(p)) return;
+            State st = state(p);
+
+            if (Files.isSymbolicLink(s)) {                                   // --- symlink
+                Path target = Files.readSymbolicLink(s);
+                String note = " -> " + target;
+                switch (st) {
+                    case NONE -> { if (!dry) Files.createSymbolicLink(t, target); add(p, note); addF++; }
+                    case LINK -> {
+                        if (Files.readSymbolicLink(t).toString().equals(target.toString())) same++;
+                        else { relink(t, target); chg(p, note); chg++; }
+                    }
+                    case FILE -> { relink(t, target); chg(p, note); chg++; }
+                    case DIR  -> conf(p, "a folder in the destination");
+                }
+                return;
+            }
+                                                                             // --- regular file
+            switch (st) {
+                case NONE -> { if (!dry) cp(s, t); add(p, ""); addF++; }
+                case LINK -> { if (!dry) cp(s, t); chg(p, " (was a symlink)"); chg++; }
+                case DIR  -> conf(p, "a folder in the destination");
+                case FILE -> {
+                    if (Files.size(s) == Files.size(t) && Files.mismatch(s, t) == -1) {
+                        if (Files.isExecutable(s) != Files.isExecutable(t)) {
+                            if (!dry) copyPerms(s, t);
+                            chg(p, " " + D + "(permissions)" + R);
+                            perm++;
+                        } else {
+                            same++;
+                        }
+                    } else if (update && Files.getLastModifiedTime(t).compareTo(Files.getLastModifiedTime(s)) > 0) {
+                        skp(p, " (newer in destination, kept)");
+                        skip++;
+                    } else {
+                        if (!dry) cp(s, t);
+                        chg(p, "");
+                        chg++;
+                    }
+                }
+            }
+        }
+
+        void relink(Path t, Path target) throws IOException {
+            if (dry) return;
+            Files.delete(t);
+            Files.createSymbolicLink(t, target);
+        }
+
+        static void cp(Path s, Path t) throws IOException {
+            Files.copy(s, t, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES, NOFOLLOW);
+        }
+
+        static void copyPerms(Path s, Path t) throws IOException {
+            try {
+                Files.setPosixFilePermissions(t, Files.getPosixFilePermissions(s));
+            } catch (UnsupportedOperationException e) {          // non-POSIX file system (Windows)
+                t.toFile().setExecutable(Files.isExecutable(s));
+            }
+        }
+    }
+
+    // ===================================================================
+    static Set<String> ancestors(Collection<String> paths) {
+        Set<String> dirs = new HashSet<>();
+        for (String p : paths) {
+            int i = -1;
+            while ((i = p.indexOf('/', i + 1)) >= 0) dirs.add(p.substring(0, i));
+        }
+        return dirs;
+    }
+
+    static String rel(Path root, Path p) {
+        return root.relativize(p).toString().replace(File.separatorChar, '/');
+    }
+
+    static void line(String color, String label, String text) {
+        out.printf("  %s%-10s%s %s%n", color, label, R, text);
+    }
+
+    // ------------------------------------------------------------------ git
+    record Res(int code, byte[] stdout) {
+        String text() { return new String(stdout, StandardCharsets.UTF_8); }
+    }
+
+    /** Runs git, captures stdout. Returns null if git cannot be started. */
+    static Res git(Path dir, boolean quiet, String... args) throws IOException {
+        List<String> cmd = new ArrayList<>(List.of("git", "-C", dir.toString()));
+        cmd.addAll(List.of(args));
+        ProcessBuilder pb = new ProcessBuilder(cmd)
+                .redirectError(quiet ? ProcessBuilder.Redirect.DISCARD : ProcessBuilder.Redirect.INHERIT)
+                .redirectInput(ProcessBuilder.Redirect.INHERIT);
+        Process pr;
+        try { pr = pb.start(); }
+        catch (IOException e) { throw die("git is not installed (or not on PATH)"); }
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        try (InputStream in = pr.getInputStream()) { in.transferTo(buf); }
+        return new Res(waitFor(pr), buf.toByteArray());
+    }
+
+    /** Runs git with its output going straight to the terminal. */
+    static int gitInherit(Path dir, String... args) throws IOException {
+        List<String> cmd = new ArrayList<>(List.of("git", "-C", dir.toString()));
+        cmd.addAll(List.of(args));
+        return waitFor(new ProcessBuilder(cmd).inheritIO().start());
+    }
+
+    static Path gitPath(Path src, String name) throws IOException {
+        Res r = git(src, true, "rev-parse", "--git-path", name);
+        Path p = Path.of(r.text().strip());
+        return p.isAbsolute() ? p : src.resolve(p);
+    }
+
+    static int waitFor(Process p) {
+        try { return p.waitFor(); }
+        catch (InterruptedException e) { Thread.currentThread().interrupt(); throw die("interrupted"); }
+    }
+
+    // ------------------------------------------------------------- helpers
+    /** Path of this script when run via the source launcher (shebang / java --source). */
+    static Path scriptPath() {
+        String f = System.getProperty("jdk.launcher.sourcefile");               // JDK 21+
+        if (f != null) return Path.of(f).toAbsolutePath();
+        // Older JDKs: first command-line argument that is an existing file.
+        List<String> a = ProcessHandle.current().info().arguments().map(List::of).orElse(List.of());
+        for (int i = 0; i < a.size(); i++) {
+            String s = a.get(i);
+            if (s.equals("--source") || s.equals("-cp") || s.equals("-classpath") || s.equals("--class-path")) { i++; continue; }
+            if (s.startsWith("-")) continue;
+            Path p = Path.of(s);
+            if (Files.isRegularFile(p)) return p.toAbsolutePath();
+            break;
+        }
+        return null;                                                             // fall back to cwd
+    }
+
+    static boolean stdoutIsTerminal() {
+        Object console = System.console();
+        if (console == null) return false;                                      // JDK <= 21: not a tty
+        try {
+            Method m = console.getClass().getMethod("isTerminal");              // JDK 22+
+            return (Boolean) m.invoke(console);
+        } catch (NoSuchMethodException e) {
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return false;
+        }
+    }
+
+    static void setupColors(String mode) {
+        String term = System.getenv("TERM");
+        boolean termOk = term != null ? !term.equals("dumb") : isWindowsTerminal();
+        boolean on = !mode.equals("never") && System.getenv("NO_COLOR") == null && termOk && stdoutIsTerminal();
+        if (!on) return;
+        R = "\033[0m"; B = "\033[1m"; D = "\033[2m";
+        RED = "\033[31m"; GRN = "\033[32m"; YEL = "\033[33m"; BLU = "\033[34m"; MAG = "\033[35m"; CYN = "\033[36m";
+    }
+
+    /** Windows Terminal / modern consoles understand ANSI even without TERM. */
+    static boolean isWindowsTerminal() {
+        return System.getProperty("os.name").startsWith("Windows")
+                && (System.getenv("WT_SESSION") != null || System.getenv("TERM_PROGRAM") != null);
+    }
+
+    static void usage() {
+        String p = CYN + B + prog + R;
+        out.print(String.join("\n",
+            p + " — copy the git-tracked files of this checkout into another folder.",
+            "",
+            B + "WHAT IT DOES" + R,
+            "  1. Checks that this checkout is " + B + "clean" + R + " (no uncommitted changes, no",
+            "     untracked files; files ignored by .gitignore are fine).",
+            "  2. Runs " + B + "git pull" + R + ". On a conflict (or any pull failure) the merge/rebase is",
+            "     aborted, the checkout is restored, nothing is copied, and it exits 1.",
+            "  3. Copies every file tracked by git (including submodules) into DEST.",
+            "     " + B + ".git is never copied, and DEST/.git is never touched" + R + ", even with --mirror.",
+            "     Ignored/build files are not copied.",
+            "  4. Prints what was added, changed and deleted, with totals.",
+            "",
+            "  The source is always the root of the checkout that contains this script,",
+            "  wherever you call it from.",
+            "",
+            B + "USAGE" + R,
+            "  " + prog + " " + GRN + "DEST" + R + " [options]",
+            "  " + prog + "                  (no arguments) show this help",
+            "  " + prog + " -h | --help      show this help",
+            "",
+            B + "ARGUMENTS" + R,
+            "  " + GRN + "DEST" + R + "             destination folder; created if missing. Must not be this",
+            "                   checkout, a folder inside it, or a folder that contains it.",
+            "",
+            B + "OPTIONS" + R,
+            "  " + YEL + "-n, --dry-run" + R + "    show what would change; change nothing",
+            "                   (also skips git pull and does not create DEST)",
+            "  " + YEL + "-m, --mirror" + R + "     make DEST an exact copy: also " + RED + "DELETE" + R + " files and folders",
+            "                   in DEST that are not tracked here (DEST/.git is protected)",
+            "  " + YEL + "-u, --update" + R + "     do not overwrite files that are newer in DEST",
+            "  " + YEL + "    --no-pull" + R + "    skip git pull",
+            "  " + YEL + "    --no-color" + R + "   plain output (also: NO_COLOR=1, or output not a terminal)",
+            "  " + YEL + "-h, --help" + R + "       show this help",
+            "",
+            "  Default mode is " + B + "merge" + R + ": add new files, update changed ones, delete nothing.",
+            "",
+            B + "EXAMPLES" + R,
+            "  " + prog + " ~/work/plan-instrs -n     " + D + "# preview" + R,
+            "  " + prog + " ~/work/plan-instrs        " + D + "# merge" + R,
+            "  " + prog + " ~/work/plan-instrs -m     " + D + "# mirror (deletes extras in DEST)" + R,
+            "",
+            B + "EXIT CODES" + R,
+            "  0 success   1 error or conflicts   2 bad command-line arguments",
+            "",
+            B + "REQUIRES" + R,
+            "  JDK 17+ and git on PATH. Without the shebang: java --source 17 " + prog + " DEST ...",
+            "",
+            B + "MORE" + R,
+            "  See drain-to.md next to this script.",
+            ""));
+    }
+}
