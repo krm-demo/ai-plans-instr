@@ -266,12 +266,12 @@
     var xA = GX[0].d0, xZ = GX[GX.length - 1].d1, yA = GY[0].d0, yZ = GY[GY.length - 1].d1;
     var y0 = Y(0), ax = X(0), xoc = Math.min(xo, xZ), Z = ZONES;
     var LAB = 'font-family:' + SERIF + ';font-style:italic;font-size:' + pf.font + 'px';
-    var CAP = 'font-family:' + SERIF + ';font-style:italic;font-size:' + Math.round(13 * f) + 'px;fill:' + th.soft;
+    var CAP = 'font-family:' + SERIF + ';font-style:italic;font-size:' + Math.max(13, pf.font - 1) + 'px;fill:' + th.soft;
 
     var h = '<defs><pattern id="' + id + '-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
       '<line x1="0" y1="0" x2="0" y2="6" style="stroke:#E24B4A;stroke-width:1;stroke-opacity:.35"/></pattern>' +
-      '<marker id="' + id + '-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">' +
-      '<path d="M2 1L8 5L2 9" style="fill:none;stroke:' + th.soft + ';stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"/></marker></defs>';
+      '<marker id="' + id + '-arrow" viewBox="0 0 12 10" refX="11" refY="5" markerWidth="12" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse">' +
+      '<path d="M1 1L11 5L1 9L3.5 5Z" style="fill:' + th.soft + '"/></marker></defs>';
 
     // Zones: translucent slices, one rectangle per panel, and a watermark in the widest piece.
     var zeroA = imax === 0;   // Swept in zero: the whole sweep-in side is a terminal failure
@@ -334,16 +334,16 @@
 
     // Axes, with a break mark where a piece ends.
     var axSt = stroke(th.soft, 1);
-    h += '<line x1="' + P.L + '" y1="' + n2(y0) + '" x2="' + (P.R + 6) + '" y2="' + n2(y0) + '" style="' + axSt + '" marker-end="url(#' + id + '-arrow)"/>';
-    h += '<line x1="' + n2(ax) + '" y1="' + n2(P.B) + '" x2="' + n2(ax) + '" y2="' + (P.T - 6) + '" style="' + axSt + '" marker-end="url(#' + id + '-arrow)"/>';
+    h += '<line x1="' + P.L + '" y1="' + n2(y0) + '" x2="' + (P.R + 12) + '" y2="' + n2(y0) + '" style="' + axSt + '" marker-end="url(#' + id + '-arrow)"/>';
+    h += '<line x1="' + n2(ax) + '" y1="' + n2(P.B) + '" x2="' + n2(ax) + '" y2="' + (P.T - 12) + '" style="' + axSt + '" marker-end="url(#' + id + '-arrow)"/>';
     if (gap) {
       // The cut: two short slanted strokes across each axis, in the middle of the gap.
       var cq = GX[0].q1 + gap / 2, cy = GY[0].q1 - gap / 2, br = stroke(th.soft, 1, null, 0.8);
       h += line(cq - 4, y0 + 4, cq - 1, y0 - 4, br) + line(cq + 1, y0 + 4, cq + 4, y0 - 4, br);
       h += line(ax - 4, cy + 1, ax + 4, cy - 2, br) + line(ax - 4, cy + 4, ax + 4, cy + 1, br);
     }
-    h += '<text x="' + n2(ax + 8) + '" y="' + (P.T - 12) + '" style="' + CAP + '">Swept amount, <tspan style="fill:' + PURPLE + ';font-style:normal;font-weight:700">$</tspan></text>';
-    h += '<text x="' + n2(ax - 5) + '" y="' + n2(y0 + 4) + '" text-anchor="end" style="' + LAB + ';fill:' + th.soft + '">0</text>';
+    h += '<text x="' + n2(ax + 10) + '" y="' + (P.T - 8) + '" style="' + CAP + '">Swept amount, <tspan style="fill:' + PURPLE + ';font-style:normal;font-weight:700">$</tspan></text>';
+    h += '<text x="' + n2(ax - 6) + '" y="' + n2(y0 + pf.font + 1) + '" text-anchor="end" style="' + LAB + ';fill:' + th.soft + '">0</text>';   // below and left: no line crosses it
 
     // Points of interest on the x axis (labels in rows so that they never overlap) and on the y axis.
     // pri: which sizes show the label (see sweptAmountMathProfiles); with T_min = T_max both are just T.
@@ -412,7 +412,7 @@
     ys.forEach(function (q) { h += line(ax - 3, Y(q.y), ax + 3, Y(q.y), stroke(q.c, 1.2)); });
     var dot = function (x, y, r, st) { if (visX(x) && visY(y)) h += circle(X(x), Y(y), r, st); };
     if (tmax - tmin >= 2 * K) dot(xc, yc, 3, 'fill:' + GRAY);
-    if (!zeroA && xk > xA) dot(xk, imax, 4.5, 'fill:' + Z.inp.ink);
+    if (!zeroA && xk > xA) dot(xk, imax, 4.5, 'fill:' + Z.in.ink + ';stroke:' + Z.inp.ink + ';stroke-width:2');   // T_min − A is Full's (filled), not Partial's (ring)
     if (xo < xZ) {
       // A payment of exactly L is allowed: filled on the line; Overflow starts right after it, open on the axis.
       dot(xo, omax, 5, 'fill:' + Z.out.ink);

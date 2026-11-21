@@ -201,8 +201,8 @@ public final class SvgRenderer {
         // Axes, continuous; where they are cut, two short slanted strokes in the middle of the cut.
         layer("axes");
         String axSt = stroke("var(--soft)", 1, null, 1);
-        cur.add(shape("line", "x1", r(pf.left()), "y1", r(y0), "x2", r(pf.right() + 6), "y2", r(y0), "style", axSt, "markerEnd", "url(#arrow)"));
-        cur.add(shape("line", "x1", r(ax), "y1", r(g.plotBottom), "x2", r(ax), "y2", r(g.plotTop - 6), "style", axSt, "markerEnd", "url(#arrow)"));
+        cur.add(shape("line", "x1", r(pf.left()), "y1", r(y0), "x2", r(pf.right() + 12), "y2", r(y0), "style", axSt, "markerEnd", "url(#arrow)"));
+        cur.add(shape("line", "x1", r(ax), "y1", r(g.plotBottom), "x2", r(ax), "y2", r(g.plotTop - 12), "style", axSt, "markerEnd", "url(#arrow)"));
         if (g.broken) {
             String br = stroke("var(--soft)", 1, null, 0.8);
             double cq = g.xs.get(0).q1() + Layout.GAP / 2, cy = g.ys.get(0).q1() - Layout.GAP / 2;
@@ -212,7 +212,7 @@ public final class SvgRenderer {
             line(ax - 4, cy + 4, ax + 4, cy + 1, br);
         }
         if (detail.text()) {
-            cur.add(shape("text", "x", r(ax + 8), "y", r(g.plotTop - 8), "cls", "m", "style", "font-size:12px;fill:var(--soft)",
+            cur.add(shape("text", "x", r(ax + 10), "y", r(g.plotTop - 6), "cls", "m", "style", "font-size:" + (pf.font() - 1) + "px;fill:var(--soft)",
                 "body", "Swept amount, <tspan style=\"fill:" + PURPLE + ";font-style:normal;font-weight:700\">$</tspan>"));
         }
 
@@ -252,7 +252,9 @@ public final class SvgRenderer {
 
         // Points: filled where the point belongs to the piece, open where the piece only comes close.
         String red = Zone.SWEPT_OUT_OVERFLOW.ink(), open = "fill:var(--bg);stroke-width:2;stroke:";
-        if (!zeroA && xk > xA) dot(xk, a, 4.5, "fill:" + Zone.SWEPT_IN_PARTIAL.ink());
+        if (!zeroA && xk > xA) {   // T_min − A belongs to Swept In Full (filled in its colour), not to Partial (the ring)
+            dot(xk, a, 4.5, "fill:" + Zone.SWEPT_IN_FULL.ink() + ";stroke:" + Zone.SWEPT_IN_PARTIAL.ink() + ";stroke-width:2");
+        }
         // With τ = 0 there is no jump: T_min (T_max) itself needs nothing, so it is In Range, a filled blue point.
         String blue = "fill:" + Zone.IN_RANGE.ink();
         if (nMin == 0) {
@@ -294,7 +296,9 @@ public final class SvgRenderer {
             text(q[2], q[3], "middle", colour, esc(Money.compact(q[0])), "m", pf.font());
         }
         yLabels(ax);
-        text(pf.right(), rowsBottom + 6, "end", "var(--soft)", "Current balance, $", "m", 12);
+        text(pf.right() + 12, rowsBottom + 8, "end", "var(--soft)", "Current balance, $", "m", pf.font() - 1);
+        // The origin: "0" below the x axis and left of the y axis, where no line crosses it.
+        if (g.xs.get(0).has(0)) text(ax - 6, y0 + pf.font() + 1, "end", "var(--soft)", "0", "m", pf.font());
 
         // The formula: one row per status, the status on the right (the frames highlight theirs and add the amount).
         if (detail.formula()) formula(rows, fxTop, rowH, legendY);
