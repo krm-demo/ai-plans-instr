@@ -2,22 +2,25 @@ package org.krmdemo.plansinstr.equilib;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Draws the swept amount per current balance as one SVG that needs no JavaScript.
  * <p>
- * The picture is everything that does not depend on the probe (zones, the function, labels, the formula), plus a
- * finite number of <b>frames</b>: one per sampled current balance. A frame is a thin transparent vertical strip
- * around its balance and, hidden until the mouse is over that strip, the purple probe, the readout line on top
- * and the highlight of its row of the formula. CSS {@code :hover} does the rest, so only the frame under the mouse
- * is shown; with the mouse elsewhere, the default frame (about 30% into Swept out) is.
+ * This class does the geometry and builds a <b>model</b>: layers of plain shapes (line, rect, circle, path, text),
+ * each a map of its attributes. The markup is the Thymeleaf template {@code templates/equilib.svg}, rendered by
+ * {@link SvgTemplate}. Maps rather than records, because Thymeleaf's expressions (OGNL) read map keys directly.
  * <p>
- * Hover works where the SVG is a document of its own or inline in HTML; as an {@code <img>} (a README on GitHub)
- * the picture is static and shows the default frame.
+ * Besides the static picture, the model has a finite number of <b>frames</b>: one per sampled current balance. A
+ * frame is a thin transparent vertical strip around its balance and, hidden until the mouse is over that strip, the
+ * purple probe, the status line on top and the highlight of its row of the formula. CSS {@code :hover} does the rest,
+ * so only the frame under the mouse is shown; with the mouse elsewhere, the default frame is.
  */
 public final class SvgRenderer {
 
@@ -27,13 +30,12 @@ public final class SvgRenderer {
 
     static final String PURPLE = "#8B5CF6";
     static final String GRAY = "#888780";
-    static final String SERIF = "Georgia, 'Times New Roman', serif";
-    static final String SANS = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
     private final Sweep s;
     private final Layout g;
     private final Layout.Profile pf;
-    private final StringBuilder h = new StringBuilder(64 * 1024);
+    private final List<Map<String, Object>> layers = new ArrayList<>();
+    private List<Map<String, Object>> cur;            // the shapes being added to
 
     private SvgRenderer(Sweep s, Layout.Profile pf) {
         this.s = s;
@@ -54,18 +56,27 @@ public final class SvgRenderer {
      * @param frames  number of sampled balances, rounded to one of {@link #FRAME_COUNTS}
      */
     public static String render(Sweep sweep, String size, int frames) {
-        return new SvgRenderer(sweep, Layout.Profile.of(size)).draw(frames(frames));
+        return render(sweep, size, frames, null);
+    }
+
+    /** The same, with the default frame at exactly {@code probe} (the picture shown when the mouse is elsewhere). */
+    public static String render(Sweep sweep, String size, int frames, Long probe) {
+        return SvgTemplate.render(model(sweep, size, frames, probe));
+    }
+
+    /** The model the template renders: width, height, viewBox and the layers of shapes. */
+    static Map<String, Object> model(Sweep sweep, String size, int frames, Long probe) {
+        return new SvgRenderer(sweep, Layout.Profile.of(size)).draw(frames(frames), probe);
     }
 
     // ---------------------------------------------------------------- drawing
 
-    private String draw(int n) {
+    private Map<String, Object> draw(int n, Long probe) {
         double tMin = s.thresholdMin(), tMax = s.thresholdMax(), nMin = s.nominalMin(), nMax = s.nominalMax();
         double a = s.sweptInMax(), l = s.sweptOutMax();
         double xl = tMin - nMin, xr = tMax + nMax, xk = tMin - a, xo = tMax + l;
-        double xA = g.xMin(), xZ = g.xMax(), yA = g.yMin(), yZ = g.yMax(), y0 = g.y(0), ax = g.axisX();
+        double xA = g.xMin(), xZ = g.xMax(), y0 = g.y(0), ax = g.axisX();
         boolean zeroA = a == 0;
-        double inLeft = zeroA ? xl : xk;                 // where the sweep-in zones meet
 
         // The formula and the legend go under the graph; their height is known before drawing.
         List<Row> rows = formulaRows();
@@ -75,24 +86,8 @@ public final class SvgRenderer {
         double legendY = fxTop + rows.size() * rowH + 20;
         double height = legendY + (pf.width() < 500 ? 3 : 1) * 17 + 8;
 
-        h.append("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 ").append(pf.width()).append(' ').append(r(height))
-            .append("\" width=\"").append(pf.width()).append("\" height=\"").append(r(height)).append("\" role=\"img\"")
-            .append(" aria-label=\"Balances Equilibrium: swept amount per current balance\">\n")
-            .append("<title>Balances Equilibrium: swept amount per current balance</title>\n")
-            .append("<style>\n")
-            .append("svg{--ink:#18212c;--soft:#5a6777;--rule:#d6dde7;--bg:#fbfcfe}\n")
-            .append("@media (prefers-color-scheme: dark){svg{--ink:#e6ebf2;--soft:#9aa7b8;--rule:#3a4452;--bg:#141a22}}\n")
-            .append(".on{pointer-events:none}.f .on{visibility:hidden}.f:hover .on{visibility:visible}.frames:not(:hover) .d .on{visibility:visible}\n")
-            .append(".hit{fill:#000;fill-opacity:0;pointer-events:all}.f:hover .hit{fill:").append(PURPLE).append(";fill-opacity:.05}\n")
-            .append("text{font-family:").append(SANS).append("}.m{font-family:").append(SERIF).append(";font-style:italic}\n")
-            .append("</style>\n")
-            .append("<rect width=\"100%\" height=\"100%\" style=\"fill:var(--bg)\"/>\n")
-            .append("<defs><pattern id=\"hatch\" width=\"6\" height=\"6\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45)\">")
-            .append("<line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"6\" style=\"stroke:#E24B4A;stroke-width:1;stroke-opacity:.35\"/></pattern>")
-            .append("<marker id=\"arrow\" viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto-start-reverse\">")
-            .append("<path d=\"M2 1L8 5L2 9\" style=\"fill:none;stroke:var(--soft);stroke-width:1.5\"/></marker></defs>\n");
-
-        // Zones: translucent bands per panel, hatched where the swept amount does not exist; a watermark each.
+        // Zones: translucent bands the full height of the plot, hatched where the swept amount does not exist.
+        layer("zones");
         double xoc = Math.min(xo, xZ);
         Object[][] bands = zeroA
             ? new Object[][] {{xA, xl, Zone.SWEPT_IN_ZERO}, {xl, tMin, Zone.IN_NOMINAL_MIN}, {tMin, tMax, Zone.IN_RANGE},
@@ -100,14 +95,13 @@ public final class SvgRenderer {
             : new Object[][] {{xA, xk, Zone.SWEPT_IN_PARTIAL}, {xk, xl, Zone.SWEPT_IN_FULL}, {xl, tMin, Zone.IN_NOMINAL_MIN},
                               {tMin, tMax, Zone.IN_RANGE}, {tMax, xr, Zone.IN_NOMINAL_MAX}, {xr, xoc, Zone.SWEPT_OUT},
                               {xoc, xZ, Zone.OVERFLOW}};
-        // The cut of the x axis is filled too when the same zone goes on behind it: the cut stays unobtrusive.
-        if (g.broken) {
+        if (g.broken) {   // the cut of the x axis is filled when the same zone goes on behind it: unobtrusive
             Zone zl = s.at(Math.round(g.xs.get(0).d1())).zone(), zr = s.at(Math.round(g.xs.get(1).d0())).zone();
             if (zl == zr) band(g.xs.get(0).q1(), Layout.GAP, zl);
         }
         Layout.Seg low = g.ys.get(0);
         double wmY = (low.q0() + low.q1()) / 2;
-        StringBuilder marks = new StringBuilder();
+        List<Runnable> watermarks = new ArrayList<>();
         for (Object[] b : bands) {
             Zone z = (Zone) b[2];
             double[] widest = null;
@@ -121,22 +115,22 @@ public final class SvgRenderer {
             }
             if (widest != null && widest[1] >= pf.wmMin()) {
                 double cx = widest[0] + widest[1] / 2;
-                marks.append("<text transform=\"rotate(-90 ").append(r(cx)).append(' ').append(r(wmY)).append(")\" x=\"").append(r(cx))
-                    .append("\" y=\"").append(r(wmY + 5)).append("\" text-anchor=\"middle\" style=\"font-size:").append(pf.font())
-                    .append("px;font-weight:500;letter-spacing:1.5px;fill:").append(z.ink()).append(";fill-opacity:")
-                    .append(z.zero() && z != Zone.IN_RANGE ? ".42" : ".34").append("\">").append(z.title())
-                    .append(z.terminal() ? " ⏚" : "").append("</text>");
+                watermarks.add(() -> cur.add(shape("text", "x", r(cx), "y", r(wmY + 5), "anchor", "middle",
+                    "transform", "rotate(-90 " + r(cx) + " " + r(wmY) + ")",
+                    "style", "font-size:" + pf.font() + "px;font-weight:500;letter-spacing:1.5px;fill:" + z.ink()
+                        + ";fill-opacity:" + (z.zero() && z != Zone.IN_RANGE ? ".42" : ".34"),
+                    "body", esc(z.title() + (z.terminal() ? " ⏚" : "")))));
             }
         }
-        h.append('\n').append(marks).append("\n<g class=\"grid\"></g><g class=\"aux\"></g>\n");
-        thresholdLine();
+        layer("marks");
+        watermarks.forEach(Runnable::run);
+        statusLabels();
 
         // Axes, continuous; where they are cut, two short slanted strokes in the middle of the cut.
+        layer("axes");
         String axSt = stroke("var(--soft)", 1, null, 1);
-        h.append("<line x1=\"").append(r(pf.left())).append("\" y1=\"").append(r(y0)).append("\" x2=\"").append(r(pf.right() + 6))
-            .append("\" y2=\"").append(r(y0)).append("\" style=\"").append(axSt).append("\" marker-end=\"url(#arrow)\"/>");
-        h.append("<line x1=\"").append(r(ax)).append("\" y1=\"").append(r(g.plotBottom)).append("\" x2=\"").append(r(ax)).append("\" y2=\"")
-            .append(r(g.plotTop - 6)).append("\" style=\"").append(axSt).append("\" marker-end=\"url(#arrow)\"/>");
+        cur.add(shape("line", "x1", r(pf.left()), "y1", r(y0), "x2", r(pf.right() + 6), "y2", r(y0), "style", axSt, "markerEnd", "url(#arrow)"));
+        cur.add(shape("line", "x1", r(ax), "y1", r(g.plotBottom), "x2", r(ax), "y2", r(g.plotTop - 6), "style", axSt, "markerEnd", "url(#arrow)"));
         if (g.broken) {
             String br = stroke("var(--soft)", 1, null, 0.8);
             double cq = g.xs.get(0).q1() + Layout.GAP / 2, cy = g.ys.get(0).q1() - Layout.GAP / 2;
@@ -145,15 +139,15 @@ public final class SvgRenderer {
             line(ax - 4, cy + 1, ax + 4, cy - 2, br);
             line(ax - 4, cy + 4, ax + 4, cy + 1, br);
         }
-        h.append("<text x=\"").append(r(ax + 8)).append("\" y=\"").append(r(g.plotTop - 8)).append("\" class=\"m\" style=\"font-size:12px;fill:var(--soft)\">")
-            .append("Swept amount, <tspan style=\"fill:").append(PURPLE).append(";font-style:normal;font-weight:700\">$</tspan></text>");
-        h.append('\n');
+        cur.add(shape("text", "x", r(ax + 8), "y", r(g.plotTop - 8), "cls", "m", "style", "font-size:12px;fill:var(--soft)",
+            "body", "Swept amount, <tspan style=\"fill:" + PURPLE + ";font-style:normal;font-weight:700\">$</tspan>"));
 
         // Projections of the points of interest onto the y axis, then the function.
+        layer("function");
         String proj = stroke(GRAY, 0.6, "1.5 3", 0.8);
+        double axData = g.xs.get(0).has(0) ? 0 : xA;      // the y axis, in dollars
         if (!zeroA) line(ax, g.y(a), g.x(Math.max(xk, xA)), g.y(a), stroke(Zone.SWEPT_IN_PARTIAL.ink(), 1, "1 3", 1));
         if (g.visY(l)) line(ax, g.y(l), pf.right(), g.y(l), stroke(Zone.OVERFLOW.ink(), 1, "1 3", 0.9));
-        double axData = g.xs.get(0).has(0) ? 0 : xA;      // the y axis, in dollars
         if (nMin > 0 && !zeroA) seg(xl, nMin, axData, nMin, proj);
         if (nMax > 0) seg(xr, nMax, axData, nMax, proj);
 
@@ -182,52 +176,65 @@ public final class SvgRenderer {
         seg(xr, 0, xr, nMax, stroke(Zone.SWEPT_OUT.ink(), 2, "4 3", 1));
         if (xo < xZ) seg(xo, 0, xZ, 0, stroke(Zone.OVERFLOW.ink(), 3, "6 4", 1));
 
-        String open = "fill:var(--bg);stroke:" + Zone.IN_RANGE.ink() + ";stroke-width:2";
+        // Points: filled where the point belongs to the piece, open where the piece only comes close.
+        String red = Zone.OVERFLOW.ink(), open = "fill:var(--bg);stroke-width:2;stroke:";
         if (!zeroA && xk > xA) dot(xk, a, 4.5, "fill:" + Zone.SWEPT_IN_PARTIAL.ink());
-        if (zeroA || nMin > 0) dot(xl, 0, 5, open);
-        if (!zeroA) dot(xl, nMin, 5, "fill:" + Zone.SWEPT_IN_FULL.ink());
-        if (nMax > 0) dot(xr, 0, 5, open);
+        if (zeroA) {
+            // T_min − τ_min itself needs a sweep in of τ_min, which the empty account cannot make: a failure point.
+            dot(xl, 0, 5, nMin > 0 ? "fill:" + red : open + Zone.IN_RANGE.ink());
+        } else {
+            if (nMin > 0) dot(xl, 0, 5, open + Zone.IN_RANGE.ink());
+            dot(xl, nMin, 5, "fill:" + Zone.SWEPT_IN_FULL.ink());
+        }
+        if (nMax > 0) dot(xr, 0, 5, open + Zone.IN_RANGE.ink());
         dot(xr, nMax, 5, "fill:" + Zone.SWEPT_OUT.ink());
-        if (xo < xZ) dot(xo, l, 5, "fill:" + Zone.SWEPT_OUT.ink());
-        h.append('\n');
+        if (xo < xZ) {
+            // T_max + L is still allowed (a payment of exactly L): filled on the line; Overflow starts just after it.
+            dot(xo, l, 5, "fill:" + Zone.SWEPT_OUT.ink());
+            dot(xo, 0, 5, open + red);
+        }
 
         // Labels: amounts under the x axis (in rows, never overlapping) and by the y axis.
+        layer("labels");
         for (double[] q : xLabels) {
             line(g.x(q[0]), g.y(q[1]) + 5, g.x(q[0]), q[3] - 12, proj);
-            text(q[2], q[3], "middle", ink((int) q[4]), Money.compact(q[0]), "m", pf.font());
+            String colour = zeroA && q[0] == xl ? Zone.SWEPT_IN_ZERO.ink() : ink((int) q[4]);   // where Swept in zero ends
+            text(q[2], q[3], "middle", colour, esc(Money.compact(q[0])), "m", pf.font());
         }
         yLabels(ax);
         text(pf.right(), rowsBottom + 6, "end", "var(--soft)", "Current balance, $", "m", 12);
-        h.append('\n');
 
         // The formula: one row per zone (the frames highlight theirs), then the parameters.
+        layer("formula");
         double fxLeft = pf.width() < 500 ? 8 : 40, colB = fxLeft + (pf.width() < 500 ? 120 : 190);
         double braceX = fxLeft + (pf.width() < 500 ? 46 : 62);
         text(fxLeft, fxTop + rows.size() * rowH / 2 - 2, null, "var(--ink)", tex("y(x) ="), "m", pf.font() + 1);
         double b1 = fxTop + 2, b2 = fxTop + rows.size() * rowH - 2, bm = (b1 + b2) / 2, bx = braceX + 6;
-        h.append("<path d=\"M").append(r(bx + 6)).append(' ').append(r(b1)).append("Q").append(r(bx)).append(' ').append(r(b1)).append(' ')
-            .append(r(bx)).append(' ').append(r(b1 + 8)).append("V").append(r(bm - 7)).append("Q").append(r(bx)).append(' ').append(r(bm)).append(' ')
-            .append(r(bx - 6)).append(' ').append(r(bm)).append("Q").append(r(bx)).append(' ').append(r(bm)).append(' ').append(r(bx)).append(' ')
-            .append(r(bm + 7)).append("V").append(r(b2 - 8)).append("Q").append(r(bx)).append(' ').append(r(b2)).append(' ').append(r(bx + 6))
-            .append(' ').append(r(b2)).append("\" style=\"fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round\"/>");
+        cur.add(shape("path", "style", "fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round",
+            "d", "M" + r(bx + 6) + " " + r(b1) + "Q" + r(bx) + " " + r(b1) + " " + r(bx) + " " + r(b1 + 8) + "V" + r(bm - 7)
+                + "Q" + r(bx) + " " + r(bm) + " " + r(bx - 6) + " " + r(bm) + "Q" + r(bx) + " " + r(bm) + " " + r(bx) + " " + r(bm + 7)
+                + "V" + r(b2 - 8) + "Q" + r(bx) + " " + r(b2) + " " + r(bx + 6) + " " + r(b2)));
         for (int i = 0; i < rows.size(); i++) {
-            Row row = rows.get(i);
             double yy = fxTop + (i + 0.72) * rowH;
-            text(braceX + 18, yy, null, "var(--ink)", tex(row.value), "m", pf.font());
-            text(colB, yy, null, "var(--ink)", tex(row.cond), "m", pf.font());
+            text(braceX + 18, yy, null, "var(--ink)", tex(rows.get(i).value), "m", pf.font());
+            text(colB, yy, null, "var(--ink)", tex(rows.get(i).cond), "m", pf.font());
         }
         legend(legendY);
-        h.append('\n');
 
         // The frames.
-        frames(n, rows, fxTop, rowH, colB);
-        h.append("</svg>\n");
-        return h.toString();
+        frames(n, probe, rows, fxTop, rowH, colB);
+
+        Map<String, Object> model = new HashMap<>();
+        model.put("width", String.valueOf(pf.width()));
+        model.put("height", r(height));
+        model.put("viewBox", "0 0 " + pf.width() + " " + r(height));
+        model.put("layers", layers);
+        return model;
     }
 
     // ---------------------------------------------------------------- frames
 
-    private void frames(int n, List<Row> rows, double fxTop, double rowH, double colB) {
+    private void frames(int n, Long probe, List<Row> rows, double fxTop, double rowH, double colB) {
         // Sample balances evenly in pixels over all x pieces, snapped to the step of their piece.
         List<double[]> samples = new ArrayList<>();       // {balance, pixel, seg index}
         double total = 0;
@@ -245,24 +252,43 @@ public final class SvgRenderer {
                 q -= wdt;
             }
         }
-        // The default frame: about 30% into Swept out (as far as it is in view).
-        double outLo = s.thresholdMax() + s.nominalMax(), outHi = Math.min(s.thresholdMax() + s.sweptOutMax(), g.xs.get(0).d1());
-        double target = outLo + 0.3 * (outHi - outLo);
-        int dflt = 0;
-        for (int i = 1; i < samples.size(); i++) {
-            if (Math.abs(samples.get(i)[0] - target) < Math.abs(samples.get(dflt)[0] - target)) dflt = i;
+        // The default frame: the given probe, or about 30% into Swept out (as far as it is in view).
+        int dflt;
+        if (probe != null) {
+            probe = Math.max(Math.round(g.xMin()), Math.min(Math.round(g.xMax()), probe));   // keep it in view
+            int k = 0;
+            for (int i = 0; i < g.xs.size(); i++) if (probe >= g.xs.get(i).d0()) k = i;
+            if (!g.visX(probe)) probe = Math.round(g.xs.get(k).d1());                          // not in the cut
+            samples.add(new double[] {probe, g.xs.get(k).map(probe), k});
+            samples.sort(Comparator.comparingDouble(q -> q[1]));
+            dflt = 0;
+            for (int i = 0; i < samples.size(); i++) if (samples.get(i)[0] == probe) dflt = i;
+        } else {
+            double outLo = s.thresholdMax() + s.nominalMax(), outHi = Math.min(s.thresholdMax() + s.sweptOutMax(), g.xs.get(0).d1());
+            double target = outLo + 0.3 * (outHi - outLo);
+            dflt = 0;
+            for (int i = 1; i < samples.size(); i++) {
+                if (Math.abs(samples.get(i)[0] - target) < Math.abs(samples.get(dflt)[0] - target)) dflt = i;
+            }
         }
 
-        h.append("<g class=\"frames\">\n");
+        Map<String, Object> framesLayer = layer("frames");
+        List<Map<String, Object>> frames = new ArrayList<>();
+        framesLayer.put("frames", frames);
         for (int i = 0; i < samples.size(); i++) {
             double[] sm = samples.get(i);
             Layout.Seg sx = g.xs.get((int) sm[2]);
             double lo = i > 0 && samples.get(i - 1)[2] == sm[2] ? (samples.get(i - 1)[1] + sm[1]) / 2 : sx.qLo();
             double hi = i < samples.size() - 1 && samples.get(i + 1)[2] == sm[2] ? (samples.get(i + 1)[1] + sm[1]) / 2 : sx.qHi();
             Sweep.Point p = s.at(Math.round(sm[0]));
-            h.append("<g class=\"f").append(i == dflt ? " d" : "").append("\"><rect class=\"hit\" x=\"").append(r(lo)).append("\" y=\"")
-                .append(r(g.plotTop)).append("\" width=\"").append(r(hi - lo)).append("\" height=\"").append(r(g.plotBottom - g.plotTop))
-                .append("\"/><g class=\"on\">");
+            Map<String, Object> f = new HashMap<>();
+            f.put("cls", i == dflt ? "f d" : "f");
+            f.put("x", r(lo));
+            f.put("y", r(g.plotTop));
+            f.put("width", r(Math.max(hi - lo, 0.5)));
+            f.put("height", r(g.plotBottom - g.plotTop));
+            cur = new ArrayList<>();
+            f.put("shapes", cur);
             line(sm[1], g.plotBottom, sm[1], g.plotTop, stroke(PURPLE, 1.4, "5 4", 0.9));
             if (p.amount() != null && g.visY(p.amount())) {
                 double py = g.y(p.amount());
@@ -270,66 +296,80 @@ public final class SvgRenderer {
                 dot(sm[0], p.amount(), 7, "fill:" + PURPLE + ";fill-opacity:.18;stroke:" + PURPLE + ";stroke-width:1.4");
                 dot(sm[0], p.amount(), 3.2, "fill:" + PURPLE);
             }
-            readout(p);
+            statusLine(p);
             for (int k = 0; k < rows.size(); k++) {
                 if (rows.get(k).zones.contains(p.zone())) {
-                    h.append("<rect x=\"").append(r(colB - 8)).append("\" y=\"").append(r(fxTop + k * rowH + 1)).append("\" width=\"")
-                        .append(r(pf.width() - colB)).append("\" height=\"").append(r(rowH - 2)).append("\" rx=\"5\" style=\"fill:")
-                        .append(p.zone().fill()).append(";fill-opacity:.18\"/>");
+                    cur.add(shape("rect", "x", r(colB - 8), "y", r(fxTop + k * rowH + 1), "width", r(pf.width() - colB),
+                        "height", r(rowH - 2), "rx", "5", "style", "fill:" + p.zone().fill() + ";fill-opacity:.18"));
                 }
             }
-            h.append("</g></g>\n");
+            frames.add(f);
         }
-        h.append("</g>\n");
     }
 
-    private void band(double qa, double w, Zone z) {
-        String rect = "<rect x=\"" + r(qa) + "\" y=\"" + r(g.plotTop) + "\" width=\"" + r(w) + "\" height=\"" + r(g.plotBottom - g.plotTop) + "\"";
-        h.append(rect).append(" style=\"fill:").append(z.fill()).append(";fill-opacity:").append(z.opacity()).append("\"/>");
-        if (z.terminal()) h.append(rect).append(" fill=\"url(#hatch)\"/>");
+    // ---------------------------------------------------------------- the two status lines
+
+    private static final String LABEL = "font-size:12.5px;fill:var(--soft)";
+
+    /** "threshold:" or, when T_min = T_max, "target balance:" — the label of the first status line. */
+    static String thresholdLabel(Sweep s) {
+        return s.singleThreshold() ? "target balance:" : "threshold:";
     }
 
-    private static final String LABEL = "font-size:10.5px;font-weight:600;letter-spacing:.6px;fill:var(--soft)";
-    private static final double LABEL_W = 104;
-
-    /** The first status line: the threshold with its nominals, "−τ_min [T_min ; T_max] +τ_max (T_min − τ_min ; T_max + τ_max)". */
-    private void thresholdLine() {
-        h.append("<text x=\"0\" y=\"16\" style=\"").append(LABEL).append("\">THRESHOLD:</text>");
-        h.append("<text x=\"").append(LABEL_W).append("\" y=\"16\" style=\"font-size:13px;font-family:ui-monospace,Menlo,monospace;fill:var(--ink)\">")
-            .append("−").append(Money.compact(s.nominalMin())).append(" [").append(Money.compact(s.thresholdMin())).append(" ; ")
-            .append(Money.compact(s.thresholdMax())).append("] +").append(Money.compact(s.nominalMax()));
-        if (pf.width() >= 500) {
-            h.append("<tspan dx=\"10\" style=\"fill:var(--soft)\">(").append(Money.compact(s.thresholdMin() - s.nominalMin())).append(" ; ")
-                .append(Money.compact(s.thresholdMax() + s.nominalMax())).append(")</tspan>");
-        }
-        h.append("</text>");
+    /**
+     * The threshold with its nominals: "−$8k [$40k ; $60k] +$10k", just "[$50k]" for a target balance; a nominal of 0
+     * is left out (no "−$0" or "+$0").
+     */
+    static String thresholdClosed(Sweep s) {
+        String core = s.singleThreshold() ? "[" + Money.compact(s.thresholdMin()) + "]"
+            : "[" + Money.compact(s.thresholdMin()) + " ; " + Money.compact(s.thresholdMax()) + "]";
+        return (s.nominalMin() > 0 ? "−" + Money.compact(s.nominalMin()) + " " : "") + core
+            + (s.nominalMax() > 0 ? " +" + Money.compact(s.nominalMax()) : "");
     }
 
-    /** The second status line, one per frame: the zone as a badge, x → y and which way the money goes. */
-    private void readout(Sweep.Point p) {
+    /** The same as an open interval: "($32k ; $70k)", the balances where nothing is swept. */
+    static String thresholdOpen(Sweep s) {
+        return "(" + Money.compact(s.thresholdMin() - s.nominalMin()) + " ; " + Money.compact(s.thresholdMax() + s.nominalMax()) + ")";
+    }
+
+    private static final double LABEL_W = 100;
+
+    private void statusLabels() {
+        cur.add(shape("text", "x", "0", "y", "17", "cls", "m", "style", LABEL, "body", esc(thresholdLabel(s))));
+        cur.add(shape("text", "x", r(LABEL_W), "y", "17", "style", "font-size:13px;fill:var(--ink)",
+            "body", esc(thresholdClosed(s)) + (pf.width() >= 500
+                ? "<tspan dx=\"12\" style=\"fill:var(--soft)\">" + esc(thresholdOpen(s)) + "</tspan>" : "")));
+        cur.add(shape("text", "x", "0", "y", "45", "cls", "m", "style", LABEL, "body", "sweep status:"));
+    }
+
+    /** The second status line, one per frame: the zone as a badge, the balance → the amount, which way the money goes. */
+    private void statusLine(Sweep.Point p) {
         Zone z = p.zone();
         String title = z.title() + (z.terminal() ? " ⏚" : "");
-        double bw = title.length() * 6.9 + 18, y0 = 28;
-        h.append("<text x=\"0\" y=\"").append(r(y0 + 15)).append("\" style=\"").append(LABEL).append("\">SWEEP STATUS:</text>");
-        h.append("<rect x=\"").append(LABEL_W).append("\" y=\"").append(r(y0)).append("\" width=\"").append(r(bw))
-            .append("\" height=\"22\" rx=\"7\" style=\"fill:").append(z.fill()).append(";fill-opacity:.18\"/>");
-        text(LABEL_W + bw / 2, y0 + 15, "middle", z.ink(), title, null, 12);
+        double bw = title.length() * 6.9 + 18, y0 = 30;
+        cur.add(shape("rect", "x", r(LABEL_W), "y", r(y0), "width", r(bw), "height", "22", "rx", "7",
+            "style", "fill:" + z.fill() + ";fill-opacity:.18"));
+        text(LABEL_W + bw / 2, y0 + 15, "middle", z.ink(), esc(title), null, 12);
         String y = p.amount() == null ? "∄ (terminal failure)" : Money.full(p.amount());
-        h.append("<text x=\"").append(r(LABEL_W + bw + 10)).append("\" y=\"").append(r(y0 + 15)).append("\" style=\"font-size:13px;fill:var(--soft)\"><tspan class=\"m\" style=\"fill:var(--ink)\">x</tspan> ")
-            .append("<tspan style=\"fill:").append(PURPLE).append(";font-weight:600\">").append(Money.full(p.balance())).append("</tspan> → ")
-            .append("<tspan class=\"m\" style=\"fill:var(--ink)\">y</tspan> <tspan style=\"fill:").append(PURPLE).append(";font-weight:600\">")
-            .append(y).append("</tspan></text>");
-        String dir = switch (z) {
+        cur.add(shape("text", "x", r(LABEL_W + bw + 10), "y", r(y0 + 15), "style", "font-size:13px;fill:var(--soft)",
+            "body", "<tspan style=\"fill:" + PURPLE + ";font-weight:600\">" + Money.full(p.balance()) + "</tspan> → "
+                + "<tspan style=\"fill:" + PURPLE + ";font-weight:600\">" + esc(y) + "</tspan>"));
+        String dir = direction(z);
+        if (!dir.isEmpty()) {
+            boolean below = pf.width() < 700;          // on M and S the direction gets a line of its own
+            cur.add(shape("text", "x", below ? r(LABEL_W) : r(pf.width()), "y", r(below ? y0 + 38 : y0 + 15),
+                "anchor", below ? null : "end", "cls", "m", "style", "font-size:12.5px;fill:var(--soft)", "body", dir));
+        }
+    }
+
+    /** Which way the money goes in a zone; empty for the terminal failures. */
+    static String direction(Zone z) {
+        return switch (z) {
             case SWEPT_IN_PARTIAL, SWEPT_IN_FULL -> "from Investment-Account to DDA";
             case SWEPT_OUT -> "from DDA to Investment-Account";
             case SWEPT_IN_ZERO, OVERFLOW -> "";
             default -> "nothing to transfer";
         };
-        if (!dir.isEmpty()) {
-            boolean below = pf.width() < 700;          // on M and S the direction gets a line of its own
-            h.append("<text x=\"").append(below ? r(LABEL_W) : r(pf.width())).append("\" y=\"").append(r(below ? y0 + 38 : y0 + 15)).append('"')
-                .append(below ? "" : " text-anchor=\"end\"").append(" style=\"font-size:12.5px;font-style:italic;fill:var(--soft)\">").append(dir).append("</text>");
-        }
     }
 
     // ---------------------------------------------------------------- labels, formula, legend
@@ -386,7 +426,7 @@ public final class SvgRenderer {
             double cy = Math.min(g.y(q[0]), prev - 15);
             prev = cy;
             line(ax - 3, g.y(q[0]), ax + 3, g.y(q[0]), stroke(ink((int) q[1]), 1.2, null, 1));
-            text(ax + 7, cy - 4, null, ink((int) q[1]), Money.compact(q[0]), "m", pf.font());
+            text(ax + 7, cy - 4, null, ink((int) q[1]), esc(Money.compact(q[0])), "m", pf.font());
         }
     }
 
@@ -410,25 +450,56 @@ public final class SvgRenderer {
     }
 
     private void legend(double y) {
-        String[][] items = {
-            {"T_min", Money.full(s.thresholdMin())}, {"T_max", Money.full(s.thresholdMax())},
-            {"τ_min", Money.full(s.nominalMin())}, {"τ_max", Money.full(s.nominalMax())},
-            {"A", Money.full(s.sweptInMax())}, {"L", Money.full(s.sweptOutMax())}};
+        boolean single = s.singleThreshold();
+        List<String[]> items = new ArrayList<>();
+        if (single) {
+            items.add(new String[] {"T", Money.full(s.thresholdMin())});
+        } else {
+            items.add(new String[] {"T_min", Money.full(s.thresholdMin())});
+            items.add(new String[] {"T_max", Money.full(s.thresholdMax())});
+        }
+        items.add(new String[] {"τ_min", Money.full(s.nominalMin())});
+        items.add(new String[] {"τ_max", Money.full(s.nominalMax())});
+        items.add(new String[] {"A", Money.full(s.sweptInMax())});
+        items.add(new String[] {"L", Money.full(s.sweptOutMax())});
         int perLine = pf.width() < 500 ? 2 : 6;
         double colW = (pf.width() - 16) / (double) perLine;
-        for (int i = 0; i < items.length; i++) {
+        for (int i = 0; i < items.size(); i++) {
             double x = 8 + (i % perLine) * colW, yy = y + (i / perLine) * 17;
-            h.append("<text x=\"").append(r(x)).append("\" y=\"").append(r(yy)).append("\" style=\"font-size:12px;fill:var(--soft)\">")
-                .append("<tspan class=\"m\" style=\"font-size:13px;fill:var(--ink)\">").append(tex(items[i][0])).append("</tspan>")
-                .append("<tspan dx=\"4\" dy=\"0\">").append(items[i][1]).append("</tspan></text>");
+            cur.add(shape("text", "x", r(x), "y", r(yy), "style", "font-size:12px;fill:var(--soft)",
+                "body", "<tspan class=\"m\" style=\"font-size:13px;fill:var(--ink)\">" + tex(items.get(i)[0]) + "</tspan>"
+                    + "<tspan dx=\"4\">" + items.get(i)[1] + "</tspan>"));
         }
     }
 
     // ---------------------------------------------------------------- primitives
 
+    private Map<String, Object> layer(String cls) {
+        Map<String, Object> layer = new HashMap<>();
+        layer.put("cls", cls);
+        cur = new ArrayList<>();
+        layer.put("shapes", cur);
+        layers.add(layer);
+        return layer;
+    }
+
+    /** A shape: its tag and attributes; null values are left out (and so leave out the attribute). */
+    static Map<String, Object> shape(String tag, String... kv) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("tag", tag);
+        for (int i = 0; i + 1 < kv.length; i += 2) if (kv[i + 1] != null) m.put(kv[i], kv[i + 1]);
+        return m;
+    }
+
+    private void band(double qa, double w, Zone z) {
+        String x = r(qa), y = r(g.plotTop), wd = r(w), ht = r(g.plotBottom - g.plotTop);
+        cur.add(shape("rect", "x", x, "y", y, "width", wd, "height", ht, "style", "fill:" + z.fill() + ";fill-opacity:" + z.opacity()));
+        if (z.terminal()) cur.add(shape("rect", "x", x, "y", y, "width", wd, "height", ht, "fill", "url(#hatch)"));
+    }
+
     private static final Pattern SUB = Pattern.compile("([A-Za-zα-ω]+)_([a-z]+)");
 
-    /** "T_min − τ_min" → letters with subscripts as tspans. */
+    /** "T_min − τ_min" → letters with subscripts as tspans (escaped markup). */
     static String tex(String t) {
         StringBuilder o = new StringBuilder();
         Matcher m = SUB.matcher(t);
@@ -461,22 +532,18 @@ public final class SvgRenderer {
 
     private void dot(double x, double y, double radius, String st) {
         if (g.visX(x) && g.visY(y)) {
-            h.append("<circle cx=\"").append(r(g.x(x))).append("\" cy=\"").append(r(g.y(y))).append("\" r=\"").append(radius)
-                .append("\" style=\"").append(st).append("\"/>");
+            cur.add(shape("circle", "cx", r(g.x(x)), "cy", r(g.y(y)), "r", r(radius), "style", st));
         }
     }
 
     private void line(double a, double b, double c, double d, String st) {
-        h.append("<line x1=\"").append(r(a)).append("\" y1=\"").append(r(b)).append("\" x2=\"").append(r(c)).append("\" y2=\"")
-            .append(r(d)).append("\" style=\"").append(st).append("\"/>");
+        cur.add(shape("line", "x1", r(a), "y1", r(b), "x2", r(c), "y2", r(d), "style", st));
     }
 
+    /** A text; {@code body} is markup (escaped text or tspans). */
     private void text(double x, double y, String anchor, String colour, String body, String cls, double size) {
-        h.append("<text x=\"").append(r(x)).append("\" y=\"").append(r(y)).append('"');
-        if (anchor != null) h.append(" text-anchor=\"").append(anchor).append('"');
-        if (cls != null) h.append(" class=\"").append(cls).append('"');
-        h.append(" style=\"font-size:").append(r(size)).append("px;fill:").append(colour).append("\">")
-            .append(body.startsWith("<tspan") ? body : esc(body)).append("</text>");
+        cur.add(shape("text", "x", r(x), "y", r(y), "anchor", anchor, "cls", cls,
+            "style", "font-size:" + r(size) + "px;fill:" + colour, "body", body));
     }
 
     private static String stroke(String col, double w, String dash, double op) {
@@ -484,11 +551,11 @@ public final class SvgRenderer {
             + (op != 1 ? ";stroke-opacity:" + op : "") + ";stroke-linecap:round;fill:none";
     }
 
-    private static String r(double v) {
+    static String r(double v) {
         return String.format(Locale.ROOT, "%.2f", v).replaceAll("\\.?0+$", "");
     }
 
-    private static String esc(String t) {
+    static String esc(String t) {
         return t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 }

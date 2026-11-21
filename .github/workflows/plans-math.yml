@@ -1,8 +1,11 @@
 name: plans-math
 run-name: plans-math ${{ github.ref_name }}
 
-# Builds plans-math on every push to main that touches it, and deploys the jar to its Lambda (still named plan-equilib:
-# the module was renamed, the function and its URL stay).
+# On every push to main that touches plans-math:
+#   1. build and test (JUnit 5 Jupiter, JaCoCo), turn the Open Test Reporting XML into HTML,
+#   2. deploy the jar to the Lambda (still named plan-equilib: the module was renamed, the function and URL stay),
+#   3. publish to GitHub Pages: the test report (one picture per case), the coverage report, the README pictures
+#      and the numbers of the README badges (shields.io endpoint JSON).
 # AWS sign-in without keys: the role plan-equilib-deploy trusts only pushes to main of this repository
 # and may only replace the code of this one function (see plans-math/deploy/setup.sh).
 on:
@@ -16,6 +19,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  pages: write
 
 concurrency:
   group: plans-math-deploy
@@ -27,9 +31,9 @@ env:
   DEPLOY_ROLE: arn:aws:iam::560574854768:role/plan-equilib-deploy
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -42,19 +46,72 @@ jobs:
       - name: Build and test
         run: mvn -B -pl plans-math -am verify
 
-      - name: Example pictures are committed
+      - name: Test report (Open Test Reporting → HTML)
         run: |
-          if ! git diff --exit-code -- plans-math/docs; then
-            echo "::error::plans-math/docs is out of date. Run 'mvn -pl plans-math compile exec:java@docs' and commit it."
-            exit 1
-          fi
+          XML=$(find plans-math/target -name 'open-test-report*.xml' | head -1)
+          echo "Open Test Reporting XML: $XML"
+          test -n "$XML"
+          mvn -B -q -pl plans-math exec:java@open-test-html -Dotr.xml="$XML" -Dotr.html="$(dirname "$XML")/index.html"
+          echo "OTR_DIR=$(dirname "$XML")" >> "$GITHUB_ENV"
+
+      - name: Pages content and badge numbers
+        run: |
+          P=site/plans-math
+          mkdir -p $P/tests $P/jacoco $P/svg $P/badges
+          cp -r "$OTR_DIR"/. $P/tests/
+          cp -r plans-math/target/site/jacoco/. $P/jacoco/
+          cp plans-math/target/pages/plans-math/svg/*.svg $P/svg/
+          cp plans-math/docs/icon*.svg $P/
+          python3 - "$P" <<'PY'
+          import csv, glob, json, sys, xml.etree.ElementTree as ET
+          p = sys.argv[1]
+          tests = failed = skipped = 0
+          for f in glob.glob('plans-math/target/surefire-reports/TEST-*.xml'):
+              r = ET.parse(f).getroot()
+              tests += int(r.get('tests', 0)); skipped += int(r.get('skipped', 0))
+              failed += int(r.get('failures', 0)) + int(r.get('errors', 0))
+          missed = covered = 0
+          for row in csv.DictReader(open('plans-math/target/site/jacoco/jacoco.csv')):
+              missed += int(row['LINE_MISSED']); covered += int(row['LINE_COVERED'])
+          cov = 100.0 * covered / max(missed + covered, 1)
+          passed = tests - failed - skipped
+          json.dump({"schemaVersion": 1, "label": "JUnit 5 tests", "message": f"{passed} passed" + (f", {failed} failed" if failed else ""),
+                     "color": "brightgreen" if not failed else "red"}, open(f"{p}/badges/tests.json", "w"))
+          json.dump({"schemaVersion": 1, "label": "JaCoCo coverage", "message": f"{cov:.1f}%",
+                     "color": "brightgreen" if cov >= 80 else "yellow" if cov >= 60 else "orange"}, open(f"{p}/badges/coverage.json", "w"))
+          print(f"tests {tests}, passed {passed}, failed {failed}, skipped {skipped}; lines {covered}/{missed + covered} = {cov:.1f}%")
+          with open(f"{p}/index.html", "w") as out:
+              out.write(f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>plans-math</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>body{{font-family:system-ui,sans-serif;max-width:780px;margin:2rem auto;padding:0 1rem;color:#18212c}}
+          a{{color:#1456b8}}h1 img{{vertical-align:middle;margin-right:.4rem}}li{{margin:.3rem 0}}</style></head><body>
+          <h1><img src="icon-small.svg" width="56" height="32" alt="">plans-math</h1>
+          <p>Balances Equilibrium: the swept amount per current balance. <a href="https://github.com/krm-demo/ai-plans-instr/tree/main/plans-math">Source and README</a>.</p>
+          <ul>
+          <li><a href="tests/index.html">Test report</a> (Open Test Reporting): {passed} JUnit 5 tests passed, one picture per case</li>
+          <li><a href="jacoco/index.html">Coverage report</a> (JaCoCo): {cov:.1f}% of lines</li>
+          <li><a href="svg/equilib-thousands.svg">Pictures</a>: <a href="svg/equilib-thousands.svg">thousands</a>,
+              <a href="svg/equilib-millions.svg">millions</a>, <a href="svg/equilib-swept-in-zero.svg">swept in zero</a>,
+              <a href="svg/equilib-single-threshold-s.svg">target balance (S)</a> (open one and move the mouse over it)</li>
+          <li><a href="https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/">Live from the Lambda</a></li>
+          </ul></body></html>""")
+          PY
+          printf '<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=plans-math/"><a href="plans-math/">plans-math</a>\n' > site/index.html
+          {
+            echo "### plans-math"
+            echo "- $(jq -r .message $P/badges/tests.json) · coverage $(jq -r .message $P/badges/coverage.json)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.DEPLOY_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Deploy the jar
+      - name: Deploy the jar to the Lambda
         run: |
           aws lambda update-function-code --function-name "$FUNCTION" \
             --zip-file fileb://plans-math/target/plans-math.jar --query 'CodeSize' --output text
@@ -65,7 +122,15 @@ jobs:
           URL=$(aws lambda get-function-url-config --function-name "$FUNCTION" --query FunctionUrl --output text)
           curl -fsS -o /tmp/equilib.svg -w '%{http_code} %{content_type} %{size_download} bytes\n' "${URL}?size=M&frames=12"
           grep -q 'class="f d"' /tmp/equilib.svg
-          {
-            echo "### plans-math deployed (Lambda plan-equilib)"
-            echo "$URL"
-          } >> "$GITHUB_STEP_SUMMARY"
+          head -c 300 /tmp/equilib.svg
+          echo "- Lambda: $URL" >> "$GITHUB_STEP_SUMMARY"
+
+  pages:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

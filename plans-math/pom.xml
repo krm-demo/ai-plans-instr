@@ -14,11 +14,36 @@
     <name>plans-math</name>
     <description>The math of the plans: Balances Equilibrium (the swept amount per current balance as an SVG without JavaScript) and its Lambda</description>
 
-    <!-- No runtime dependencies on purpose: the jar itself is the Lambda package (a few dozen KB, fast cold start). -->
+    <properties>
+        <jacoco.version>0.8.14</jacoco.version>
+        <open-test-reporting.version>0.2.5</open-test-reporting.version>
+        <!-- where JUnit writes the Open Test Reporting XML (the workflow passes the actual file, see plans-math.yml) -->
+        <otr.xml>${project.build.directory}/open-test-report/open-test-report.xml</otr.xml>
+        <otr.html>${project.build.directory}/open-test-report/index.html</otr.html>
+    </properties>
+
+    <!-- Versions of Thymeleaf, SLF4J and JUnit come from the Spring Boot BOM of the parent (no Spring at runtime). -->
     <dependencies>
+        <dependency>
+            <groupId>org.thymeleaf</groupId>
+            <artifactId>thymeleaf</artifactId>
+        </dependency>
+        <!-- Thymeleaf logs through SLF4J; a Lambda has nothing to say there. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Writes the Open Test Reporting XML (with the pictures the tests publish), see junit-platform.properties. -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-reporting</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -26,9 +51,49 @@
     <build>
         <finalName>plans-math</finalName>
         <plugins>
+            <!-- Coverage of the tests: target/site/jacoco (HTML, XML, CSV), published on GitHub Pages. -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- @{argLine}: the JaCoCo agent -->
+                    <argLine>@{argLine}</argLine>
+                    <properties>
+                        <configurationParameters>
+                            junit.platform.reporting.open.xml.enabled = true
+                            junit.platform.reporting.output.dir = ${project.build.directory}/open-test-report
+                        </configurationParameters>
+                    </properties>
+                </configuration>
+            </plugin>
+
             <!--
-              Regenerates the example pictures of the README in docs/ on every build; commit them.
-              On its own (from the repo root): mvn -pl plans-math compile exec:java@docs
+              exec:java@docs writes the pictures of the README into target/pages/plans-math/svg (published on GitHub Pages).
+              exec:java@open-test-html turns the Open Test Reporting XML into one HTML page (with the pictures);
+              run it after the tests (from the repo root):
+                mvn -pl plans-math compile exec:java@docs
+                mvn -pl plans-math exec:java@open-test-html -Dotr.xml=... -Dotr.html=...
             -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -37,15 +102,69 @@
                 <executions>
                     <execution>
                         <id>docs</id>
-                        <phase>process-classes</phase>
+                        <phase>verify</phase>
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <configuration>
                             <mainClass>org.krmdemo.plansinstr.equilib.EquilibDocs</mainClass>
                             <arguments>
-                                <argument>${project.basedir}/docs</argument>
+                                <argument>${project.build.directory}/pages/plans-math/svg</argument>
                             </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>open-test-html</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <includeProjectDependencies>false</includeProjectDependencies>
+                            <mainClass>org.opentest4j.reporting.cli.ReportingCli</mainClass>
+                            <arguments>
+                                <argument>html-report</argument>
+                                <argument>--output</argument>
+                                <argument>${otr.html}</argument>
+                                <argument>${otr.xml}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.opentest4j.reporting</groupId>
+                        <artifactId>open-test-reporting-cli</artifactId>
+                        <version>${open-test-reporting.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <!-- The Lambda package: one jar with Thymeleaf inside (and the templates). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>META-INF/versions/*/module-info.class</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>

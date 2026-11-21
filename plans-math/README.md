@@ -1,29 +1,29 @@
-# plans-math: Balances Equilibrium
+# <img src="docs/icon-small.svg" width="56" height="32" alt=""> plans-math
 
-[<img src="docs/icon.svg" width="120" height="68" alt="Balances Equilibrium on the preview site">](https://krm-demo.github.io/krm-demo-org-site/swept-amount-math.en.html)
-&nbsp;&nbsp;
-[<img src="docs/icon-small.svg" width="60" height="34" alt="Balances Equilibrium on krm-demo.org">](https://krm-demo.org/swept-amount-math.en.html)
+[![plans-math](https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml/badge.svg)](https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml)
+[![JUnit 5 tests](https://img.shields.io/endpoint?url=https://krm-demo.github.io/ai-plans-instr/plans-math/badges/tests.json)](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html)
+[![JaCoCo coverage](https://img.shields.io/endpoint?url=https://krm-demo.github.io/ai-plans-instr/plans-math/badges/coverage.json)](https://krm-demo.github.io/ai-plans-instr/plans-math/jacoco/index.html)
 
-*My balances sing romances.* One of them lives paycheck to paycheck: it sighs when it gets too thin and gets
-restless when it gets too fat. The other one sits quietly in an investment account and grows. They agreed on a few
-rules long ago, and since then money moves between them by itself, with no phone calls about pocket change.
+[Site: krm-demo.org](https://krm-demo.org/swept-amount-math.en.html) ·
+[Site preview (GitHub Pages)](https://krm-demo.github.io/krm-demo-org-site/swept-amount-math.en.html) ·
+[Test report with every case](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html) ·
+[Coverage](https://krm-demo.github.io/ai-plans-instr/plans-math/jacoco/index.html) ·
+[Live from the Lambda](https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/)
 
-This module (`plans-math`, the math of the plans; its first piece) draws those rules: the **swept amount per current balance** of a cash sweep. It renders the graph as
-one SVG **without JavaScript** and serves it from an AWS Lambda. The interactive version, with handles to drag,
-lives on the site: the big icon above opens the preview (staging), the small one opens
-[krm-demo.org](https://krm-demo.org/) (the AWS version, after the next release of the site).
+[![Balances Equilibrium: swept amount per current balance](https://krm-demo.github.io/ai-plans-instr/plans-math/svg/equilib-thousands.svg)](https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/?sweptOutMax=30000)
 
-- Live, from the Lambda: <https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/> (move the mouse over the graph) —
-  [thousands](https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/?sweptOutMax=30000),
-  [millions](https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/),
-  [swept in zero](https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/?sweptInMax=0&sweptOutMax=30000),
-  [size S](https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/?size=S&thresholdMin=50000&thresholdMax=50000&nominalMin=5000&nominalMax=5000&sweptInMax=20000&sweptOutMax=25000)
+**Balances Equilibrium**: for a current balance of the DDA, find the **sweep status** and the amount to transfer,
+either from the investment account to the DDA (swept in) or the other way round (swept out). The picture above is
+rebuilt from the code on every push; click it to open the same picture live from the Lambda and move the mouse over
+it. Every status, jump and special case is a test: the [test report](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html) shows the parameters, the
+balance, the status and the picture of each. More pictures: [millions, broken axes](https://krm-demo.github.io/ai-plans-instr/plans-math/svg/equilib-millions.svg),
+[swept in zero](https://krm-demo.github.io/ai-plans-instr/plans-math/svg/equilib-swept-in-zero.svg), [target balance, size S](https://krm-demo.github.io/ai-plans-instr/plans-math/svg/equilib-single-threshold-s.svg).
+The interactive version, with handles to drag, is on the site.
 
 ## Contents
 
 - [The arrangement](#the-arrangement)
 - [The swept amount](#the-swept-amount)
-- [Sweep statuses](#sweep-statuses)
 - [How it is drawn](#how-it-is-drawn)
 - [Without JavaScript](#without-javascript)
 - [The Lambda](#the-lambda)
@@ -71,6 +71,9 @@ least *τ* (and more than nothing).
   to 0) and at *T*<sub>max</sub> + *τ*<sub>max</sub> (from 0 to *τ*<sub>max</sub>). The point of a jump belongs to
   the sweep: on the graph it is filled on the sweep and open on the zero line, and the dashed vertical between them
   has the colour of the sweep.
+- **The ends.** A payment of exactly *L* is still allowed: (*T*<sub>max</sub> + *L*, *L*) is filled, and Overflow starts
+  right after it (an open red point on the axis). With *A* = 0, the point *T*<sub>min</sub> − *τ*<sub>min</sub> on the axis
+  belongs to Swept in zero (a filled red point): it needs a sweep in of *τ*<sub>min</sub> that the empty account cannot make.
 - **Terminal failure** (∄, ⏚). In two zones the swept amount does not exist: one sweep cannot restore the balance.
   *Overflow*: the excess is above the limit *L*. *Swept in zero*: a sweep in is needed, but the investment account
   is empty (*A* = 0), so the whole left side turns red. ⏚ is the ground symbol the
@@ -84,33 +87,8 @@ least *τ* (and more than nothing).
 | In nominal min, In range, In nominal max | blue `#378ADD` (the nominal zones lighter) | *y* = 0 |
 | Swept out | teal `#1D9E75` | *y* = *x* − *T*<sub>max</sub> |
 | Overflow | red `#E24B4A`, hatched | terminal failure |
-| the probe | purple `#8B5CF6` | the balance under the mouse |
+| the probe | purple `#8B5CF6` | the balance under the mouse, and the $ of "Swept amount, $" |
 
-The pictures here are rebuilt from the code on every build, so they always show the current version. They are
-static as images; click one to open the same picture live from the Lambda and move the mouse over it.
-
-Thousands, *L* = $30,000:
-
-[![Swept amount in thousands](docs/equilib-thousands.svg)](https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/?sweptOutMax=30000)
-
-## Sweep statuses
-
-What all this math is for: for a current balance, find the **sweep status** and the amount to transfer, either
-**from Investment-Account to DDA** (swept in) or **from DDA to Investment-Account** (swept out). On the graph the
-status is the line on top, next to the threshold written as −*τ*<sub>min</sub> [*T*<sub>min</sub> ; *T*<sub>max</sub>] +*τ*<sub>max</sub>,
-or as the interval (*T*<sub>min</sub> − *τ*<sub>min</sub> ; *T*<sub>max</sub> + *τ*<sub>max</sub>) — for example
-−$8k [$40k ; $60k] +$10k, that is ($32k ; $70k).
-
-| Sweep status | Transfer | In short |
-|---|---|---|
-| **Swept in full** | *T*<sub>min</sub> − *x*, from Investment-Account to DDA | exactly what is missing comes back. If that is all of *A*, the investment account is emptied to the cent, and the next shortfall meets an empty account. |
-| **Swept in partial** | all of *A*, from Investment-Account to DDA | the last transfer: it empties the investment account and is still not enough to reach *T*<sub>min</sub>. |
-| **Swept in zero** ⏚ | none (∄) | the investment account is empty. A yellow card: on the next round the plan is either cancelled (sent off till the end of the match, as in football) or paused (a few minutes in the penalty box, as in hockey). |
-| **In nominal min** | none | below *T*<sub>min</sub>, but by less than *τ*<sub>min</sub>: not worth a transfer. |
-| **In range** | none | between the thresholds: all is well. |
-| **In nominal max** | none | above *T*<sub>max</sub>, but by less than *τ*<sub>max</sub>. |
-| **Swept out** | *x* − *T*<sub>max</sub>, from DDA to Investment-Account | the excess goes to work. |
-| **Overflow** ⏚ | none (∄) | the excess is above *L*, the largest single payment the investment account accepts: one sweep cannot restore the balance. |
 
 ## How it is drawn
 
@@ -126,19 +104,18 @@ or as the interval (*T*<sub>min</sub> − *τ*<sub>min</sub> ; *T*<sub>max</sub>
   around *T*<sub>max</sub> + *L* when it is in the same panel.
 - **Sizes** L (760 px), M (560 px), S (380 px). Smaller sizes show fewer labels: S only the thresholds and the caps,
   M also the nominals, L everything. Want to see it all? Look at it on a big screen.
+- **On top, two status lines.** *threshold:* the thresholds with their nominals, −*τ*<sub>min</sub> [*T*<sub>min</sub> ; *T*<sub>max</sub>] +*τ*<sub>max</sub>,
+  then the same as the open interval (*T*<sub>min</sub> − *τ*<sub>min</sub> ; *T*<sub>max</sub> + *τ*<sub>max</sub>) where nothing is swept.
+  With *T*<sub>min</sub> = *T*<sub>max</sub> it is a *target balance:* [*T*]; a nominal of 0 is left out (no −$0, +$0).
+  *sweep status:* the zone of the balance under the probe, the balance → the swept amount, and which way the money
+  goes: *from Investment-Account to DDA* or *from DDA to Investment-Account*.
 - The purple dashed lines go from the probed point down to the x axis and across to the y axis; the $ of
   "Swept amount, $" is purple as well, since the swept amount is what the probe reads.
 - Dashed lines in a zone's colour show what *would* happen without the caps, the nominals or the limit.
   Every point of interest is projected onto the axes with a thin dotted line.
 - The colours of text and axes follow the light or dark mode of the reader (`prefers-color-scheme`).
 
-Millions, *L* = $2,000,000, broken axes:
 
-[![Swept amount in millions, broken axes](docs/equilib-millions.svg)](https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/)
-
-Swept in zero, *A* = 0:
-
-[![Swept in zero](docs/equilib-swept-in-zero.svg)](https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/?sweptInMax=0&sweptOutMax=30000)
 
 ## Without JavaScript
 
@@ -149,6 +126,11 @@ the number of possible positions must be **finite**:
   values per power of ten (`Sweep.snapped()`).
 - **The current balance** is sampled: 12, 24, 48 (default) or 96 **frames**, evenly in pixels over the visible
   x axis, each balance rounded to a step of about 1% of its panel.
+
+The SVG is made with [Thymeleaf](https://www.thymeleaf.org/) (no Spring): `SvgRenderer` computes the geometry and
+hands the template [`templates/equilib.svg`](src/main/resources/templates/equilib.svg) layers of plain shapes
+(maps of attributes, which Thymeleaf's expressions read directly). The first line of every picture is a comment:
+when it was made, with which Java and which Thymeleaf.
 
 One SVG holds the static picture and all frames. A frame is a thin transparent strip around its balance plus,
 hidden, the purple probe, the readout line on top and the highlight of its row of the formula. CSS shows only the
@@ -162,7 +144,7 @@ frame under the mouse, or the default one (about 30% into Swept out) when the mo
 ```
 
 Hover works where the SVG is a document of its own (the Lambda's answer opened in a browser) or inline in HTML.
-As an `<img>`, like the pictures in this README, it is static and shows the default frame.
+As an `<img>`, like the picture at the top of this README, it is static and shows the default frame.
 
 Since the set of answers is finite, the same frames could also be rendered ahead of time in parallel, one picture
 per frame, and swapped by the page; the single-SVG form needs no page at all.
@@ -192,13 +174,14 @@ Inconsistent parameters (*T*<sub>min</sub> > *T*<sub>max</sub>, 0 < *A* < *τ*<s
 ## Build and deploy
 
 ```bash
-mvn -pl plans-math -am verify                      # build, tests, regenerate docs/*.svg (commit them)
+mvn -pl plans-math -am verify                      # build, tests, coverage, pictures (target/pages/plans-math/svg)
 mvn -pl plans-math compile exec:java@docs          # only the pictures
 ```
 
 - **Deploy**: every push to `main` that touches `plans-math/` runs
-  [`.github/workflows/plans-math.yml`](../.github/workflows/plans-math.yml): build, test, check that `docs/` is
-  committed, replace the code of the Lambda, smoke-test the URL. It signs in to AWS with OIDC (no stored keys) as
+  [`.github/workflows/plans-math.yml`](../.github/workflows/plans-math.yml): build, test, turn the test results into the HTML report, replace
+  the code of the Lambda, smoke-test the URL, and publish the reports, the pictures and the badge numbers on
+  [GitHub Pages](https://krm-demo.github.io/ai-plans-instr/plans-math/). It signs in to AWS with OIDC (no stored keys) as
   the role `plan-equilib-deploy`, which trusts only pushes to `main` of this repository and may only update this
   one function.
 - The Lambda keeps the module's first name, `plan-equilib` (and so do its roles and URL); the module was renamed
@@ -209,20 +192,25 @@ mvn -pl plans-math compile exec:java@docs          # only the pictures
 ## Files
 
 ```
-pom.xml                         no runtime dependencies; exec:java@docs writes docs/*.svg
+pom.xml                         Thymeleaf; JaCoCo; exec:java@docs (pictures), exec:java@open-test-html (report);
+                                the shade plugin makes the Lambda jar
 src/main/java/org/krmdemo/plansinstr/equilib/
   Sweep                         the parameters, the swept amount at() a balance, snapping
   Zone                          the zones, their titles and colours, terminal or not
   Layout                        data ranges and pixels, broken axes, 45° everywhere, clipping
-  SvgRenderer                   the SVG: zones, function, labels, formula, legend, the frames
+  SvgRenderer                   the geometry: zones, function, labels, formula, legend, the frames
+  SvgTemplate                   renders it with Thymeleaf
+src/main/resources/templates/equilib.svg   the Thymeleaf template of every picture
   EquilibHandler                the Lambda (Function URL event in, SVG out)
-  EquilibDocs                   writes docs/*.svg
-src/test/java/…                 SweepTest, SvgRendererTest
-docs/                           the pictures of this README and the two icons
+  EquilibDocs                   writes the pictures of this README (published on GitHub Pages)
+src/test/java/…                 SweepTest, SvgRendererTest, SweepStatusGalleryTest (the documented cases)
+docs/                           the two icons
 deploy/setup.sh                 the one-time AWS setup
 ```
 
 ## References
+
+- [Thymeleaf](https://www.thymeleaf.org/doc/tutorials/3.1/usingthymeleaf.html), [Open Test Reporting](https://github.com/ota4j-team/open-test-reporting), [JaCoCo](https://www.jacoco.org/jacoco/)
 
 - [Lambda Function URLs](https://docs.aws.amazon.com/lambda/latest/dg/urls-configuration.html) and their
   [permissions](https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html)
