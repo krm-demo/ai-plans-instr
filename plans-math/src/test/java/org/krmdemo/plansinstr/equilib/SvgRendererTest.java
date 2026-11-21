@@ -28,15 +28,46 @@ class SvgRendererTest {
         return n;
     }
 
+    private static int countSvg(Document d, String cls) {
+        NodeList all = d.getElementsByTagName("svg");
+        int n = 0;
+        for (int i = 0; i < all.getLength(); i++) {
+            String c = ((Element) all.item(i)).getAttribute("class");
+            if ((" " + c + " ").contains(" " + cls + " ")) n++;
+        }
+        return n;
+    }
+
     @Test
-    void oneFrameperSampleAndExactlyOneDefault() throws Exception {
-        for (String size : new String[] {"L", "M", "S"}) {
+    void oneFramePerSampleAndExactlyOneDefault() throws Exception {
+        for (String tier : new String[] {"L", "M", "S"}) {
             for (Sweep s : new Sweep[] {Sweep.DEMO, new Sweep(40_000, 60_000, 8_000, 10_000, 0, 30_000)}) {
-                Document d = parse(SvgRenderer.render(s, size, 48));
-                assertEquals(48, count(d, "f"), size);
-                assertEquals(1, count(d, "d"), size);
+                Document d = parse(SvgRenderer.render(s, tier, 48));
+                assertEquals(48, count(d, "f"), tier);
+                assertEquals(1, count(d, "d"), tier);
+                assertEquals(1, countSvg(d, "one"), tier);
             }
         }
+    }
+
+    @Test
+    void theAdaptivePictureHasEveryTierAndFramesInTheGraphsOnly() throws Exception {
+        Document d = parse(SvgRenderer.render(Sweep.DEMO));
+        for (String tier : new String[] {"icon-s", "icon", "tMINI", "tS", "tM", "tL"}) {
+            assertEquals(1, countSvg(d, tier), tier);
+        }
+        assertEquals(3 * SvgRenderer.DEFAULT_FRAMES, count(d, "f"), "frames in S, M and L");
+        assertEquals(3, count(d, "d"), "one default frame per graph");
+        assertEquals("760", d.getDocumentElement().getAttribute("width"), "the natural size is that of L");
+    }
+
+    @Test
+    void theFormulaIsInMAndLOnly() {
+        Sweep s = new Sweep(40_000, 60_000, 8_000, 10_000, 25_000, 30_000);
+        assertTrue(SvgRenderer.render(s, "L", 12).contains("class=\"formula\""));
+        assertTrue(SvgRenderer.render(s, "M", 12).contains("class=\"formula\""));
+        assertTrue(!SvgRenderer.render(s, "S", 12).contains("class=\"formula\""));
+        assertTrue(!SvgRenderer.render(s, "mini", 12).contains("<text"));
     }
 
     @Test

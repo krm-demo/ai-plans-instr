@@ -5,17 +5,27 @@
 <!--
   Balances Equilibrium: the swept amount per current balance (krm-demo/ai-plans-instr, plans-math).
   The Thymeleaf template (XML mode) behind every picture; the geometry comes from SvgRenderer as layers of shapes.
-  The frames: one per sampled balance; CSS :hover shows the frame under the mouse, or the default one.
+  Tiers: nested <svg> elements, one per level of detail; the media queries below show the one that fits the width
+  the picture is shown at (in <img> or <object> that is the width of the picture itself).
+  Frames: one per sampled balance; CSS :hover shows the frame under the mouse, or the default one.
 -->
 <title>Balances Equilibrium: swept amount per current balance</title>
 <style>
 svg{--ink:#18212c;--soft:#5a6777;--rule:#d6dde7;--bg:#fbfcfe}
 @media (prefers-color-scheme: dark){svg{--ink:#e6ebf2;--soft:#9aa7b8;--rule:#3a4452;--bg:#141a22}}
+.tier{display:none}.one{display:inline}
+@media (max-width:79.98px){.icon-s{display:inline}}
+@media (min-width:80px) and (max-width:199.98px){.icon{display:inline}}
+@media (min-width:200px) and (max-width:339.98px){.tMINI{display:inline}}
+@media (min-width:340px) and (max-width:539.98px){.tS{display:inline}}
+@media (min-width:540px) and (max-width:739.98px){.tM{display:inline}}
+@media (min-width:740px){.tL{display:inline}}
 .on{pointer-events:none}.f .on{visibility:hidden}.f:hover .on{visibility:visible}.frames:not(:hover) .d .on{visibility:visible}
 .hit{fill:#000;fill-opacity:0;pointer-events:all}.f:hover .hit{fill:#8B5CF6;fill-opacity:.05}
-text{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}.m{font-family:Georgia,'Times New Roman',serif;font-style:italic}
+text{font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}
+.m{font-family:Georgia,'Times New Roman',serif;font-style:italic}
+.wm{font-family:'Avenir Next','Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,Roboto,'Helvetica Neue',Arial,sans-serif;font-weight:600;letter-spacing:.2px}
 </style>
-<rect width="100%" height="100%" style="fill:var(--bg)"/>
 <defs>
   <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
     <line x1="0" y1="0" x2="0" y2="6" style="stroke:#E24B4A;stroke-width:1;stroke-opacity:.35"/>
@@ -24,7 +34,44 @@ text{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}.m{font-fa
     <path d="M2 1L8 5L2 9" style="fill:none;stroke:var(--soft);stroke-width:1.5"/>
   </marker>
 </defs>
-<g th:each="layer : ${layers}" th:attr="class=${layer.cls}">
+<th:block th:if="${adaptive}">
+<!-- The smallest: the cart, bold, without the $. -->
+<svg class="tier icon-s" width="100%" height="100%" viewBox="0 0 120 68" preserveAspectRatio="xMidYMid meet"
+     style="fill:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:round">
+  <path d="M80 34V60M73 34H4" style="stroke:#8B5CF6;stroke-width:3.5;stroke-dasharray:4 4"/>
+  <path d="M6 18H18" style="stroke:#8A5418"/>
+  <path d="M18 18L38 38" style="stroke:#BA7517"/>
+  <path d="M36 58H72" style="stroke:#378ADD;stroke-width:4"/>
+  <path d="M68 46L106 8" style="stroke:#1D9E75"/>
+  <circle cx="38" cy="38" r="4.5" style="fill:#BA7517;stroke:none"/>
+  <circle cx="68" cy="46" r="4.5" style="fill:#1D9E75;stroke:none"/>
+  <circle cx="80" cy="34" r="7.5" style="stroke:#8B5CF6;stroke-width:3.5;fill:#8B5CF6;fill-opacity:.25"/>
+</svg>
+<!-- A little bigger: the icon with its axes and the $ in the cart. -->
+<svg class="tier icon" width="100%" height="100%" viewBox="0 0 120 68" preserveAspectRatio="xMidYMid meet"
+     style="fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round">
+  <path d="M6 54H116M8 62V4" style="stroke:var(--ink);stroke-width:1.5;stroke-opacity:.4"/>
+  <text x="54" y="49" text-anchor="middle" style="font-size:17px;font-weight:700;fill:var(--ink);fill-opacity:.75;stroke:none">$</text>
+  <path d="M79 33V54M75 33H8" style="stroke:#8B5CF6;stroke-width:2;stroke-dasharray:3 3"/>
+  <path d="M10 24H22" style="stroke:#8A5418"/>
+  <path d="M22 24L40 42" style="stroke:#BA7517"/>
+  <path d="M40 45V54" style="stroke:#BA7517;stroke-width:2;stroke-dasharray:2.5 2.5"/>
+  <path d="M43 54H65" style="stroke:#378ADD"/>
+  <path d="M68 51V47" style="stroke:#1D9E75;stroke-width:2;stroke-dasharray:2.5 2.5"/>
+  <path d="M68 44L104 8" style="stroke:#1D9E75"/>
+  <circle cx="22" cy="24" r="2.4" style="fill:#8A5418;stroke:none"/>
+  <circle cx="40" cy="42" r="3" style="fill:#BA7517;stroke:none"/>
+  <circle cx="40" cy="54" r="3" style="stroke:#378ADD;stroke-width:2;fill:var(--bg)"/>
+  <circle cx="68" cy="54" r="3" style="stroke:#378ADD;stroke-width:2;fill:var(--bg)"/>
+  <circle cx="68" cy="44" r="3" style="fill:#1D9E75;stroke:none"/>
+  <circle cx="79" cy="33" r="5.5" style="stroke:#8B5CF6;stroke-width:2;fill:#8B5CF6;fill-opacity:.2"/>
+  <circle cx="79" cy="33" r="2.2" style="fill:#8B5CF6;stroke:none"/>
+</svg>
+</th:block>
+<svg th:each="t : ${tiers}" th:attr="class=${t.cls},viewBox=${t.viewBox}" width="100%" height="100%"
+     preserveAspectRatio="xMidYMin meet">
+<rect width="100%" height="100%" style="fill:var(--bg)"/>
+<g th:each="layer : ${t.layers}" th:attr="class=${layer.cls}">
   <th:block th:each="e : ${layer.shapes}" th:switch="${e.tag}">
     <line th:case="'line'" th:attr="x1=${e.x1},y1=${e.y1},x2=${e.x2},y2=${e.y2},style=${e.style},marker-end=${e.markerEnd}"/>
     <rect th:case="'rect'" th:attr="x=${e.x},y=${e.y},width=${e.width},height=${e.height},rx=${e.rx},fill=${e.fill},style=${e.style}"/>
@@ -45,4 +92,5 @@ text{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}.m{font-fa
     </g>
   </g>
 </g>
+</svg>
 </svg>

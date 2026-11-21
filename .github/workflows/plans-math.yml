@@ -2,8 +2,10 @@ name: plans-math
 run-name: plans-math ${{ github.ref_name }}
 
 # On every push to main that touches plans-math (a library: nothing is deployed but its documentation):
-#   1. build and test (JUnit 5 Jupiter, JaCoCo), turn the Open Test Reporting XML into HTML,
-#   2. publish to GitHub Pages: the test report (one picture per layout), the coverage report, the README pictures
+#   1. build and test (JUnit Jupiter, JaCoCo), turn the Open Test Reporting XML into HTML,
+#   2. commit the GitHub Pages of the project to the gh-pages branch (Pages serves that branch):
+#      plans-math/ — the interactive page (src/site: the JavaScript widget, the statuses, the palettes),
+#      the library's adaptive SVG pictures, the test report (one picture per case), the coverage report
 #      and the numbers of the README badges (shields.io endpoint JSON).
 on:
   push:
@@ -14,9 +16,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  id-token: write
-  pages: write
+  contents: write      # push to gh-pages
 
 concurrency:
   group: plans-math-pages
@@ -56,56 +56,22 @@ jobs:
           cp -r "$OTR_DIR"/. $P/tests/
           cp -r plans-math/target/site/jacoco/. $P/jacoco/
           cp plans-math/target/pages/plans-math/svg/*.svg $P/svg/
-          cp plans-math/docs/icon*.svg $P/
-          python3 - "$P" <<'PY'
-          import csv, glob, json, sys, xml.etree.ElementTree as ET
-          p = sys.argv[1]
-          tests = failed = skipped = 0
-          for f in glob.glob('plans-math/target/surefire-reports/TEST-*.xml'):
-              r = ET.parse(f).getroot()
-              tests += int(r.get('tests', 0)); skipped += int(r.get('skipped', 0))
-              failed += int(r.get('failures', 0)) + int(r.get('errors', 0))
-          missed = covered = 0
-          for row in csv.DictReader(open('plans-math/target/site/jacoco/jacoco.csv')):
-              missed += int(row['LINE_MISSED']); covered += int(row['LINE_COVERED'])
-          cov = 100.0 * covered / max(missed + covered, 1)
-          passed = tests - failed - skipped
-          json.dump({"schemaVersion": 1, "label": "JUnit 5 tests", "message": f"{passed} passed" + (f", {failed} failed" if failed else ""),
-                     "color": "brightgreen" if not failed else "red"}, open(f"{p}/badges/tests.json", "w"))
-          json.dump({"schemaVersion": 1, "label": "JaCoCo coverage", "message": f"{cov:.1f}%",
-                     "color": "brightgreen" if cov >= 80 else "yellow" if cov >= 60 else "orange"}, open(f"{p}/badges/coverage.json", "w"))
-          print(f"tests {tests}, passed {passed}, failed {failed}, skipped {skipped}; lines {covered}/{missed + covered} = {cov:.1f}%")
-          with open(f"{p}/index.html", "w") as out:
-              out.write(f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>plans-math</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <style>body{{font-family:system-ui,sans-serif;max-width:780px;margin:2rem auto;padding:0 1rem;color:#18212c}}
-          a{{color:#1456b8}}h1 img{{vertical-align:middle;margin-right:.4rem}}li{{margin:.3rem 0}}</style></head><body>
-          <h1><img src="icon-small.svg" width="56" height="32" alt="">plans-math</h1>
-          <p>A Java library. Balances Equilibrium: the swept amount per current balance, as an SVG without JavaScript. <a href="https://github.com/krm-demo/ai-plans-instr/tree/main/plans-math">Source and README</a>.</p>
-          <ul>
-          <li><a href="tests/index.html">Test report</a> (Open Test Reporting): {passed} JUnit 5 tests passed, one picture per layout</li>
-          <li><a href="jacoco/index.html">Coverage report</a> (JaCoCo): {cov:.1f}% of lines</li>
-          <li><a href="svg/equilib-thousands.svg">Pictures</a>: <a href="svg/equilib-thousands.svg">thousands</a>,
-              <a href="svg/equilib-millions.svg">millions</a>, <a href="svg/equilib-swept-in-zero.svg">swept in zero</a>,
-              <a href="svg/equilib-single-threshold-s.svg">target balance (S)</a> (open one and move the mouse over it)</li>
-          </ul></body></html>""")
-          PY
+          cp -r plans-math/src/site/. $P/
+          python3 plans-math/src/site/fill-page.py "$P" plans-math/target/pages/plans-math/svg/statuses.html "$GITHUB_SHA"
           printf '<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=plans-math/"><a href="plans-math/">plans-math</a>\n' > site/index.html
+          rm -f $P/fill-page.py
           {
             echo "### plans-math"
             echo "- $(jq -r .message $P/badges/tests.json) · coverage $(jq -r .message $P/badges/coverage.json)"
+            echo "- https://krm-demo.github.io/ai-plans-instr/plans-math/"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Commit to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: site
-
-  pages:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./site
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          full_commit_message: "plans-math: pages from ${{ github.sha }}"

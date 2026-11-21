@@ -31,15 +31,52 @@ public final class SvgRenderer {
     static final String PURPLE = "#8B5CF6";
     static final String GRAY = "#888780";
 
+    /**
+     * How much of the picture a tier draws. The adaptive SVG holds them all and shows the one that fits the width it
+     * is shown at; ICON_S and ICON are the fixed cart icons in the template.
+     * <ul>
+     * <li>MINI: S geometry, only the coloured slices, the axes, the function and its points: no text, no frames;</li>
+     * <li>S: the graph with its labels and the status lines (the formula would break the harmony of a phone);</li>
+     * <li>M and L: everything, the formula and the legend under the graph.</li>
+     * </ul>
+     */
+    enum Detail {
+        MINI("S"), S("S"), M("M"), L("L");
+
+        final String profile;
+
+        Detail(String profile) {
+            this.profile = profile;
+        }
+
+        boolean text() { return this != MINI; }
+
+        boolean formula() { return this == M || this == L; }
+
+        static Detail of(String name) {
+            return switch (name == null ? "L" : name.toUpperCase()) {
+                case "MINI" -> MINI;
+                case "S" -> S;
+                case "M" -> M;
+                default -> L;
+            };
+        }
+    }
+
+    /** The widths (CSS px of the rendered picture) where the adaptive SVG switches to the next tier. */
+    public static final int[] TIER_WIDTHS = {80, 200, 340, 540, 740};
+
     private final Sweep s;
     private final Layout g;
     private final Layout.Profile pf;
+    private final Detail detail;
     private final List<Map<String, Object>> layers = new ArrayList<>();
     private List<Map<String, Object>> cur;            // the shapes being added to
 
-    private SvgRenderer(Sweep s, Layout.Profile pf) {
+    private SvgRenderer(Sweep s, Detail detail) {
         this.s = s;
-        this.pf = pf;
+        this.detail = detail;
+        this.pf = Layout.Profile.of(detail.profile);
         this.g = new Layout(s, pf);
     }
 
@@ -51,22 +88,55 @@ public final class SvgRenderer {
     }
 
     /**
-     * @param sweep   the parameters (use {@link Sweep#snapped()} for a finite set of pictures)
-     * @param size    "L" (760 px), "M" (560 px) or "S" (380 px)
-     * @param frames  number of sampled balances, rounded to one of {@link #FRAME_COUNTS}
+     * The adaptive picture: one SVG that looks like an icon when shown small and like the full graph, with its
+     * frames, when shown large. Its own CSS media queries pick the tier by the width the SVG is shown at
+     * (in {@code <img>}, {@code <object>} or opened directly; inline in HTML the page's width counts instead):
+     * below 80 px the small cart icon, below 200 px the icon with the $ in the cart, below 340 px the coloured
+     * slices only, below 540 px S, below 740 px M, from 740 px L. Its natural size is that of L.
+     *
+     * @param sweep the parameters (use {@link Sweep#snapped()} for a finite set of pictures)
      */
-    public static String render(Sweep sweep, String size, int frames) {
-        return render(sweep, size, frames, null);
+    public static String render(Sweep sweep) {
+        return render(sweep, DEFAULT_FRAMES, null);
     }
 
-    /** The same, with the default frame at exactly {@code probe} (the picture shown when the mouse is elsewhere). */
-    public static String render(Sweep sweep, String size, int frames, Long probe) {
-        return SvgTemplate.render(model(sweep, size, frames, probe));
+    /**
+     * The adaptive picture with {@code frames} sampled balances (rounded to one of {@link #FRAME_COUNTS}) and its
+     * default frame (shown when the mouse is elsewhere) at exactly {@code probe}, or 30% into Swept Out when null.
+     */
+    public static String render(Sweep sweep, int frames, Long probe) {
+        return SvgTemplate.render(adaptiveModel(sweep, frames, probe));
     }
 
-    /** The model the template renders: width, height, viewBox and the layers of shapes. */
-    static Map<String, Object> model(Sweep sweep, String size, int frames, Long probe) {
-        return new SvgRenderer(sweep, Layout.Profile.of(size)).draw(frames(frames), probe);
+    /**
+     * One tier only, at its fixed size: "L" (760 px), "M" (560 px), "S" (380 px) or "mini" (the slices, 380 px).
+     */
+    public static String render(Sweep sweep, String tier, int frames) {
+        return SvgTemplate.render(singleModel(sweep, tier, frames, null));
+    }
+
+    static Map<String, Object> adaptiveModel(Sweep sweep, int frames, Long probe) {
+        List<Map<String, Object>> tiers = new ArrayList<>();
+        for (Detail d : Detail.values()) tiers.add(new SvgRenderer(sweep, d).draw(frames(frames), probe));
+        Map<String, Object> l = tiers.get(tiers.size() - 1);
+        Map<String, Object> model = new HashMap<>();
+        model.put("adaptive", Boolean.TRUE);
+        model.put("width", l.get("width"));
+        model.put("height", l.get("height"));
+        model.put("viewBox", "0 0 " + l.get("width") + " " + l.get("height"));
+        model.put("tiers", tiers);
+        return model;
+    }
+
+    static Map<String, Object> singleModel(Sweep sweep, String tier, int frames, Long probe) {
+        Map<String, Object> t = new SvgRenderer(sweep, Detail.of(tier)).draw(frames(frames), probe);
+        t.put("cls", t.get("cls") + " one");
+        Map<String, Object> model = new HashMap<>();
+        model.put("width", t.get("width"));
+        model.put("height", t.get("height"));
+        model.put("viewBox", "0 0 " + t.get("width") + " " + t.get("height"));
+        model.put("tiers", List.of(t));
+        return model;
     }
 
     // ---------------------------------------------------------------- drawing
@@ -79,12 +149,12 @@ public final class SvgRenderer {
         boolean zeroA = a == 0;
 
         // The formula and the legend go under the graph; their height is known before drawing.
-        List<Row> rows = formulaRows();
+        List<Row> rows = detail.formula() ? formulaRows() : List.of();
         List<double[]> xLabels = new ArrayList<>();
-        double rowsBottom = labelRows(xLabels);
+        double rowsBottom = detail.text() ? labelRows(xLabels) : g.plotBottom;
         double fxTop = rowsBottom + 26, rowH = pf.font() * 1.55;
         double legendY = fxTop + rows.size() * rowH + 20;
-        double height = legendY + (pf.width() < 500 ? 3 : 1) * 17 + 8;
+        double height = detail.formula() ? legendY + (pf.width() < 500 ? 3 : 1) * 17 + 8 : rowsBottom + 12;
 
         // Zones: translucent bands the full height of the plot, hatched where the swept amount does not exist.
         layer("zones");
@@ -99,7 +169,7 @@ public final class SvgRenderer {
             Zone zl = s.at(Math.round(g.xs.get(0).d1())).zone(), zr = s.at(Math.round(g.xs.get(1).d0())).zone();
             if (zl == zr) band(g.xs.get(0).q1(), Layout.GAP, zl);
         }
-        double wmY = g.plotTop + 8;                       // watermarks hang from the top: there is room up there
+        double wmY = g.plotTop + 0.1 * (g.plotBottom - g.plotTop);   // watermarks hang 10% below the top of the plot
         List<Runnable> watermarks = new ArrayList<>();
         for (Object[] b : bands) {
             Zone z = (Zone) b[2];
@@ -112,18 +182,20 @@ public final class SvgRenderer {
                 if (widest == null || w > widest[1]) widest = new double[] {qa, w};
                 band(qa, w, z);
             }
-            if (widest != null && widest[1] >= pf.wmMin()) {
+            if (widest != null && widest[1] >= pf.wmMin() && detail.text()) {
                 double cx = widest[0] + widest[1] / 2;
                 watermarks.add(() -> cur.add(shape("text", "x", r(cx), "y", r(wmY + 5), "anchor", "end",
                     "transform", "rotate(-90 " + r(cx) + " " + r(wmY) + ")",
-                    "style", "font-size:" + pf.font() + "px;font-weight:500;letter-spacing:1.5px;fill:" + z.ink()
-                        + ";fill-opacity:" + (z.zero() && z != Zone.IN_RANGE ? ".42" : ".34"),
+                    "cls", "wm", "style", "font-size:" + (pf.font() - 1) + "px;fill:" + z.ink()
+                        + ";fill-opacity:" + (z.zero() && z != Zone.IN_RANGE ? ".5" : ".42"),
                     "body", z.titleMarkup(800))));
             }
         }
-        layer("marks");
-        watermarks.forEach(Runnable::run);
-        statusLabels();
+        if (detail.text()) {
+            layer("marks");
+            watermarks.forEach(Runnable::run);
+            statusLabels();
+        }
 
         // Axes, continuous; where they are cut, two short slanted strokes in the middle of the cut.
         layer("axes");
@@ -138,8 +210,10 @@ public final class SvgRenderer {
             line(ax - 4, cy + 1, ax + 4, cy - 2, br);
             line(ax - 4, cy + 4, ax + 4, cy + 1, br);
         }
-        cur.add(shape("text", "x", r(ax + 8), "y", r(g.plotTop - 8), "cls", "m", "style", "font-size:12px;fill:var(--soft)",
-            "body", "Swept amount, <tspan style=\"fill:" + PURPLE + ";font-style:normal;font-weight:700\">$</tspan>"));
+        if (detail.text()) {
+            cur.add(shape("text", "x", r(ax + 8), "y", r(g.plotTop - 8), "cls", "m", "style", "font-size:12px;fill:var(--soft)",
+                "body", "Swept amount, <tspan style=\"fill:" + PURPLE + ";font-style:normal;font-weight:700\">$</tspan>"));
+        }
 
         // Projections of the points of interest onto the y axis, then the function.
         layer("function");
@@ -200,6 +274,17 @@ public final class SvgRenderer {
             dot(xo, 0, 5, open + red);
         }
 
+        Map<String, Object> tier = new HashMap<>();
+        tier.put("cls", "tier t" + detail.name());
+        tier.put("layers", layers);
+        if (!detail.text()) {           // the slices only: cropped to the plot and its arrows
+            double x0 = pf.left() - 8, y0t = g.plotTop - 12;
+            tier.put("width", r(pf.right() + 14 - x0));
+            tier.put("height", r(g.plotBottom + 8 - y0t));
+            tier.put("viewBox", r(x0) + " " + r(y0t) + " " + tier.get("width") + " " + tier.get("height"));
+            return tier;
+        }
+
         // Labels: amounts under the x axis (in rows, never overlapping) and by the y axis.
         layer("labels");
         for (double[] q : xLabels) {
@@ -211,8 +296,20 @@ public final class SvgRenderer {
         text(pf.right(), rowsBottom + 6, "end", "var(--soft)", "Current balance, $", "m", 12);
 
         // The formula: one row per status, the status on the right (the frames highlight theirs and add the amount).
+        if (detail.formula()) formula(rows, fxTop, rowH, legendY);
+
+        // The frames.
+        frames(n, probe, rows, fxTop, rowH);
+
+        tier.put("width", String.valueOf(pf.width()));
+        tier.put("height", r(height));
+        tier.put("viewBox", "0 0 " + pf.width() + " " + r(height));
+        return tier;
+    }
+
+    private void formula(List<Row> rows, double fxTop, double rowH, double legendY) {
         layer("formula");
-        double fxLeft = 8, valX = fxLeft + (pf.width() < 500 ? 70 : 84), colB = valX + (pf.width() < 500 ? 128 : 150);
+        double fxLeft = 8, valX = valX(), colB = valX + (pf.width() < 500 ? 128 : 150);
         double braceX = fxLeft + (pf.width() < 500 ? 46 : 62);
         text(fxLeft, fxTop + rows.size() * rowH / 2 + 4, null, "var(--ink)", tex("y(x) ="), "m", pf.font() + 1);
         double b1 = fxTop + 2, b2 = fxTop + rows.size() * rowH - 2, bm = (b1 + b2) / 2, bx = braceX + 6;
@@ -223,28 +320,25 @@ public final class SvgRenderer {
         for (int i = 0; i < rows.size(); i++) {
             Row row = rows.get(i);
             double yy = fxTop + (i + 0.72) * rowH;
-            text(valX, yy, null, "var(--ink)", tex(row.value), "m", pf.font());
-            text(colB, yy, null, "var(--ink)", tex(row.cond), "m", pf.font());
+            String col = row.zone.terminal() ? row.zone.ink() : "var(--ink)";   // no money moves: red, both of them
+            text(valX, yy, null, col, tex(row.value), "m", pf.font());
+            text(colB, yy, null, col, tex(row.cond), "m", pf.font());
             if (pf.width() >= 500) {
                 text(pf.width() - 8, yy, "end", row.zone.ink(), row.zone.titleMarkup(700), null, pf.width() < 700 ? 11.5 : 12.5);
             }
         }
         legend(legendY);
+    }
 
-        // The frames.
-        frames(n, probe, rows, fxTop, rowH, valX);
-
-        Map<String, Object> model = new HashMap<>();
-        model.put("width", String.valueOf(pf.width()));
-        model.put("height", r(height));
-        model.put("viewBox", "0 0 " + pf.width() + " " + r(height));
-        model.put("layers", layers);
-        return model;
+    /** Where the values of the formula start. */
+    private double valX() {
+        return 8 + (pf.width() < 500 ? 70 : 84);
     }
 
     // ---------------------------------------------------------------- frames
 
-    private void frames(int n, Long probe, List<Row> rows, double fxTop, double rowH, double valX) {
+    private void frames(int n, Long probe, List<Row> rows, double fxTop, double rowH) {
+        double valX = valX();
         // Sample balances evenly in pixels over all x pieces, snapped to the step of their piece.
         List<double[]> samples = new ArrayList<>();       // {balance, pixel, seg index}
         double total = 0;

@@ -29,7 +29,7 @@ class SweepStatusGalleryTest {
     record Check(long balance, Zone zone, Long amount) {
     }
 
-    /** One set of parameters, what it is about, the threshold as written on the picture, and the checks. */
+    /** One set of parameters, what it is about, the tier ("adaptive": all), the threshold as written, and the checks. */
     record Variant(String title, String about, Sweep sweep, String size, String threshold, List<Check> checks) {
         @Override
         public String toString() {
@@ -44,38 +44,38 @@ class SweepStatusGalleryTest {
     static Stream<Variant> variants() {
         return Stream.of(
             new Variant("Thresholds with nominals", "The full layout: every status, both jumps.",
-                new Sweep(40_000, 60_000, 8_000, 10_000, 25_000, 30_000), "L", "−$8k [$40k ; $60k] +$10k", List.of(
+                new Sweep(40_000, 60_000, 8_000, 10_000, 25_000, 30_000), "adaptive", "−$8k [$40k ; $60k] +$10k", List.of(
                     c(10_000, Zone.SWEPT_IN_PARTIAL, 25_000L), c(15_000, Zone.SWEPT_IN_FULL, 25_000L),
                     c(32_000, Zone.SWEPT_IN_FULL, 8_000L), c(32_001, Zone.IN_NOMINAL_MIN, 0L), c(50_000, Zone.IN_RANGE, 0L),
                     c(69_999, Zone.IN_NOMINAL_MAX, 0L), c(70_000, Zone.SWEPT_OUT, 10_000L), c(90_000, Zone.SWEPT_OUT, 30_000L),
                     c(90_001, Zone.SWEPT_OUT_OVERFLOW, null))),
             new Variant("No nominals", "τ = 0: no jumps, no In Nominal zones; T_min and T_max themselves are In Range.",
-                new Sweep(40_000, 60_000, 0, 0, 25_000, 30_000), "L", "[$40k ; $60k]", List.of(
+                new Sweep(40_000, 60_000, 0, 0, 25_000, 30_000), "adaptive", "[$40k ; $60k]", List.of(
                     c(39_999, Zone.SWEPT_IN_FULL, 1L), c(40_000, Zone.IN_RANGE, 0L), c(60_000, Zone.IN_RANGE, 0L),
                     c(60_001, Zone.SWEPT_OUT, 1L))),
             new Variant("Target balance", "T_min = T_max = T: the threshold is [T], In Range is the single point x = T.",
-                new Sweep(50_000, 50_000, 5_000, 5_000, 20_000, 25_000), "L", "−$5k [$50k] +$5k", List.of(
+                new Sweep(50_000, 50_000, 5_000, 5_000, 20_000, 25_000), "adaptive", "−$5k [$50k] +$5k", List.of(
                     c(40_000, Zone.SWEPT_IN_FULL, 10_000L), c(45_001, Zone.IN_NOMINAL_MIN, 0L), c(50_000, Zone.IN_RANGE, 0L),
                     c(54_999, Zone.IN_NOMINAL_MAX, 0L), c(55_000, Zone.SWEPT_OUT, 5_000L))),
             new Variant("Target balance, no nominals", "The simplest layout: [T], every dollar off T is swept.",
-                new Sweep(50_000, 50_000, 0, 0, 20_000, 25_000), "L", "[$50k]", List.of(
+                new Sweep(50_000, 50_000, 0, 0, 20_000, 25_000), "adaptive", "[$50k]", List.of(
                     c(49_999, Zone.SWEPT_IN_FULL, 1L), c(50_000, Zone.IN_RANGE, 0L), c(50_001, Zone.SWEPT_OUT, 1L))),
             new Variant("Empty investment account", "A = 0: the whole sweep In side is Swept In Zero, red like Swept Out Overflow; "
                 + "T_min − τ_min is a filled red point.",
-                new Sweep(40_000, 60_000, 8_000, 10_000, 0, 30_000), "L", "−$8k [$40k ; $60k] +$10k", List.of(
+                new Sweep(40_000, 60_000, 8_000, 10_000, 0, 30_000), "adaptive", "−$8k [$40k ; $60k] +$10k", List.of(
                     c(10_000, Zone.SWEPT_IN_ZERO, null), c(32_000, Zone.SWEPT_IN_ZERO, null), c(32_001, Zone.IN_NOMINAL_MIN, 0L))),
             new Variant("Empty investment account, no nominal min", "A = 0 and τ_min = 0: Swept In Zero ends just before T_min, "
                 + "which is In Range: a filled blue point.",
-                new Sweep(40_000, 60_000, 0, 10_000, 0, 30_000), "L", "[$40k ; $60k] +$10k", List.of(
+                new Sweep(40_000, 60_000, 0, 10_000, 0, 30_000), "adaptive", "[$40k ; $60k] +$10k", List.of(
                     c(39_999, Zone.SWEPT_IN_ZERO, null), c(40_000, Zone.IN_RANGE, 0L))),
             new Variant("Target balance, empty account, no nominal min", "T_min = T_max, A = 0, τ_min = 0.",
-                new Sweep(50_000, 50_000, 0, 5_000, 0, 25_000), "L", "[$50k] +$5k", List.of(
+                new Sweep(50_000, 50_000, 0, 5_000, 0, 25_000), "adaptive", "[$50k] +$5k", List.of(
                     c(49_999, Zone.SWEPT_IN_ZERO, null), c(50_000, Zone.IN_RANGE, 0L), c(55_000, Zone.SWEPT_OUT, 5_000L))),
             new Variant("Millions, broken axes", "L in millions: the axes are cut where Swept Out leaves the pan, "
                 + "and the line goes on across the cut at 45°.",
-                Sweep.DEMO, "L", "−$8k [$40k ; $60k] +$10k", List.of(
+                Sweep.DEMO, "adaptive", "−$8k [$40k ; $60k] +$10k", List.of(
                     c(1_500_000, Zone.SWEPT_OUT, 1_440_000L), c(2_060_001, Zone.SWEPT_OUT_OVERFLOW, null))),
-            new Variant("Size S", "The smallest picture: only the thresholds and the limits are labelled.",
+            new Variant("Tier S", "The phone tier on its own: the graph and the status lines; only the thresholds and the limits are labelled.",
                 new Sweep(40_000, 60_000, 8_000, 10_000, 25_000, 30_000), "S", "−$8k [$40k ; $60k] +$10k", List.of(
                     c(25_000, Zone.SWEPT_IN_FULL, 15_000L))));
     }
@@ -91,7 +91,7 @@ class SweepStatusGalleryTest {
         }
         assertEquals(v.threshold(), SvgRenderer.thresholdClosed(s), "threshold");
 
-        String svg = SvgRenderer.render(s, v.size(), SvgRenderer.DEFAULT_FRAMES);
+        String svg = "adaptive".equals(v.size()) ? SvgRenderer.render(s) : SvgRenderer.render(s, v.size(), SvgRenderer.DEFAULT_FRAMES);
         assertTrue(svg.contains("class=\"f d\""), "the default frame");
 
         Map<String, String> entries = new LinkedHashMap<>();

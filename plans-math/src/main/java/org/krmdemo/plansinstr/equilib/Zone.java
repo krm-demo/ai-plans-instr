@@ -90,6 +90,21 @@ public enum Zone {
         return md.toString();
     }
 
+    /**
+     * The same list as HTML for the GitHub Pages of the project: each status name in the colour of its slice ("In" and
+     * "Out" in bold, ⏚ after a terminal one), {@code data-zone} for pages that recolour it.
+     */
+    public static String statusListHtml() {
+        StringBuilder h = new StringBuilder("<ul class=\"statuses\">\n");
+        for (Zone z : values()) {
+            String title = (" " + z.title + " ").replace(" In ", " <b>In</b> ").replace(" Out ", " <b>Out</b> ").trim();
+            h.append("  <li><span class=\"st\" data-zone=\"").append(z.name()).append("\" style=\"color:").append(z.ink).append("\">")
+                .append(title).append(z.terminal ? " ⏚" : "").append("</span> — ")
+                .append(symbols(SvgRenderer.esc(z.description)).replaceAll("\\*([^*]+)\\*", "<i>$1</i>")).append("</li>\n");
+        }
+        return h.append("</ul>\n").toString();
+    }
+
     private static String symbols(String t) {
         return t.replaceAll("(?<!\\w)([Tτ])_(min|max)(?!\\w)", "*$1*<sub>$2</sub>")
             .replaceAll("(?<![\\w*>])([ALTx])(?![\\w*<])", "*$1*")

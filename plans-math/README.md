@@ -1,13 +1,11 @@
 # <img src="docs/icon-small.svg" width="56" height="32" alt=""> plans-math
 
 [![plans-math](https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml/badge.svg)](https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml)
-[![JUnit 5 tests](https://img.shields.io/endpoint?url=https://krm-demo.github.io/ai-plans-instr/plans-math/badges/tests.json)](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html)
+[![JUnit tests](https://img.shields.io/endpoint?url=https://krm-demo.github.io/ai-plans-instr/plans-math/badges/tests.json)](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html)
 [![JaCoCo coverage](https://img.shields.io/endpoint?url=https://krm-demo.github.io/ai-plans-instr/plans-math/badges/coverage.json)](https://krm-demo.github.io/ai-plans-instr/plans-math/jacoco/index.html)
 
-[Site: krm-demo.org](https://krm-demo.org/swept-amount-math.en.html) ·
-[Site preview (GitHub Pages)](https://krm-demo.github.io/krm-demo-org-site/swept-amount-math.en.html) ·
-[Test report: every layout](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html) ·
-[Coverage](https://krm-demo.github.io/ai-plans-instr/plans-math/jacoco/index.html)
+**[GitHub Pages of the project](https://krm-demo.github.io/ai-plans-instr/plans-math/)**: the interactive graph, the pictures, the reports ·
+[Test report](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html) · [Coverage](https://krm-demo.github.io/ai-plans-instr/plans-math/jacoco/index.html) · [Site: krm-demo.org](https://krm-demo.org/)
 
 [![Balances Equilibrium: swept amount per current balance](https://krm-demo.github.io/ai-plans-instr/plans-math/svg/equilib-thousands.svg)](https://krm-demo.github.io/ai-plans-instr/plans-math/svg/equilib-thousands.svg)
 
@@ -22,21 +20,23 @@
 
 **Balances Equilibrium**, a Java library: for a current balance *x* of the DDA it finds the sweep status and the
 swept amount *y*, and draws both as one SVG without JavaScript. The picture above is rebuilt on every push; click it
-to open the SVG itself and move the mouse over it. More layouts, one per test: [the test report](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html).
+to open the SVG itself, move the mouse over it and make the window narrower. More layouts, one per test:
+[the test report](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html).
 
-The interactive page with handles to drag is on the site; it is a page of the site, written in JavaScript, not part
-of this library.
+The interactive page with handles to drag (JavaScript) is on the [GitHub Pages of the project](https://krm-demo.github.io/ai-plans-instr/plans-math/); its source is
+[`src/site/`](src/site), and it is rebuilt on every push to `main`. It is not part of the library.
 
 ## Contents
 
 - [Parameters](#parameters)
 - [How it is drawn](#how-it-is-drawn)
-- [Without JavaScript](#without-javascript)
+- [One picture, every size](#one-picture-every-size)
+- [The Thymeleaf template](#the-thymeleaf-template)
 - [Use it](#use-it)
 - [Build](#build)
+- [GitHub Pages](#github-pages)
 - [Files](#files)
 - [References](#references)
-
 ## Parameters
 
 The current account is a **DDA** (demand deposit account); a **cash sweep** keeps its balance between two thresholds
@@ -71,18 +71,32 @@ picture, one row per status; the row of the balance under the mouse is highlight
 - **Colours**: brown Swept **In** Partial, amber Swept **In** Full, blue the **In** zones, teal Swept **Out**, red and
   hatched the terminal failures, purple the probe and the $ of the swept amount. Text and axes follow the reader's
   light or dark mode.
-- **Sizes** L (760 px), M (560 px), S (380 px); smaller sizes show fewer labels.
+- **Terminal failures** look the same: Swept **In** Zero and Swept **Out** Overflow are both red, hatched, ⏚, and
+  their rows of the formula are red: no money moves in either.
+- **Tiers** L (760 px), M (560 px), S (380 px) and smaller: see below.
 
-## Without JavaScript
+## One picture, every size
 
-The SVG is made with [Thymeleaf](https://www.thymeleaf.org/) (no Spring): `SvgRenderer` computes the geometry and
-hands the template [`templates/equilib.svg`](src/main/resources/templates/equilib.svg) layers of plain shapes. The
-first line of every picture is a comment: when it was made, with which Java and which Thymeleaf.
+`SvgRenderer.render(sweep)` returns **one** SVG that holds six tiers, nested `<svg>` elements, and shows the one that
+fits the width it is shown at. Its own CSS media queries do it, so it works in `<img>`, `<object>`, a Markdown image or
+opened directly (inline in HTML the width of the page counts instead):
+
+| Shown at | Tier | What is in it |
+|---|---|---|
+| below 80 px | `icon-s` | the cart, bold, without the $ |
+| 80–199 px | `icon` | the cart with its axes and the $ in it |
+| 200–339 px | `tMINI` | the coloured slices, the axes and the function: no text |
+| 340–539 px | `tS` | the graph, its labels and the status lines (no formula: it would break the harmony of a phone) |
+| 540–739 px | `tM` | everything: the formula and the legend under the graph |
+| 740 px and more | `tL` | everything, at full size |
+
+The natural size of the picture is that of L, so the smaller tiers keep its proportions (an `<img>` cannot change its
+height). `render(sweep, "S", 48)` and the like give one tier alone, at its own size.
 
 Every picture is computed in advance, so the positions are finite: parameters are rounded to two significant digits
-(`Sweep.snapped()`), and the current balance is sampled in 12, 24, 48 (default) or 96 **frames**. One SVG holds the
-static picture and all frames; a frame is a thin transparent strip around its balance plus, hidden, the purple probe,
-the status line and the highlighted row of the formula. CSS alone shows the frame under the mouse:
+(`Sweep.snapped()`), and the current balance is sampled in 12, 24, 48 (default) or 96 **frames** (in each of S, M, L).
+A frame is a thin transparent strip around its balance plus, hidden, the purple probe, the status line and the
+highlighted row of the formula. CSS alone shows the frame under the mouse:
 
 ```css
 .on { pointer-events: none }                      /* only the strips catch the mouse */
@@ -91,28 +105,69 @@ the status line and the highlighted row of the formula. CSS alone shows the fram
 .frames:not(:hover) .d .on { visibility: visible } /* the default frame */
 ```
 
-Hover works where the SVG is a document of its own or inline in HTML; as an `<img>` it is static (the default frame).
+Hover works where the SVG is a document of its own (opened directly, `<object>`) or inline in HTML; as an `<img>` it
+is static (the default frame).
+
+## The Thymeleaf template
+
+The markup is [`src/main/resources/templates/equilib.svg`](src/main/resources/templates/equilib.svg), a
+[Thymeleaf](https://www.thymeleaf.org/) template in XML mode, without Spring: `SvgTemplate` sets up a
+`TemplateEngine` with a class-path resolver (`templates/` + name + `.svg`) and processes it with a `Context` that holds
+the model. `SvgRenderer` does all the geometry and builds that model from plain `Map`s and `List`s (OGNL, Thymeleaf's
+expression language without Spring, reads map keys as properties):
+
+```
+width, height, viewBox      the natural size (that of L)
+adaptive                    true: the two icon tiers are written too (th:if)
+tiers[]                     cls ("tier tS" …), viewBox, layers[]
+  layers[]                  cls ("zones", "marks", "axes", "function", "labels", "formula", "frames"), shapes[]
+    shapes[]                tag ("line", "rect", "circle", "path", "text") and its attributes; text has a body (markup)
+    frames[]                only in the "frames" layer: cls ("f", "f d" for the default), the strip, shapes[]
+comment                     "generated … · Java … · Thymeleaf …", the first comment of every picture
+```
+
+The template walks it with a few features only:
+
+- `th:each` over tiers, layers, shapes and frames; `th:switch` on `${e.tag}` with one `th:case` per kind of shape;
+- `th:attr="x1=${e.x1},…,style=${e.style}"`: an attribute whose value is null is left out, so one line serves every
+  shape of its kind (`marker-end` only where there is one);
+- `th:utext="${e.body}"` for the text of a label, which may hold `<tspan>`s (subscripts, the bolder **In** and **Out**);
+- `th:if="${adaptive}"` around the two icons, which are static SVG in the template, the same carts as `docs/`;
+- the CSS in `<style>`: the light and dark colours, the media queries of the tiers and the `:hover` of the frames.
+
+To change the look, edit the template (static parts, CSS); to change what is drawn, `SvgRenderer`.
 
 ## Use it
 
 ```java
 Sweep sweep = new Sweep(40_000, 60_000, 8_000, 10_000, 25_000, 30_000);   // T_min, T_max, τ_min, τ_max, A, L
 Sweep.Point p = sweep.at(85_000);          // SWEPT_OUT, 25_000
-String svg = SvgRenderer.render(sweep, "L", 48);
+String svg = SvgRenderer.render(sweep);    // one adaptive SVG: icon … full graph
+String s = SvgRenderer.render(sweep, "S", 48);   // one tier alone
 ```
 
 Not published to Maven Central (yet): build it from this repository.
 
 ## Build
 
+Java 21 and Maven, from the root of the repository:
+
 ```bash
-mvn -pl plans-math -am verify                      # build, tests, coverage, pictures (target/pages/plans-math/svg)
-mvn -pl plans-math compile exec:java@docs          # only the pictures
+mvn -pl plans-math -am verify                      # build, tests, coverage, pictures
+mvn -pl plans-math compile exec:java@docs          # only the pictures, into plans-math/docs
 ```
 
+`verify` leaves in `plans-math/target/`: `surefire-reports/`, `open-test-report/` (Open Test Reporting XML),
+`site/jacoco/` (coverage) and `pages/plans-math/svg/` (the pictures and the status list of the GitHub Pages). The HTML
+test report: `mvn -pl plans-math exec:java@open-test-html -Dotr.xml=… -Dotr.html=…` (as the workflow does).
+
+## GitHub Pages
+
 Every push to `main` that touches `plans-math/` runs [`.github/workflows/plans-math.yml`](../.github/workflows/plans-math.yml):
-build and test, turn the Open Test Reporting XML into HTML, and publish the test report (one picture per layout), the
-coverage report, the pictures and the badge numbers on [GitHub Pages](https://krm-demo.github.io/ai-plans-instr/plans-math/).
+it builds and tests, turns the Open Test Reporting XML into HTML, puts together `plans-math/` — the page from
+[`src/site/`](src/site) (the status list filled in from `Zone`, the numbers of the tests and the coverage), the
+pictures, the test report, the coverage report, the badge JSON — and **commits** it to the `gh-pages` branch, which
+GitHub Pages serves at [https://krm-demo.github.io/ai-plans-instr/plans-math/](https://krm-demo.github.io/ai-plans-instr/plans-math/).
 
 ## Files
 
@@ -122,10 +177,11 @@ src/main/java/org/krmdemo/plansinstr/equilib/
   Sweep                         the parameters, the swept amount at() a balance, snapping
   Zone                          the statuses: titles, colours, terminal or not, the one description of each
   Layout                        data ranges and pixels, broken axes, 45° everywhere, clipping
-  SvgRenderer                   the geometry: zones, function, labels, formula, legend, the frames
+  SvgRenderer                   the geometry: the tiers, zones, function, labels, formula, legend, the frames
   SvgTemplate                   renders it with Thymeleaf
-  EquilibDocs                   writes the pictures of this README (published on GitHub Pages)
+  EquilibDocs                   writes the pictures of this README and the status list (for GitHub Pages)
 src/main/resources/templates/equilib.svg   the Thymeleaf template of every picture
+src/site/                       the GitHub Pages: index.html, the JavaScript widget, page.js (palettes), fill-page.py
 src/test/java/…                 SweepTest, SvgRendererTest, SweepStatusGalleryTest (one test per layout; and the
                                 check that the status list above is Zone's, word for word)
 docs/                           the two icons
@@ -135,4 +191,5 @@ docs/                           the two icons
 
 - [Thymeleaf](https://www.thymeleaf.org/doc/tutorials/3.1/usingthymeleaf.html), [Open Test Reporting](https://github.com/ota4j-team/open-test-reporting), [JaCoCo](https://www.jacoco.org/jacoco/)
 - [Liang–Barsky line clipping](https://en.wikipedia.org/wiki/Liang%E2%80%93Barsky_algorithm)
-- The interactive page: [krm-demo-org-site, `site/projects/swept-amount-math/`](https://github.com/krm-demo/krm-demo-org-site/tree/main/site/projects/swept-amount-math)
+- [Media queries in SVG](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries/Using_media_queries) apply to the SVG's own viewport
+- [peaceiris/actions-gh-pages](https://github.com/peaceiris/actions-gh-pages): the commit to `gh-pages`
