@@ -10,9 +10,9 @@
         <version>0.1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>plan-equilib</artifactId>
-    <name>plan-equilib</name>
-    <description>Balances Equilibrium: the swept amount per current balance as an SVG without JavaScript, and its Lambda</description>
+    <artifactId>plans-math</artifactId>
+    <name>plans-math</name>
+    <description>The math of the plans: Balances Equilibrium (the swept amount per current balance as an SVG without JavaScript) and its Lambda</description>
 
     <!-- No runtime dependencies on purpose: the jar itself is the Lambda package (a few dozen KB, fast cold start). -->
     <dependencies>
@@ -24,11 +24,11 @@
     </dependencies>
 
     <build>
-        <finalName>plan-equilib</finalName>
+        <finalName>plans-math</finalName>
         <plugins>
             <!--
               Regenerates the example pictures of the README in docs/ on every build; commit them.
-              On its own (from the repo root): mvn -pl plan-equilib compile exec:java@docs
+              On its own (from the repo root): mvn -pl plans-math compile exec:java@docs
             -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

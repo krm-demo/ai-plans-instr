@@ -100,6 +100,11 @@ public final class SvgRenderer {
             : new Object[][] {{xA, xk, Zone.SWEPT_IN_PARTIAL}, {xk, xl, Zone.SWEPT_IN_FULL}, {xl, tMin, Zone.IN_NOMINAL_MIN},
                               {tMin, tMax, Zone.IN_RANGE}, {tMax, xr, Zone.IN_NOMINAL_MAX}, {xr, xoc, Zone.SWEPT_OUT},
                               {xoc, xZ, Zone.OVERFLOW}};
+        // The cut of the x axis is filled too when the same zone goes on behind it: the cut stays unobtrusive.
+        if (g.broken) {
+            Zone zl = s.at(Math.round(g.xs.get(0).d1())).zone(), zr = s.at(Math.round(g.xs.get(1).d0())).zone();
+            if (zl == zr) band(g.xs.get(0).q1(), Layout.GAP, zl);
+        }
         Layout.Seg low = g.ys.get(0);
         double wmY = (low.q0() + low.q1()) / 2;
         StringBuilder marks = new StringBuilder();
@@ -112,11 +117,7 @@ public final class SvgRenderer {
                 double qa = sx.map(lo), w = sx.map(hi) - qa;
                 if (w <= 0.5) continue;
                 if (widest == null || w > widest[1]) widest = new double[] {qa, w};
-                for (Layout.Seg sy : g.ys) {
-                    String rect = "<rect x=\"" + r(qa) + "\" y=\"" + r(sy.qLo()) + "\" width=\"" + r(w) + "\" height=\"" + r(sy.qHi() - sy.qLo()) + "\"";
-                    h.append(rect).append(" style=\"fill:").append(z.fill()).append(";fill-opacity:").append(z.opacity()).append("\"/>");
-                    if (z.terminal()) h.append(rect).append(" fill=\"url(#hatch)\"/>");
-                }
+                band(qa, w, z);
             }
             if (widest != null && widest[1] >= pf.wmMin()) {
                 double cx = widest[0] + widest[1] / 2;
@@ -128,24 +129,24 @@ public final class SvgRenderer {
             }
         }
         h.append('\n').append(marks).append("\n<g class=\"grid\"></g><g class=\"aux\"></g>\n");
+        thresholdLine();
 
-        // Axes with break marks.
+        // Axes, continuous; where they are cut, two short slanted strokes in the middle of the cut.
         String axSt = stroke("var(--soft)", 1, null, 1);
-        for (int i = 0; i < g.xs.size(); i++) {
-            Layout.Seg sx = g.xs.get(i);
-            boolean last = i == g.xs.size() - 1;
-            h.append("<line x1=\"").append(r(sx.q0())).append("\" y1=\"").append(r(y0)).append("\" x2=\"").append(r(last ? sx.q1() + 6 : sx.q1()))
-                .append("\" y2=\"").append(r(y0)).append("\" style=\"").append(axSt).append('"').append(last ? " marker-end=\"url(#arrow)\"" : "").append("/>");
-            if (!last) for (double q : new double[] {sx.q1(), g.xs.get(i + 1).q0()}) line(q - 3, y0 + 5, q + 3, y0 - 5, axSt);
+        h.append("<line x1=\"").append(r(pf.left())).append("\" y1=\"").append(r(y0)).append("\" x2=\"").append(r(pf.right() + 6))
+            .append("\" y2=\"").append(r(y0)).append("\" style=\"").append(axSt).append("\" marker-end=\"url(#arrow)\"/>");
+        h.append("<line x1=\"").append(r(ax)).append("\" y1=\"").append(r(g.plotBottom)).append("\" x2=\"").append(r(ax)).append("\" y2=\"")
+            .append(r(g.plotTop - 6)).append("\" style=\"").append(axSt).append("\" marker-end=\"url(#arrow)\"/>");
+        if (g.broken) {
+            String br = stroke("var(--soft)", 1, null, 0.8);
+            double cq = g.xs.get(0).q1() + Layout.GAP / 2, cy = g.ys.get(0).q1() - Layout.GAP / 2;
+            line(cq - 4, y0 + 4, cq - 1, y0 - 4, br);
+            line(cq + 1, y0 + 4, cq + 4, y0 - 4, br);
+            line(ax - 4, cy + 1, ax + 4, cy - 2, br);
+            line(ax - 4, cy + 4, ax + 4, cy + 1, br);
         }
-        for (int i = 0; i < g.ys.size(); i++) {
-            Layout.Seg sy = g.ys.get(i);
-            boolean last = i == g.ys.size() - 1;
-            h.append("<line x1=\"").append(r(ax)).append("\" y1=\"").append(r(sy.q0())).append("\" x2=\"").append(r(ax)).append("\" y2=\"")
-                .append(r(last ? sy.q1() - 6 : sy.q1())).append("\" style=\"").append(axSt).append('"').append(last ? " marker-end=\"url(#arrow)\"" : "").append("/>");
-            if (!last) for (double q : new double[] {sy.q1(), g.ys.get(i + 1).q0()}) line(ax - 5, q + 3, ax + 5, q - 3, axSt);
-        }
-        text(ax + 8, g.plotTop - 8, null, "var(--soft)", "Swept amount, $", "m", 12);
+        h.append("<text x=\"").append(r(ax + 8)).append("\" y=\"").append(r(g.plotTop - 8)).append("\" class=\"m\" style=\"font-size:12px;fill:var(--soft)\">")
+            .append("Swept amount, <tspan style=\"fill:").append(PURPLE).append(";font-style:normal;font-weight:700\">$</tspan></text>");
         h.append('\n');
 
         // Projections of the points of interest onto the y axis, then the function.
@@ -175,6 +176,9 @@ public final class SvgRenderer {
         }
         seg(xl, 0, xr, 0, stroke(Zone.IN_RANGE.ink(), w, null, 1));
         if (xr < xZ) seg(xr, nMax, xoc, xoc - tMax, stroke(Zone.SWEPT_OUT.ink(), w, null, 1));
+        if (g.broken && xr < g.xs.get(0).d1()) {       // across the cut: from corner to corner, at 45°
+            line(g.xs.get(0).q1(), g.ys.get(0).q1(), g.xs.get(1).q0(), g.ys.get(1).q0(), stroke(Zone.SWEPT_OUT.ink(), w, null, 1));
+        }
         seg(xr, 0, xr, nMax, stroke(Zone.SWEPT_OUT.ink(), 2, "4 3", 1));
         if (xo < xZ) seg(xo, 0, xZ, 0, stroke(Zone.OVERFLOW.ink(), 3, "6 4", 1));
 
@@ -259,7 +263,7 @@ public final class SvgRenderer {
             h.append("<g class=\"f").append(i == dflt ? " d" : "").append("\"><rect class=\"hit\" x=\"").append(r(lo)).append("\" y=\"")
                 .append(r(g.plotTop)).append("\" width=\"").append(r(hi - lo)).append("\" height=\"").append(r(g.plotBottom - g.plotTop))
                 .append("\"/><g class=\"on\">");
-            seg(sm[0], g.yMin(), sm[0], g.yMax(), stroke(PURPLE, 1.4, "5 4", 0.9));
+            line(sm[1], g.plotBottom, sm[1], g.plotTop, stroke(PURPLE, 1.4, "5 4", 0.9));
             if (p.amount() != null && g.visY(p.amount())) {
                 double py = g.y(p.amount());
                 line(g.axisX(), py, sm[1], py, stroke(PURPLE, 1.1, "3 3", 0.8));
@@ -279,18 +283,53 @@ public final class SvgRenderer {
         h.append("</g>\n");
     }
 
-    /** The line on top: the zone as a badge, then x → y. */
+    private void band(double qa, double w, Zone z) {
+        String rect = "<rect x=\"" + r(qa) + "\" y=\"" + r(g.plotTop) + "\" width=\"" + r(w) + "\" height=\"" + r(g.plotBottom - g.plotTop) + "\"";
+        h.append(rect).append(" style=\"fill:").append(z.fill()).append(";fill-opacity:").append(z.opacity()).append("\"/>");
+        if (z.terminal()) h.append(rect).append(" fill=\"url(#hatch)\"/>");
+    }
+
+    private static final String LABEL = "font-size:10.5px;font-weight:600;letter-spacing:.6px;fill:var(--soft)";
+    private static final double LABEL_W = 104;
+
+    /** The first status line: the threshold with its nominals, "−τ_min [T_min ; T_max] +τ_max (T_min − τ_min ; T_max + τ_max)". */
+    private void thresholdLine() {
+        h.append("<text x=\"0\" y=\"16\" style=\"").append(LABEL).append("\">THRESHOLD:</text>");
+        h.append("<text x=\"").append(LABEL_W).append("\" y=\"16\" style=\"font-size:13px;font-family:ui-monospace,Menlo,monospace;fill:var(--ink)\">")
+            .append("−").append(Money.compact(s.nominalMin())).append(" [").append(Money.compact(s.thresholdMin())).append(" ; ")
+            .append(Money.compact(s.thresholdMax())).append("] +").append(Money.compact(s.nominalMax()));
+        if (pf.width() >= 500) {
+            h.append("<tspan dx=\"10\" style=\"fill:var(--soft)\">(").append(Money.compact(s.thresholdMin() - s.nominalMin())).append(" ; ")
+                .append(Money.compact(s.thresholdMax() + s.nominalMax())).append(")</tspan>");
+        }
+        h.append("</text>");
+    }
+
+    /** The second status line, one per frame: the zone as a badge, x → y and which way the money goes. */
     private void readout(Sweep.Point p) {
         Zone z = p.zone();
         String title = z.title() + (z.terminal() ? " ⏚" : "");
-        double bw = title.length() * 6.9 + 18;
-        h.append("<rect x=\"0\" y=\"4\" width=\"").append(r(bw)).append("\" height=\"22\" rx=\"7\" style=\"fill:").append(z.fill()).append(";fill-opacity:.18\"/>");
-        text(bw / 2, 19, "middle", z.ink(), title, null, 12);
+        double bw = title.length() * 6.9 + 18, y0 = 28;
+        h.append("<text x=\"0\" y=\"").append(r(y0 + 15)).append("\" style=\"").append(LABEL).append("\">SWEEP STATUS:</text>");
+        h.append("<rect x=\"").append(LABEL_W).append("\" y=\"").append(r(y0)).append("\" width=\"").append(r(bw))
+            .append("\" height=\"22\" rx=\"7\" style=\"fill:").append(z.fill()).append(";fill-opacity:.18\"/>");
+        text(LABEL_W + bw / 2, y0 + 15, "middle", z.ink(), title, null, 12);
         String y = p.amount() == null ? "∄ (terminal failure)" : Money.full(p.amount());
-        h.append("<text x=\"").append(r(bw + 10)).append("\" y=\"19\" style=\"font-size:13px;fill:var(--soft)\"><tspan class=\"m\" style=\"fill:var(--ink)\">x</tspan> ")
+        h.append("<text x=\"").append(r(LABEL_W + bw + 10)).append("\" y=\"").append(r(y0 + 15)).append("\" style=\"font-size:13px;fill:var(--soft)\"><tspan class=\"m\" style=\"fill:var(--ink)\">x</tspan> ")
             .append("<tspan style=\"fill:").append(PURPLE).append(";font-weight:600\">").append(Money.full(p.balance())).append("</tspan> → ")
             .append("<tspan class=\"m\" style=\"fill:var(--ink)\">y</tspan> <tspan style=\"fill:").append(PURPLE).append(";font-weight:600\">")
             .append(y).append("</tspan></text>");
+        String dir = switch (z) {
+            case SWEPT_IN_PARTIAL, SWEPT_IN_FULL -> "from Investment-Account to DDA";
+            case SWEPT_OUT -> "from DDA to Investment-Account";
+            case SWEPT_IN_ZERO, OVERFLOW -> "";
+            default -> "nothing to transfer";
+        };
+        if (!dir.isEmpty()) {
+            boolean below = pf.width() < 700;          // on M and S the direction gets a line of its own
+            h.append("<text x=\"").append(below ? r(LABEL_W) : r(pf.width())).append("\" y=\"").append(r(below ? y0 + 38 : y0 + 15)).append('"')
+                .append(below ? "" : " text-anchor=\"end\"").append(" style=\"font-size:12.5px;font-style:italic;fill:var(--soft)\">").append(dir).append("</text>");
+        }
     }
 
     // ---------------------------------------------------------------- labels, formula, legend

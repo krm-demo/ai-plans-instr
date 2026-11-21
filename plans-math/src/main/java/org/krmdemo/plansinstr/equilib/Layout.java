@@ -6,10 +6,9 @@ import java.util.List;
 /**
  * Where the graph of one {@link Sweep} goes: the data ranges of the axes, fitted to the parameters, and their pixels.
  * <p>
- * Every panel has the same dollars per pixel on both of its axes, so every slope is 45° (0° and 90° are the only
- * other angles). When L is far bigger than the thresholds, the axes are <b>broken</b>: the "pan" (thresholds,
- * nominals, A) stays bottom left, the end of the "handle" (Swept out up to T_max + L) goes top right, in a smaller
- * scale of its own but still at 45°.
+ * One scale for both axes, so every slope is 45° (0° and 90° are the only other angles). When L is far bigger than
+ * the thresholds, the axes are <b>broken</b>: the "pan" (thresholds, nominals, A) stays bottom left, the end of the
+ * "handle" (Swept out up to T_max + L) goes top right, and the cut between them runs along the Swept out line.
  */
 final class Layout {
 
@@ -24,9 +23,9 @@ final class Layout {
 
     /** A size of the picture. */
     record Profile(String name, int width, int left, int right, int top, int font, int rowGap, int wmMin, int pri) {
-        static final Profile L = new Profile("L", 760, 22, 736, 54, 15, 19, 22, 3);
-        static final Profile M = new Profile("M", 560, 18, 540, 50, 14, 18, 19, 2);
-        static final Profile S = new Profile("S", 380, 14, 366, 48, 13, 17, 17, 1);
+        static final Profile L = new Profile("L", 760, 22, 736, 82, 15, 19, 22, 3);
+        static final Profile M = new Profile("M", 560, 18, 540, 78, 14, 18, 19, 2);
+        static final Profile S = new Profile("S", 380, 14, 366, 92, 13, 17, 17, 1);
 
         static Profile of(String name) {
             return switch (name == null ? "L" : name.toUpperCase()) {
@@ -37,8 +36,7 @@ final class Layout {
         }
     }
 
-    static final double GAP = 12;
-    static final double SHARE = 0.72;   // part of the width the "pan" gets when the axes are broken
+    static final double GAP = 10;
 
     final Profile pf;
     final List<Seg> xs = new ArrayList<>();
@@ -48,6 +46,12 @@ final class Layout {
     /** Step of the balances the frames are sampled at, per x piece. */
     final double[] steps;
 
+    /**
+     * Broken axes keep ONE scale everywhere. The pan ends at x1 = T_max + y1, where y1 is the top of its y range,
+     * so the Swept out line leaves it exactly through its top right corner. The same amount Δ is cut out of both
+     * axes, and the handle panel starts at (x1 + Δ, y1 + Δ) = (T_max + L − tail, L − tail): back on the same line,
+     * which goes on across the cut at 45° as if nothing happened.
+     */
     Layout(Sweep s, Profile pf) {
         this.pf = pf;
         double tMin = s.thresholdMin(), tMax = s.thresholdMax(), nMin = s.nominalMin(), nMax = s.nominalMax();
@@ -56,37 +60,36 @@ final class Layout {
         double coreLo = tMin - Math.max(a, nMin), coreHi = tMax + nMax;
         double span = Math.max(coreHi - coreLo, Math.max(tMax * 0.2, 10));
         double xLo = coreLo - 0.3 * span, panHi = coreHi + 0.45 * span;
-        broken = end > panHi + 0.9 * span;
-        double xHi = broken ? panHi : Math.max(panHi, end + 0.25 * span);
+        double yNeed = Math.max(Math.max(Math.max(a, nMin), nMax) * 1.25, 0.15 * span);
 
-        double yTop = Math.max(Math.max(a, nMin), nMax);
-        if (!broken) yTop = Math.max(yTop, l);
-        yTop = Math.max(yTop * 1.25, 0.15 * span);
-        double yLo = -Math.max(0.12 * yTop, 0.05 * span);
+        // Broken: the pan up to the corner (x1, y1) on the line y = x − T_max, then the handle near (T_max + L, L).
+        double y1 = Math.max(yNeed, panHi - tMax), x1 = tMax + y1;
+        double tail = 0.3 * (x1 - xLo), head = 0.12 * tail, margin = 0.35 * tail;
+        broken = end - tail > x1 + 0.5 * tail;
 
-        double width = pf.right() - pf.left() - (broken ? GAP : 0);
-        double wl = broken ? width * SHARE : width;
-        double k = wl / (xHi - xLo);                       // pixels per dollar, the same on both axes
-        double hl = (yTop - yLo) * k;
-        double minH = 0.3 * pf.width();
-        if (hl < minH) { yTop = yLo + minH / k; hl = minH; }
-
-        double wu = 0, hu = 0, s0 = 0;
+        double yLo;
         if (broken) {
-            wu = width - wl;
-            s0 = Math.min(0.5 * l, Math.min((end - xHi) / 0.8 * 0.95, (l - yTop) / 0.8 * 0.95));
-            hu = wu;                                        // equal spans on both axes: a square panel
-        }
-        plotBottom = pf.top() + hl + (broken ? GAP + hu : 0);
-        plotTop = pf.top();
-
-        xs.add(new Seg(xLo, xHi, pf.left(), pf.left() + wl));
-        ys.add(new Seg(yLo, yTop, plotBottom, plotBottom - hl));
-        if (broken) {
-            xs.add(new Seg(end - 0.8 * s0, end + 0.2 * s0, pf.left() + wl + GAP, pf.right()));
-            ys.add(new Seg(l - 0.8 * s0, l + 0.2 * s0, plotBottom - hl - GAP, plotTop));
-            steps = new double[] {niceStep(span), niceStep(s0)};
+            yLo = -Math.max(0.12 * y1, 0.05 * span);
+            double k = (pf.right() - pf.left() - GAP) / ((x1 - xLo) + tail + margin);   // pixels per dollar, both axes
+            double wl = (x1 - xLo) * k, hl = (y1 - yLo) * k, hu = (tail + head) * k;
+            plotTop = pf.top();
+            plotBottom = plotTop + hu + GAP + hl;
+            xs.add(new Seg(xLo, x1, pf.left(), pf.left() + wl));
+            xs.add(new Seg(end - tail, end + margin, pf.left() + wl + GAP, pf.right()));
+            ys.add(new Seg(yLo, y1, plotBottom, plotBottom - hl));
+            ys.add(new Seg(l - tail, l + head, plotTop + hu, plotTop));
+            steps = new double[] {niceStep(span), niceStep(tail + margin)};
         } else {
+            double xHi = Math.max(panHi, end + 0.25 * span);
+            double yTop = Math.max(yNeed, l * 1.15);
+            yLo = -Math.max(0.12 * yTop, 0.05 * span);
+            double k = (pf.right() - pf.left()) / (xHi - xLo);
+            double hl = (yTop - yLo) * k, minH = 0.3 * pf.width();
+            if (hl < minH) { yTop = yLo + minH / k; hl = minH; }
+            plotTop = pf.top();
+            plotBottom = plotTop + hl;
+            xs.add(new Seg(xLo, xHi, pf.left(), pf.right()));
+            ys.add(new Seg(yLo, yTop, plotBottom, plotTop));
             steps = new double[] {niceStep(xHi - xLo)};
         }
     }

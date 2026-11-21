@@ -1,4 +1,4 @@
-# Balances Equilibrium — `plan-equilib`
+# plans-math: Balances Equilibrium
 
 [<img src="docs/icon.svg" width="120" height="68" alt="Balances Equilibrium on the preview site">](https://krm-demo.github.io/krm-demo-org-site/swept-amount-math.en.html)
 &nbsp;&nbsp;
@@ -8,7 +8,7 @@
 restless when it gets too fat. The other one sits quietly in an investment account and grows. They agreed on a few
 rules long ago, and since then money moves between them by itself, with no phone calls about pocket change.
 
-This module draws those rules: the **swept amount per current balance** of a cash sweep. It renders the graph as
+This module (`plans-math`, the math of the plans; its first piece) draws those rules: the **swept amount per current balance** of a cash sweep. It renders the graph as
 one SVG **without JavaScript** and serves it from an AWS Lambda. The interactive version, with handles to drag,
 lives on the site: the big icon above opens the preview (staging), the small one opens
 [krm-demo.org](https://krm-demo.org/) (the AWS version, after the next release of the site).
@@ -23,6 +23,7 @@ lives on the site: the big icon above opens the preview (staging), the small one
 
 - [The arrangement](#the-arrangement)
 - [The swept amount](#the-swept-amount)
+- [Sweep statuses](#sweep-statuses)
 - [How it is drawn](#how-it-is-drawn)
 - [Without JavaScript](#without-javascript)
 - [The Lambda](#the-lambda)
@@ -85,33 +86,59 @@ least *τ* (and more than nothing).
 | Overflow | red `#E24B4A`, hatched | terminal failure |
 | the probe | purple `#8B5CF6` | the balance under the mouse |
 
+The pictures here are rebuilt from the code on every build, so they always show the current version. They are
+static as images; click one to open the same picture live from the Lambda and move the mouse over it.
+
 Thousands, *L* = $30,000:
 
-![Swept amount in thousands](docs/equilib-thousands.svg)
+[![Swept amount in thousands](docs/equilib-thousands.svg)](https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/?sweptOutMax=30000)
+
+## Sweep statuses
+
+What all this math is for: for a current balance, find the **sweep status** and the amount to transfer, either
+**from Investment-Account to DDA** (swept in) or **from DDA to Investment-Account** (swept out). On the graph the
+status is the line on top, next to the threshold written as −*τ*<sub>min</sub> [*T*<sub>min</sub> ; *T*<sub>max</sub>] +*τ*<sub>max</sub>,
+or as the interval (*T*<sub>min</sub> − *τ*<sub>min</sub> ; *T*<sub>max</sub> + *τ*<sub>max</sub>) — for example
+−$8k [$40k ; $60k] +$10k, that is ($32k ; $70k).
+
+| Sweep status | Transfer | In short |
+|---|---|---|
+| **Swept in full** | *T*<sub>min</sub> − *x*, from Investment-Account to DDA | exactly what is missing comes back. If that is all of *A*, the investment account is emptied to the cent, and the next shortfall meets an empty account. |
+| **Swept in partial** | all of *A*, from Investment-Account to DDA | the last transfer: it empties the investment account and is still not enough to reach *T*<sub>min</sub>. |
+| **Swept in zero** ⏚ | none (∄) | the investment account is empty. A yellow card: on the next round the plan is either cancelled (sent off till the end of the match, as in football) or paused (a few minutes in the penalty box, as in hockey). |
+| **In nominal min** | none | below *T*<sub>min</sub>, but by less than *τ*<sub>min</sub>: not worth a transfer. |
+| **In range** | none | between the thresholds: all is well. |
+| **In nominal max** | none | above *T*<sub>max</sub>, but by less than *τ*<sub>max</sub>. |
+| **Swept out** | *x* − *T*<sub>max</sub>, from DDA to Investment-Account | the excess goes to work. |
+| **Overflow** ⏚ | none (∄) | the excess is above *L*, the largest single payment the investment account accepts: one sweep cannot restore the balance. |
 
 ## How it is drawn
 
 - **Only 0°, 45° and 90°.** Every panel has the same dollars per pixel on both axes, so the slopes of *y* = *T*<sub>min</sub> − *x*
   and *y* = *x* − *T*<sub>max</sub> are exactly 45°. The height of the graph follows from its width and the data.
 - **Broken axes.** Real amounts are lopsided: thresholds in thousands or hundreds of thousands, *L* in millions.
-  On one scale that is a wok with a very long handle. When *T*<sub>max</sub> + *L* is far to the right, both axes break:
-  the "pan" (thresholds, nominals, *A*) stays bottom left, the end of the "handle" (Swept out up to *T*<sub>max</sub> + *L*)
-  goes top right, in a scale of its own, still at 45°.
+  On one scale that is a wok with a very long handle. When *T*<sub>max</sub> + *L* is far to the right, the same
+  amount Δ is cut out of both axes, at the point where the Swept out line leaves the "pan" (its top right corner).
+  The "handle" panel starts at (*T*<sub>max</sub> + *L* − tail, *L* − tail), back on the same line: the scale stays
+  the same everywhere, and Swept out goes on across the cut as its own continuation, at 45°. The cut shows only as
+  two small marks on each axis; the bands of the zones run across it.
 - **The ranges fit the parameters**: a margin around *T*<sub>min</sub> − *A* … *T*<sub>max</sub> + *τ*<sub>max</sub>, and
   around *T*<sub>max</sub> + *L* when it is in the same panel.
 - **Sizes** L (760 px), M (560 px), S (380 px). Smaller sizes show fewer labels: S only the thresholds and the caps,
   M also the nominals, L everything. Want to see it all? Look at it on a big screen.
+- The purple dashed lines go from the probed point down to the x axis and across to the y axis; the $ of
+  "Swept amount, $" is purple as well, since the swept amount is what the probe reads.
 - Dashed lines in a zone's colour show what *would* happen without the caps, the nominals or the limit.
   Every point of interest is projected onto the axes with a thin dotted line.
 - The colours of text and axes follow the light or dark mode of the reader (`prefers-color-scheme`).
 
 Millions, *L* = $2,000,000, broken axes:
 
-![Swept amount in millions, broken axes](docs/equilib-millions.svg)
+[![Swept amount in millions, broken axes](docs/equilib-millions.svg)](https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/)
 
 Swept in zero, *A* = 0:
 
-![Swept in zero](docs/equilib-swept-in-zero.svg)
+[![Swept in zero](docs/equilib-swept-in-zero.svg)](https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/?sweptInMax=0&sweptOutMax=30000)
 
 ## Without JavaScript
 
@@ -165,15 +192,17 @@ Inconsistent parameters (*T*<sub>min</sub> > *T*<sub>max</sub>, 0 < *A* < *τ*<s
 ## Build and deploy
 
 ```bash
-mvn -pl plan-equilib -am verify                    # build, tests, regenerate docs/*.svg (commit them)
-mvn -pl plan-equilib compile exec:java@docs        # only the pictures
+mvn -pl plans-math -am verify                      # build, tests, regenerate docs/*.svg (commit them)
+mvn -pl plans-math compile exec:java@docs          # only the pictures
 ```
 
-- **Deploy**: every push to `main` that touches `plan-equilib/` runs
-  [`.github/workflows/plan-equilib.yml`](../.github/workflows/plan-equilib.yml): build, test, check that `docs/` is
+- **Deploy**: every push to `main` that touches `plans-math/` runs
+  [`.github/workflows/plans-math.yml`](../.github/workflows/plans-math.yml): build, test, check that `docs/` is
   committed, replace the code of the Lambda, smoke-test the URL. It signs in to AWS with OIDC (no stored keys) as
   the role `plan-equilib-deploy`, which trusts only pushes to `main` of this repository and may only update this
   one function.
+- The Lambda keeps the module's first name, `plan-equilib` (and so do its roles and URL); the module was renamed
+  to `plans-math` later, for more math to come.
 - **One-time setup** (done for account 560574854768, us-east-1): [`deploy/setup.sh`](deploy/setup.sh) creates the
   execution role, the function, its public URL with both permissions it needs, and the deploy role.
 

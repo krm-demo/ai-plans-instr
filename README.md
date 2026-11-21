@@ -25,8 +25,8 @@ plans-lambda/                   the deployable Lambda (shaded jar), org.krmdemo.
   RuntimeInfoConfig             host name, start time, build number
   MigrationFunctions            migrateDatabase (runs Flyway)
   resources/db/migration/       SQL schema
-plan-equilib/                   Balances Equilibrium: the swept amount per current balance as an SVG without
-                                JavaScript, and its public Lambda (no dependencies), see plan-equilib/README.md
+plans-math/                     Balances Equilibrium: the swept amount per current balance as an SVG without
+                                JavaScript, and its public Lambda (no dependencies), see plans-math/README.md
 infra/template.yaml             AWS: network, Postgres, Lambdas, HTTP API
 infra/github-oidc.yaml          AWS one-time: lets GitHub deploy without keys
 .github/workflows/release.yml   release workflow

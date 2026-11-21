@@ -6,9 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Writes the example pictures of the README into {@code plan-equilib/docs/}:
- * <pre>mvn -pl plan-equilib compile exec:java@docs</pre>
- * (or {@code java -cp plan-equilib/target/classes org.krmdemo.plansinstr.equilib.EquilibDocs plan-equilib/docs}).
+ * Writes the example pictures of the README into {@code plans-math/docs/}:
+ * <pre>mvn -pl plans-math compile exec:java@docs</pre>
+ * (or {@code java -cp plans-math/target/classes org.krmdemo.plansinstr.equilib.EquilibDocs plans-math/docs}).
  */
 public final class EquilibDocs {
 
@@ -16,7 +16,7 @@ public final class EquilibDocs {
     }
 
     public static void main(String[] args) throws IOException {
-        Path dir = Path.of(args.length > 0 ? args[0] : "plan-equilib/docs");
+        Path dir = Path.of(args.length > 0 ? args[0] : "plans-math/docs");
         Files.createDirectories(dir);
         write(dir, "equilib-thousands.svg", new Sweep(40_000, 60_000, 8_000, 10_000, 25_000, 30_000), "L");
         write(dir, "equilib-millions.svg", Sweep.DEMO, "L");

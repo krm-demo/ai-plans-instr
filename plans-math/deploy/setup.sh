@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# One-time AWS setup of plan-equilib: the Lambda, its public Function URL and the role GitHub Actions deploys with.
+# One-time AWS setup of plans-math (its Lambda is named plan-equilib, the module's first name): the Lambda, its public Function URL and the role GitHub Actions deploys with.
 # The same steps were done for account 560574854768 in us-east-1 on 2026-11-20; this script is the record of them
 # (and lets you repeat them in another account). Needs an AWS profile that may create IAM roles.
 #
-#   ./plan-equilib/deploy/setup.sh            # from the repo root, after: mvn -pl plan-equilib -am package
+#   ./plans-math/deploy/setup.sh              # from the repo root, after: mvn -pl plans-math -am package
 set -euo pipefail
 
 REGION="${AWS_REGION:-us-east-1}"
 FN=plan-equilib
 REPO=krm-demo/ai-plans-instr
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
-JAR=plan-equilib/target/plan-equilib.jar
+JAR=plans-math/target/plans-math.jar
 
 # 1. The role the function runs with: only CloudWatch logs.
 aws iam create-role --role-name plan-equilib-exec --assume-role-policy-document '{
