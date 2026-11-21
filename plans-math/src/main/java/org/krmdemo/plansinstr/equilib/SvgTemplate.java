@@ -45,15 +45,19 @@ final class SvgTemplate {
             + " · Java " + Runtime.version() + " · Thymeleaf " + thymeleafVersion();
     }
 
+    /** From the pom.properties Maven puts into every jar (kept by the shade plugin), else from the manifest. */
     static String thymeleafVersion() {
-        String v = TemplateEngine.class.getPackage().getImplementationVersion();
-        if (v == null) {
-            try {
-                v = (String) Class.forName("org.thymeleaf.Thymeleaf").getField("VERSION").get(null);
-            } catch (ReflectiveOperationException | ClassCastException e) {
-                v = "3";
+        try (var in = TemplateEngine.class.getResourceAsStream("/META-INF/maven/org.thymeleaf/thymeleaf/pom.properties")) {
+            if (in != null) {
+                java.util.Properties props = new java.util.Properties();
+                props.load(in);
+                String v = props.getProperty("version");
+                if (v != null) return v;
             }
+        } catch (java.io.IOException e) {
+            // fall through
         }
-        return v;
+        String v = TemplateEngine.class.getPackage().getImplementationVersion();
+        return v != null ? v : "3.x";
     }
 }

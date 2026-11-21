@@ -53,6 +53,9 @@ jobs:
           test -n "$XML"
           mvn -B -q -pl plans-math exec:java@open-test-html -Dotr.xml="$XML" -Dotr.html="$(dirname "$XML")/index.html"
           echo "OTR_DIR=$(dirname "$XML")" >> "$GITHUB_ENV"
+          echo "--- the report and the files the tests published:"
+          find "$(dirname "$XML")" -type f | sed 's/^/  /' | head -40
+          grep -o '[^"/]*\.svg' "$(dirname "$XML")/index.html" | sort -u | head -20 || true
 
       - name: Pages content and badge numbers
         run: |
