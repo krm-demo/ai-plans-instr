@@ -1,0 +1,19 @@
+<svg width="120" height="68" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 68" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Balances Equilibrium: the graph in the colours of its zones, the purple probe 30% into Swept out, a $ in the pan. -->
+    <path d="M6 54H116M8 62V4" stroke="#5a6777" stroke-width="1.5" opacity="0.4"/>
+    <text x="54" y="49" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="17" font-weight="700" fill="#5a6777" opacity="0.75">$</text>
+    <path d="M79 33V54M75 33H8" stroke="#8B5CF6" stroke-width="2" stroke-dasharray="3 3"/>
+    <path d="M10 24H22" stroke="#8A5418"/>
+    <path d="M22 24L40 42" stroke="#BA7517"/>
+    <path d="M40 45V54" stroke="#BA7517" stroke-width="2" stroke-dasharray="2.5 2.5"/>
+    <path d="M43 54H65" stroke="#378ADD"/>
+    <path d="M68 51V47" stroke="#1D9E75" stroke-width="2" stroke-dasharray="2.5 2.5"/>
+    <path d="M68 44L104 8" stroke="#1D9E75"/>
+    <circle cx="22" cy="24" r="2.4" fill="#8A5418"/>
+    <circle cx="40" cy="42" r="3" fill="#BA7517"/>
+    <circle cx="40" cy="54" r="3" stroke="#378ADD" stroke-width="2" fill="#ffffff"/>
+    <circle cx="68" cy="54" r="3" stroke="#378ADD" stroke-width="2" fill="#ffffff"/>
+    <circle cx="68" cy="44" r="3" fill="#1D9E75"/>
+    <circle cx="79" cy="33" r="5.5" stroke="#8B5CF6" stroke-width="2" fill="#8B5CF6" fill-opacity="0.2"/>
+    <circle cx="79" cy="33" r="2.2" fill="#8B5CF6"/>
+</svg>

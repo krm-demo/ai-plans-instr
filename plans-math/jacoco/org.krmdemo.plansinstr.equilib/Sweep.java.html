@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Sweep.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">plans-math</a> &gt; <a href="index.source.html" class="el_package">org.krmdemo.plansinstr.equilib</a> &gt; <span class="el_source">Sweep.java</span></div><h1>Sweep.java</h1><pre class="source lang-java linenums">package org.krmdemo.plansinstr.equilib;
+
+/**
+ * The parameters of a cash sweep, in whole dollars, and the swept amount for any current balance.
+ *
+ * &lt;pre&gt;
+ *   y = A               x &amp;lt; T_min − A                     Swept in partial   (A &amp;gt; 0)
+ *   y = T_min − x       T_min − A ≤ x ≤ T_min − τ_min     Swept in full      (A &amp;gt; 0)
+ *   ∄ (⏚)               x ≤ T_min − τ_min                 Swept in zero      (A = 0)
+ *   y = 0               T_min − τ_min &amp;lt; x &amp;lt; T_max + τ_max  In nominal min / In range / In nominal max
+ *   y = x − T_max       T_max + τ_max ≤ x ≤ T_max + L     Swept out
+ *   ∄ (⏚)               x &amp;gt; T_max + L                     Overflow
+ * &lt;/pre&gt;
+ *
+ * The nominals are the smallest transfers worth making: a sweep happens only if it moves at least τ (and more
+ * than nothing). So y jumps at T_min − τ_min and at T_max + τ_max, and the point of the jump belongs to the sweep.
+ *
+ * @param thresholdMin T_min, the lowest balance the DDA should keep
+ * @param thresholdMax T_max, the highest balance the DDA should keep (T_min ≤ T_max; just T when equal)
+ * @param nominalMin   τ_min, the smallest sweep in worth making
+ * @param nominalMax   τ_max, the smallest sweep out worth making
+ * @param sweptInMax   A, available: the balance of the investment account, the most one sweep in can bring back;
+ *                     0, or at least τ_min (a smaller A could never move a whole nominal)
+ * @param sweptOutMax  L, limit: the largest single payment into the investment account (at least τ_max, above 0)
+ */
+public record Sweep(long thresholdMin, long thresholdMax, long nominalMin, long nominalMax,
+                    long sweptInMax, long sweptOutMax) {
+
+    /** The demo of the README with L in millions (broken axes): thresholds in thousands. */
+<span class="fc" id="L30">    public static final Sweep DEMO = new Sweep(40_000, 60_000, 8_000, 10_000, 25_000, 2_000_000);</span>
+
+<span class="fc" id="L32">    public Sweep {</span>
+<span class="pc bpc" id="L33" title="4 of 8 branches missed.">        if (thresholdMin &lt; 0 || nominalMin &lt; 0 || nominalMax &lt; 0 || sweptInMax &lt; 0) {</span>
+<span class="nc" id="L34">            throw new IllegalArgumentException(&quot;amounts cannot be negative&quot;);</span>
+        }
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (thresholdMin &gt; thresholdMax) {</span>
+<span class="fc" id="L37">            throw new IllegalArgumentException(&quot;thresholdMin must not be above thresholdMax&quot;);</span>
+        }
+<span class="fc bfc" id="L39" title="All 4 branches covered.">        if (sweptInMax != 0 &amp;&amp; sweptInMax &lt; nominalMin) {</span>
+<span class="fc" id="L40">            throw new IllegalArgumentException(&quot;sweptInMax (A) must be 0 or at least nominalMin&quot;);</span>
+        }
+<span class="pc bpc" id="L42" title="1 of 4 branches missed.">        if (sweptOutMax &lt;= 0 || sweptOutMax &lt; nominalMax) {</span>
+<span class="fc" id="L43">            throw new IllegalArgumentException(&quot;sweptOutMax (L) must be above 0 and at least nominalMax&quot;);</span>
+        }
+<span class="fc" id="L45">    }</span>
+
+    /** The swept amount at one current balance: its zone and the amount, or null where it does not exist (∄). */
+<span class="fc" id="L48">    public record Point(long balance, Zone zone, Long amount) {</span>
+    }
+
+    public Point at(long x) {
+<span class="fc" id="L52">        long need = thresholdMin - x;</span>
+<span class="fc bfc" id="L53" title="All 4 branches covered.">        if (need &gt; 0 &amp;&amp; need &gt;= nominalMin) {</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">            if (sweptInMax == 0) return new Point(x, Zone.SWEPT_IN_ZERO, null);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">            if (need &gt; sweptInMax) return new Point(x, Zone.SWEPT_IN_PARTIAL, sweptInMax);</span>
+<span class="fc" id="L56">            return new Point(x, Zone.SWEPT_IN_FULL, need);</span>
+        }
+<span class="fc" id="L58">        long excess = x - thresholdMax;</span>
+<span class="fc bfc" id="L59" title="All 4 branches covered.">        if (excess &gt; 0 &amp;&amp; excess &gt;= nominalMax) {</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            return excess &gt; sweptOutMax ? new Point(x, Zone.SWEPT_OUT_OVERFLOW, null) : new Point(x, Zone.SWEPT_OUT, excess);</span>
+        }
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (x &lt; thresholdMin) return new Point(x, Zone.IN_NOMINAL_MIN, 0L);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (x &lt;= thresholdMax) return new Point(x, Zone.IN_RANGE, 0L);</span>
+<span class="fc" id="L64">        return new Point(x, Zone.IN_NOMINAL_MAX, 0L);</span>
+    }
+
+    /** T_min = T_max: the labels and the formula say just T. */
+    public boolean singleThreshold() {
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        return thresholdMin == thresholdMax;</span>
+    }
+
+    /**
+     * Rounds an amount to two significant digits (37 512 → 38 000, 2 340 000 → 2 300 000). That keeps the number of
+     * possible values of every parameter finite: at most 90 per power of ten.
+     */
+    public static long snap(long v) {
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (v &lt;= 0) return 0;</span>
+<span class="fc" id="L78">        long step = 1;</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        while (v / step &gt;= 100) step *= 10;</span>
+<span class="fc" id="L80">        return Math.round((double) v / step) * step;</span>
+    }
+
+    /** The same parameters, each rounded by {@link #snap(long)}; then made consistent again where rounding broke it. */
+    public Sweep snapped() {
+<span class="nc" id="L85">        long tMin = snap(thresholdMin), tMax = Math.max(tMin, snap(thresholdMax));</span>
+<span class="nc" id="L86">        long nMin = snap(nominalMin), nMax = snap(nominalMax);</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        long a = sweptInMax == 0 ? 0 : Math.max(snap(sweptInMax), nMin);</span>
+<span class="nc" id="L88">        long l = Math.max(snap(sweptOutMax), Math.max(nMax, 1));</span>
+<span class="nc" id="L89">        return new Sweep(tMin, tMax, nMin, nMax, a, l);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

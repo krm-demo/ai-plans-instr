@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Layout.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">plans-math</a> &gt; <a href="index.source.html" class="el_package">org.krmdemo.plansinstr.equilib</a> &gt; <span class="el_source">Layout.java</span></div><h1>Layout.java</h1><pre class="source lang-java linenums">package org.krmdemo.plansinstr.equilib;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Where the graph of one {@link Sweep} goes: the data ranges of the axes, fitted to the parameters, and their pixels.
+ * &lt;p&gt;
+ * One scale for both axes, so every slope is 45° (0° and 90° are the only other angles). When L is far bigger than
+ * the thresholds, the axes are &lt;b&gt;broken&lt;/b&gt;: the &quot;pan&quot; (thresholds, nominals, A) stays bottom left, the end of the
+ * &quot;handle&quot; (Swept out up to T_max + L) goes top right, and the cut between them runs along the Swept out line.
+ */
+final class Layout {
+
+    /** One piece of an axis: data range [d0, d1] drawn on pixels [q0, q1]. */
+<span class="fc" id="L16">    record Seg(double d0, double d1, double q0, double q1) {</span>
+<span class="fc" id="L17">        double map(double v) { return q0 + (v - d0) * (q1 - q0) / (d1 - d0); }</span>
+<span class="fc" id="L18">        double unmap(double q) { return d0 + (q - q0) * (d1 - d0) / (q1 - q0); }</span>
+<span class="fc bfc" id="L19" title="All 4 branches covered.">        boolean has(double v) { return v &gt;= d0 &amp;&amp; v &lt;= d1; }</span>
+<span class="fc" id="L20">        double qLo() { return Math.min(q0, q1); }</span>
+<span class="fc" id="L21">        double qHi() { return Math.max(q0, q1); }</span>
+    }
+
+    /** A size of the picture. */
+<span class="fc" id="L25">    record Profile(String name, int width, int left, int right, int top, int font, int rowGap, int wmMin, int pri) {</span>
+<span class="fc" id="L26">        static final Profile L = new Profile(&quot;L&quot;, 760, 22, 736, 82, 15, 19, 22, 3);</span>
+<span class="fc" id="L27">        static final Profile M = new Profile(&quot;M&quot;, 560, 18, 540, 78, 14, 18, 19, 2);</span>
+<span class="fc" id="L28">        static final Profile S = new Profile(&quot;S&quot;, 380, 14, 366, 92, 13, 17, 17, 1);</span>
+
+        static Profile of(String name) {
+<span class="pc bpc" id="L31" title="1 of 5 branches missed.">            return switch (name == null ? &quot;L&quot; : name.toUpperCase()) {</span>
+<span class="fc" id="L32">                case &quot;M&quot; -&gt; M;</span>
+<span class="fc" id="L33">                case &quot;S&quot; -&gt; S;</span>
+<span class="fc" id="L34">                default -&gt; L;</span>
+            };
+        }
+    }
+
+    static final double GAP = 10;
+
+    final Profile pf;
+<span class="fc" id="L42">    final List&lt;Seg&gt; xs = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L43">    final List&lt;Seg&gt; ys = new ArrayList&lt;&gt;();</span>
+    final double plotTop, plotBottom;
+    final boolean broken;
+    /** Step of the balances the frames are sampled at, per x piece. */
+    final double[] steps;
+
+    /**
+     * Broken axes keep ONE scale everywhere. The pan ends at x1 = T_max + y1, where y1 is the top of its y range,
+     * so the Swept out line leaves it exactly through its top right corner. The same amount Δ is cut out of both
+     * axes, and the handle panel starts at (x1 + Δ, y1 + Δ) = (T_max + L − tail, L − tail): back on the same line,
+     * which goes on across the cut at 45° as if nothing happened.
+     */
+<span class="fc" id="L55">    Layout(Sweep s, Profile pf) {</span>
+<span class="fc" id="L56">        this.pf = pf;</span>
+<span class="fc" id="L57">        double tMin = s.thresholdMin(), tMax = s.thresholdMax(), nMin = s.nominalMin(), nMax = s.nominalMax();</span>
+<span class="fc" id="L58">        double a = s.sweptInMax(), l = s.sweptOutMax(), end = tMax + l;</span>
+
+<span class="fc" id="L60">        double coreLo = tMin - Math.max(a, nMin), coreHi = tMax + nMax;</span>
+<span class="fc" id="L61">        double span = Math.max(coreHi - coreLo, Math.max(tMax * 0.2, 10));</span>
+<span class="fc" id="L62">        double xLo = coreLo - 0.3 * span, panHi = coreHi + 0.45 * span;</span>
+<span class="fc" id="L63">        double yNeed = Math.max(Math.max(Math.max(a, nMin), nMax) * 1.25, 0.15 * span);</span>
+
+        // Broken: the pan up to the corner (x1, y1) on the line y = x − T_max, then the handle near (T_max + L, L).
+<span class="fc" id="L66">        double y1 = Math.max(yNeed, panHi - tMax), x1 = tMax + y1;</span>
+<span class="fc" id="L67">        double tail = 0.3 * (x1 - xLo), head = 0.12 * tail, margin = 0.35 * tail;</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        broken = end - tail &gt; x1 + 0.5 * tail;</span>
+
+        double yLo;
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (broken) {</span>
+<span class="fc" id="L72">            yLo = -Math.max(0.12 * y1, 0.05 * span);</span>
+<span class="fc" id="L73">            double k = (pf.right() - pf.left() - GAP) / ((x1 - xLo) + tail + margin);   // pixels per dollar, both axes</span>
+<span class="fc" id="L74">            double wl = (x1 - xLo) * k, hl = (y1 - yLo) * k, hu = (tail + head) * k;</span>
+<span class="fc" id="L75">            plotTop = pf.top();</span>
+<span class="fc" id="L76">            plotBottom = plotTop + hu + GAP + hl;</span>
+<span class="fc" id="L77">            xs.add(new Seg(xLo, x1, pf.left(), pf.left() + wl));</span>
+<span class="fc" id="L78">            xs.add(new Seg(end - tail, end + margin, pf.left() + wl + GAP, pf.right()));</span>
+<span class="fc" id="L79">            ys.add(new Seg(yLo, y1, plotBottom, plotBottom - hl));</span>
+<span class="fc" id="L80">            ys.add(new Seg(l - tail, l + head, plotTop + hu, plotTop));</span>
+<span class="fc" id="L81">            steps = new double[] {niceStep(span), niceStep(tail + margin)};</span>
+<span class="fc" id="L82">        } else {</span>
+<span class="fc" id="L83">            double xHi = Math.max(panHi, end + 0.25 * span);</span>
+<span class="fc" id="L84">            double yTop = Math.max(yNeed, l * 1.15);</span>
+<span class="fc" id="L85">            yLo = -Math.max(0.12 * yTop, 0.05 * span);</span>
+<span class="fc" id="L86">            double k = (pf.right() - pf.left()) / (xHi - xLo);</span>
+<span class="fc" id="L87">            double hl = (yTop - yLo) * k, minH = 0.3 * pf.width();</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (hl &lt; minH) { yTop = yLo + minH / k; hl = minH; }</span>
+<span class="fc" id="L89">            plotTop = pf.top();</span>
+<span class="fc" id="L90">            plotBottom = plotTop + hl;</span>
+<span class="fc" id="L91">            xs.add(new Seg(xLo, xHi, pf.left(), pf.right()));</span>
+<span class="fc" id="L92">            ys.add(new Seg(yLo, yTop, plotBottom, plotTop));</span>
+<span class="fc" id="L93">            steps = new double[] {niceStep(xHi - xLo)};</span>
+        }
+<span class="fc" id="L95">    }</span>
+
+    /** About a hundredth of a range, rounded to a power of ten. */
+    static double niceStep(double range) {
+<span class="fc" id="L99">        return Math.pow(10, Math.floor(Math.log10(Math.max(range, 1))) - 2);</span>
+    }
+
+<span class="fc" id="L102">    double x(double v) { return pick(xs, v).map(v); }</span>
+<span class="fc" id="L103">    double y(double v) { return pick(ys, v).map(v); }</span>
+<span class="fc" id="L104">    boolean visX(double v) { return xs.stream().anyMatch(sg -&gt; sg.has(v)); }</span>
+<span class="fc" id="L105">    boolean visY(double v) { return ys.stream().anyMatch(sg -&gt; sg.has(v)); }</span>
+<span class="fc" id="L106">    double xMin() { return xs.get(0).d0(); }</span>
+<span class="fc" id="L107">    double xMax() { return xs.get(xs.size() - 1).d1(); }</span>
+<span class="nc" id="L108">    double yMin() { return ys.get(0).d0(); }</span>
+<span class="nc" id="L109">    double yMax() { return ys.get(ys.size() - 1).d1(); }</span>
+    /** The pixel of the y axis: at x = 0 when that is in view, else at the left edge of the plot. */
+<span class="fc bfc" id="L111" title="All 2 branches covered.">    double axisX() { return xs.get(0).has(0) ? x(0) : pf.left(); }</span>
+
+    private static Seg pick(List&lt;Seg&gt; axis, double v) {
+<span class="fc" id="L114">        Seg sg = axis.get(0);</span>
+<span class="fc bfc" id="L115" title="All 4 branches covered.">        for (Seg s : axis) if (v &gt;= s.d0()) sg = s;</span>
+<span class="fc" id="L116">        return sg;</span>
+    }
+
+    /** Liang–Barsky: the part of a segment inside the box, or null. */
+    static double[] clip(double x1, double y1, double x2, double y2, double a, double b, double c, double d) {
+<span class="fc" id="L121">        double t0 = 0, t1 = 1, dx = x2 - x1, dy = y2 - y1;</span>
+<span class="fc" id="L122">        double[] p = {-dx, dx, -dy, dy}, q = {x1 - a, b - x1, y1 - c, d - y1};</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        for (int i = 0; i &lt; 4; i++) {</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if (p[i] == 0) {</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">                if (q[i] &lt; 0) return null;</span>
+                continue;
+            }
+<span class="fc" id="L128">            double r = q[i] / p[i];</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">            if (p[i] &lt; 0) {</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                if (r &gt; t1) return null;</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">                if (r &gt; t0) t0 = r;</span>
+            } else {
+<span class="fc bfc" id="L133" title="All 2 branches covered.">                if (r &lt; t0) return null;</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">                if (r &lt; t1) t1 = r;</span>
+            }
+        }
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        if (t1 - t0 &lt; 1e-9) return null;</span>
+<span class="fc" id="L138">        return new double[] {x1 + t0 * dx, y1 + t0 * dy, x1 + t1 * dx, y1 + t1 * dy};</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
