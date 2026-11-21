@@ -187,10 +187,11 @@ public final class SvgRenderer {
                 watermarks.add(() -> cur.add(shape("text", "x", r(cx), "y", r(wmY + 5), "anchor", "end",
                     "transform", "rotate(-90 " + r(cx) + " " + r(wmY) + ")",
                     "cls", "wm", "style", "font-size:" + (pf.font() - 1) + "px;fill:" + z.ink()
-                        + ";fill-opacity:" + (z.zero() && z != Zone.IN_RANGE ? ".5" : ".42"),
+                        + ";fill-opacity:" + (z.zero() && z != Zone.IN_RANGE ? ".44" : ".36"),
                     "body", z.titleMarkup(800))));
             }
         }
+        edges(bands);
         if (detail.text()) {
             layer("marks");
             watermarks.forEach(Runnable::run);
@@ -613,6 +614,57 @@ public final class SvgRenderer {
         m.put("tag", tag);
         for (int i = 0; i + 1 < kv.length; i += 2) if (kv[i + 1] != null) m.put(kv[i], kv[i + 1]);
         return m;
+    }
+
+    /**
+     * Who owns the edge between two slices: the zone of the balance exactly at the boundary (its interval is closed
+     * there). The owner's edge is an <b>extremal edge</b>: its surface turns away from the viewer, so the shading
+     * darkens towards the edge along it, with a thin highlight ridge just inside; the neighbour's surface is simply
+     * cut there, in a faint shadow (Ghose and Palmer, 2015: the side with the extremal edge is seen as the nearer one,
+     * the one the border belongs to). A target balance [T] owns a point of its own: a narrow ridge, shaded on both
+     * sides. Built from thin rectangles, so the template needs no gradients.
+     */
+    private void edges(Object[][] bands) {
+        java.util.Set<Long> seen = new java.util.TreeSet<>();
+        for (int i = 0; i + 1 < bands.length; i++) seen.add(Math.round((double) bands[i][1]));
+        for (long v : seen) {
+            if (v <= g.xMin() || v >= g.xMax()) continue;
+            boolean visible = false;
+            for (Layout.Seg sx : g.xs) visible |= v > sx.d0() && v < sx.d1();
+            if (!visible) continue;
+            Zone own = s.at(v).zone(), zl = s.at(v - 1).zone(), zr = s.at(v + 1).zone();
+            if (zl == zr && own == zl) continue;
+            double x = g.x(v);
+            if (own == zl) extremal(x, -1, own);
+            else if (own == zr) extremal(x, 1, own);
+            else {                                      // a point of its own: [T]
+                extremal(x - 2.5, 1, own);
+                extremal(x + 2.5, -1, own);
+                cur.add(shape("rect", "x", r(x - 2.5), "y", r(g.plotTop), "width", "5", "height", r(g.plotBottom - g.plotTop),
+                    "style", "fill:" + own.fill() + ";fill-opacity:.10"));
+            }
+        }
+    }
+
+    /** The owner's extremal edge at {@code x}, the owner on side {@code d} (-1: left, 1: right). */
+    private void extremal(double x, int d, Zone owner) {
+        String y = r(g.plotTop), h = r(g.plotBottom - g.plotTop);
+        double step = 1.5;
+        for (int i = 0; i < 6; i++) {                   // the surface turning away: darker towards the edge
+            double o = 0.28 * Math.pow(1 - i / 6.0, 1.6);
+            double qx = d < 0 ? x - (i + 1) * step : x + i * step;
+            cur.add(shape("rect", "x", r(qx), "y", y, "width", r(step), "height", h,
+                "style", "fill:" + owner.fill() + ";fill-opacity:" + String.format(java.util.Locale.ROOT, "%.3f", o)));
+        }
+        double hx = x + d * 3.5;                        // the highlight ridge
+        cur.add(shape("line", "x1", r(hx), "y1", y, "x2", r(hx), "y2", r(g.plotBottom),
+            "style", "stroke:#fff;stroke-opacity:.55;stroke-width:1"));
+        for (int i = 0; i < 4; i++) {                   // the neighbour, cut, in a faint shadow
+            double o = 0.09 * (1 - i / 4.0);
+            double qx = d < 0 ? x + i * step : x - (i + 1) * step;
+            cur.add(shape("rect", "x", r(qx), "y", y, "width", r(step), "height", h,
+                "style", "fill:#000;fill-opacity:" + String.format(java.util.Locale.ROOT, "%.3f", o)));
+        }
     }
 
     private void band(double qa, double w, Zone z) {

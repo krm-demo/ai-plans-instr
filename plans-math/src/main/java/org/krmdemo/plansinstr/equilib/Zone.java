@@ -12,23 +12,23 @@ package org.krmdemo.plansinstr.equilib;
  */
 public enum Zone {
 
-    SWEPT_IN_ZERO("Swept In Zero", "#E24B4A", "#E24B4A", 0.10, true,
+    SWEPT_IN_ZERO("Swept In Zero", "#E24B4A", "#E24B4A", 0.07, true,
         "a sweep In is needed, but the investment account is empty (A = 0): terminal failure ⏚. "
             + "Like a yellow card: on the next round the plan is cancelled or paused."),
-    SWEPT_IN_PARTIAL("Swept In Partial", "#A8692A", "#8A5418", 0.17, false,
+    SWEPT_IN_PARTIAL("Swept In Partial", "#A8692A", "#8A5418", 0.11, false,
         "far below T_min: all of A comes back and the balance is still short; the investment account is emptied."),
-    SWEPT_IN_FULL("Swept In Full", "#EF9F27", "#BA7517", 0.13, false,
+    SWEPT_IN_FULL("Swept In Full", "#EF9F27", "#BA7517", 0.09, false,
         "exactly the missing T_min − x comes back from the investment account, at least τ_min "
             + "(at T_min − A that is all of A: emptied to the cent)."),
-    IN_NOMINAL_MIN("In Nominal Min", Zone.BLUE, Zone.BLUE, 0.06, false,
+    IN_NOMINAL_MIN("In Nominal Min", Zone.BLUE, Zone.BLUE, 0.04, false,
         "below T_min by less than τ_min: not worth a transfer."),
-    IN_RANGE("In Range", Zone.BLUE, Zone.BLUE, 0.15, false,
+    IN_RANGE("In Range", Zone.BLUE, Zone.BLUE, 0.10, false,
         "between T_min and T_max (or right at the target T): nothing to transfer."),
-    IN_NOMINAL_MAX("In Nominal Max", Zone.BLUE, Zone.BLUE, 0.06, false,
+    IN_NOMINAL_MAX("In Nominal Max", Zone.BLUE, Zone.BLUE, 0.04, false,
         "above T_max by less than τ_max: not worth a transfer."),
-    SWEPT_OUT("Swept Out", "#1D9E75", "#1D9E75", 0.13, false,
+    SWEPT_OUT("Swept Out", "#1D9E75", "#1D9E75", 0.09, false,
         "the excess x − T_max, at least τ_max, goes from the DDA to the investment account; exactly L is still allowed."),
-    SWEPT_OUT_OVERFLOW("Swept Out Overflow", "#E24B4A", "#E24B4A", 0.10, true,
+    SWEPT_OUT_OVERFLOW("Swept Out Overflow", "#E24B4A", "#E24B4A", 0.07, true,
         "the excess is above L, the largest single payment the investment account accepts: terminal failure ⏚.");
 
     private static final String BLUE = "#378ADD";

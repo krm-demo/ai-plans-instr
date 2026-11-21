@@ -39,14 +39,14 @@
   var BLUE = '#378ADD', GRAY = '#888780', PURPLE = '#8B5CF6';   // purple: the probe, a colour no zone uses
   var ZONES = {
     // The titles of plans-math's Zone (krm-demo/ai-plans-instr): "In" and "Out" always capitalised, and a bit bolder.
-    zero:  { fill: '#E24B4A', ink: '#E24B4A', title: 'Swept In Zero',      op: 0.10, terminal: true },
-    inp:   { fill: '#A8692A', ink: '#8A5418', title: 'Swept In Partial',   op: 0.17 },
-    in:    { fill: '#EF9F27', ink: '#BA7517', title: 'Swept In Full',      op: 0.13 },
-    nmin:  { fill: BLUE,      ink: BLUE,      title: 'In Nominal Min',     op: 0.06 },
-    range: { fill: BLUE,      ink: BLUE,      title: 'In Range',           op: 0.15 },
-    nmax:  { fill: BLUE,      ink: BLUE,      title: 'In Nominal Max',     op: 0.06 },
-    out:   { fill: '#1D9E75', ink: '#1D9E75', title: 'Swept Out',          op: 0.13 },
-    over:  { fill: '#E24B4A', ink: '#E24B4A', title: 'Swept Out Overflow', op: 0.10, terminal: true }
+    zero:  { fill: '#E24B4A', ink: '#E24B4A', title: 'Swept In Zero',      op: 0.07, terminal: true },
+    inp:   { fill: '#A8692A', ink: '#8A5418', title: 'Swept In Partial',   op: 0.11 },
+    in:    { fill: '#EF9F27', ink: '#BA7517', title: 'Swept In Full',      op: 0.09 },
+    nmin:  { fill: BLUE,      ink: BLUE,      title: 'In Nominal Min',     op: 0.04 },
+    range: { fill: BLUE,      ink: BLUE,      title: 'In Range',           op: 0.10 },
+    nmax:  { fill: BLUE,      ink: BLUE,      title: 'In Nominal Max',     op: 0.04 },
+    out:   { fill: '#1D9E75', ink: '#1D9E75', title: 'Swept Out',          op: 0.09 },
+    over:  { fill: '#E24B4A', ink: '#E24B4A', title: 'Swept Out Overflow', op: 0.07, terminal: true }
   };
 
   // Softer colours of the two Swept In slices to choose from (?palette=…): {inp: [fill, ink], in: [fill, ink]}.
@@ -300,8 +300,35 @@
       if (widest && widest.w >= pf.wmMin) {
         var cx = n2(widest.x + widest.w / 2);
         marks += '<text transform="rotate(-90 ' + cx + ' ' + n2(wmY) + ')" x="' + cx + '" y="' + n2(wmY + 5) + '" text-anchor="end" style="font-family:' + WM_SANS +
-          ';font-size:' + (pf.wm - 1) + 'px;font-weight:600;letter-spacing:0.2px;fill:' + Z[z].ink + ';fill-opacity:' + (z === 'nmin' || z === 'nmax' ? 0.5 : 0.42) + '">' + titleMarkup(z, 800, 'tspan') + '</text>';
+          ';font-size:' + (pf.wm - 1) + 'px;font-weight:600;letter-spacing:0.2px;fill:' + Z[z].ink + ';fill-opacity:' + (z === 'nmin' || z === 'nmax' ? 0.44 : 0.36) + '">' + titleMarkup(z, 800, 'tspan') + '</text>';
       }
+    });
+    // Who owns the edge between two slices: the zone of the balance exactly at the boundary. The owner's edge is an
+    // extremal edge (its surface turns away: darker towards the edge, a thin highlight ridge inside); the neighbour is
+    // simply cut there, in a faint shadow. A target [T] is a narrow ridge of its own, shaded on both sides.
+    var extremal = function (x, d, z) {
+      var o = '', y = n2(P.T), hh = n2(plotH), st = 1.5, i;
+      for (i = 0; i < 6; i++) o += '<rect x="' + n2(d < 0 ? x - (i + 1) * st : x + i * st) + '" y="' + y + '" width="' + st + '" height="' + hh +
+        '" style="fill:' + Z[z].fill + ';fill-opacity:' + (0.28 * Math.pow(1 - i / 6, 1.6)).toFixed(3) + '"/>';
+      o += '<line x1="' + n2(x + d * 3.5) + '" y1="' + y + '" x2="' + n2(x + d * 3.5) + '" y2="' + n2(P.B) + '" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>';
+      for (i = 0; i < 4; i++) o += '<rect x="' + n2(d < 0 ? x + i * st : x - (i + 1) * st) + '" y="' + y + '" width="' + st + '" height="' + hh +
+        '" style="fill:#000;fill-opacity:' + (0.09 * (1 - i / 4)).toFixed(3) + '"/>';
+      return o;
+    };
+    var seen = {};
+    bands.forEach(function (bd, i) {
+      var v = Math.round(bd[1]);
+      if (i === bands.length - 1 || seen[v]) return;
+      seen[v] = 1;
+      var sx = null;
+      G.X.forEach(function (q) { if (v > q.d0 && v < q.d1) sx = q; });
+      if (!sx) return;
+      var own = sweptAmountAt(v, s).zone, zl = sweptAmountAt(v - 1, s).zone, zr = sweptAmountAt(v + 1, s).zone, x = lin(sx, v);
+      if (zl === zr && own === zl) return;
+      if (own === zl) h += extremal(x, -1, own);
+      else if (own === zr) h += extremal(x, 1, own);
+      else h += extremal(x - 2.5, 1, own) + extremal(x + 2.5, -1, own) + '<rect x="' + n2(x - 2.5) + '" y="' + n2(P.T) + '" width="5" height="' + n2(plotH) +
+        '" style="fill:' + Z[own].fill + ';fill-opacity:.10"/>';
     });
     h += marks + '<g class="grid"></g><g class="aux"></g>';
 
