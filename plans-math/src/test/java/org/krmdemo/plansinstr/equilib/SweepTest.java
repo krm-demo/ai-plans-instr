@@ -29,7 +29,7 @@ class SweepTest {
         check(69_999, Zone.IN_NOMINAL_MAX, 0L);
         check(70_000, Zone.SWEPT_OUT, 10_000L);              // T_max + τ_max: the jump belongs to the sweep
         check(90_000, Zone.SWEPT_OUT, 30_000L);              // T_max + L
-        check(90_001, Zone.OVERFLOW, null);
+        check(90_001, Zone.SWEPT_OUT_OVERFLOW, null);
     }
 
     @Test

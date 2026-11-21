@@ -1,13 +1,10 @@
 name: plans-math
 run-name: plans-math ${{ github.ref_name }}
 
-# On every push to main that touches plans-math:
+# On every push to main that touches plans-math (a library: nothing is deployed but its documentation):
 #   1. build and test (JUnit 5 Jupiter, JaCoCo), turn the Open Test Reporting XML into HTML,
-#   2. deploy the jar to the Lambda (still named plan-equilib: the module was renamed, the function and URL stay),
-#   3. publish to GitHub Pages: the test report (one picture per case), the coverage report, the README pictures
+#   2. publish to GitHub Pages: the test report (one picture per layout), the coverage report, the README pictures
 #      and the numbers of the README badges (shields.io endpoint JSON).
-# AWS sign-in without keys: the role plan-equilib-deploy trusts only pushes to main of this repository
-# and may only replace the code of this one function (see plans-math/deploy/setup.sh).
 on:
   push:
     branches: [main]
@@ -22,13 +19,8 @@ permissions:
   pages: write
 
 concurrency:
-  group: plans-math-deploy
+  group: plans-math-pages
   cancel-in-progress: false
-
-env:
-  AWS_REGION: us-east-1
-  FUNCTION: plan-equilib
-  DEPLOY_ROLE: arn:aws:iam::560574854768:role/plan-equilib-deploy
 
 jobs:
   build:
@@ -89,14 +81,13 @@ jobs:
           <style>body{{font-family:system-ui,sans-serif;max-width:780px;margin:2rem auto;padding:0 1rem;color:#18212c}}
           a{{color:#1456b8}}h1 img{{vertical-align:middle;margin-right:.4rem}}li{{margin:.3rem 0}}</style></head><body>
           <h1><img src="icon-small.svg" width="56" height="32" alt="">plans-math</h1>
-          <p>Balances Equilibrium: the swept amount per current balance. <a href="https://github.com/krm-demo/ai-plans-instr/tree/main/plans-math">Source and README</a>.</p>
+          <p>A Java library. Balances Equilibrium: the swept amount per current balance, as an SVG without JavaScript. <a href="https://github.com/krm-demo/ai-plans-instr/tree/main/plans-math">Source and README</a>.</p>
           <ul>
-          <li><a href="tests/index.html">Test report</a> (Open Test Reporting): {passed} JUnit 5 tests passed, one picture per case</li>
+          <li><a href="tests/index.html">Test report</a> (Open Test Reporting): {passed} JUnit 5 tests passed, one picture per layout</li>
           <li><a href="jacoco/index.html">Coverage report</a> (JaCoCo): {cov:.1f}% of lines</li>
           <li><a href="svg/equilib-thousands.svg">Pictures</a>: <a href="svg/equilib-thousands.svg">thousands</a>,
               <a href="svg/equilib-millions.svg">millions</a>, <a href="svg/equilib-swept-in-zero.svg">swept in zero</a>,
               <a href="svg/equilib-single-threshold-s.svg">target balance (S)</a> (open one and move the mouse over it)</li>
-          <li><a href="https://ww3q3jauycs4gei35n5hr4o4lu0vhidr.lambda-url.us-east-1.on.aws/">Live from the Lambda</a></li>
           </ul></body></html>""")
           PY
           printf '<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=plans-math/"><a href="plans-math/">plans-math</a>\n' > site/index.html
@@ -108,25 +99,6 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
-
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.DEPLOY_ROLE }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Deploy the jar to the Lambda
-        run: |
-          aws lambda update-function-code --function-name "$FUNCTION" \
-            --zip-file fileb://plans-math/target/plans-math.jar --query 'CodeSize' --output text
-          aws lambda wait function-updated-v2 --function-name "$FUNCTION"
-
-      - name: Smoke test
-        run: |
-          URL=$(aws lambda get-function-url-config --function-name "$FUNCTION" --query FunctionUrl --output text)
-          curl -fsS -o /tmp/equilib.svg -w '%{http_code} %{content_type} %{size_download} bytes\n' "${URL}?size=M&frames=12"
-          grep -q 'class="f d"' /tmp/equilib.svg
-          head -c 300 /tmp/equilib.svg
-          echo "- Lambda: $URL" >> "$GITHUB_STEP_SUMMARY"
 
   pages:
     needs: build

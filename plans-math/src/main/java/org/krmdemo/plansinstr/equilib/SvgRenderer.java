@@ -91,16 +91,15 @@ public final class SvgRenderer {
         double xoc = Math.min(xo, xZ);
         Object[][] bands = zeroA
             ? new Object[][] {{xA, xl, Zone.SWEPT_IN_ZERO}, {xl, tMin, Zone.IN_NOMINAL_MIN}, {tMin, tMax, Zone.IN_RANGE},
-                              {tMax, xr, Zone.IN_NOMINAL_MAX}, {xr, xoc, Zone.SWEPT_OUT}, {xoc, xZ, Zone.OVERFLOW}}
+                              {tMax, xr, Zone.IN_NOMINAL_MAX}, {xr, xoc, Zone.SWEPT_OUT}, {xoc, xZ, Zone.SWEPT_OUT_OVERFLOW}}
             : new Object[][] {{xA, xk, Zone.SWEPT_IN_PARTIAL}, {xk, xl, Zone.SWEPT_IN_FULL}, {xl, tMin, Zone.IN_NOMINAL_MIN},
                               {tMin, tMax, Zone.IN_RANGE}, {tMax, xr, Zone.IN_NOMINAL_MAX}, {xr, xoc, Zone.SWEPT_OUT},
-                              {xoc, xZ, Zone.OVERFLOW}};
+                              {xoc, xZ, Zone.SWEPT_OUT_OVERFLOW}};
         if (g.broken) {   // the cut of the x axis is filled when the same zone goes on behind it: unobtrusive
             Zone zl = s.at(Math.round(g.xs.get(0).d1())).zone(), zr = s.at(Math.round(g.xs.get(1).d0())).zone();
             if (zl == zr) band(g.xs.get(0).q1(), Layout.GAP, zl);
         }
-        Layout.Seg low = g.ys.get(0);
-        double wmY = (low.q0() + low.q1()) / 2;
+        double wmY = g.plotTop + 8;                       // watermarks hang from the top: there is room up there
         List<Runnable> watermarks = new ArrayList<>();
         for (Object[] b : bands) {
             Zone z = (Zone) b[2];
@@ -115,11 +114,11 @@ public final class SvgRenderer {
             }
             if (widest != null && widest[1] >= pf.wmMin()) {
                 double cx = widest[0] + widest[1] / 2;
-                watermarks.add(() -> cur.add(shape("text", "x", r(cx), "y", r(wmY + 5), "anchor", "middle",
+                watermarks.add(() -> cur.add(shape("text", "x", r(cx), "y", r(wmY + 5), "anchor", "end",
                     "transform", "rotate(-90 " + r(cx) + " " + r(wmY) + ")",
                     "style", "font-size:" + pf.font() + "px;font-weight:500;letter-spacing:1.5px;fill:" + z.ink()
                         + ";fill-opacity:" + (z.zero() && z != Zone.IN_RANGE ? ".42" : ".34"),
-                    "body", esc(z.title() + (z.terminal() ? " ⏚" : "")))));
+                    "body", z.titleMarkup(800))));
             }
         }
         layer("marks");
@@ -147,7 +146,7 @@ public final class SvgRenderer {
         String proj = stroke(GRAY, 0.6, "1.5 3", 0.8);
         double axData = g.xs.get(0).has(0) ? 0 : xA;      // the y axis, in dollars
         if (!zeroA) line(ax, g.y(a), g.x(Math.max(xk, xA)), g.y(a), stroke(Zone.SWEPT_IN_PARTIAL.ink(), 1, "1 3", 1));
-        if (g.visY(l)) line(ax, g.y(l), pf.right(), g.y(l), stroke(Zone.OVERFLOW.ink(), 1, "1 3", 0.9));
+        if (g.visY(l)) line(ax, g.y(l), pf.right(), g.y(l), stroke(Zone.SWEPT_OUT_OVERFLOW.ink(), 1, "1 3", 0.9));
         if (nMin > 0 && !zeroA) seg(xl, nMin, axData, nMin, proj);
         if (nMax > 0) seg(xr, nMax, axData, nMax, proj);
 
@@ -156,7 +155,7 @@ public final class SvgRenderer {
         seg(tMax, 0, xr, nMax, stroke(Zone.IN_RANGE.ink(), 1.4, "4 3", 0.85));
         if (zeroA) seg(xA, tMin - xA, xl, nMin, stroke(Zone.SWEPT_IN_ZERO.ink(), 1.4, "4 3", 0.7));
         else if (xk > xA) seg(xA, tMin - xA, xk, a, stroke(Zone.SWEPT_IN_FULL.ink(), 1.4, "4 3", 0.6));
-        if (xo < xZ) seg(xo, l, xZ, xZ - tMax, stroke(Zone.OVERFLOW.ink(), 1.4, "4 3", 0.75));
+        if (xo < xZ) seg(xo, l, xZ, xZ - tMax, stroke(Zone.SWEPT_OUT_OVERFLOW.ink(), 1.4, "4 3", 0.75));
 
         // Solid: what happens. Red dashed on the axis: the terminal failures (∄).
         double w = 2.75;
@@ -174,20 +173,27 @@ public final class SvgRenderer {
             line(g.xs.get(0).q1(), g.ys.get(0).q1(), g.xs.get(1).q0(), g.ys.get(1).q0(), stroke(Zone.SWEPT_OUT.ink(), w, null, 1));
         }
         seg(xr, 0, xr, nMax, stroke(Zone.SWEPT_OUT.ink(), 2, "4 3", 1));
-        if (xo < xZ) seg(xo, 0, xZ, 0, stroke(Zone.OVERFLOW.ink(), 3, "6 4", 1));
+        if (xo < xZ) seg(xo, 0, xZ, 0, stroke(Zone.SWEPT_OUT_OVERFLOW.ink(), 3, "6 4", 1));
 
         // Points: filled where the point belongs to the piece, open where the piece only comes close.
-        String red = Zone.OVERFLOW.ink(), open = "fill:var(--bg);stroke-width:2;stroke:";
+        String red = Zone.SWEPT_OUT_OVERFLOW.ink(), open = "fill:var(--bg);stroke-width:2;stroke:";
         if (!zeroA && xk > xA) dot(xk, a, 4.5, "fill:" + Zone.SWEPT_IN_PARTIAL.ink());
-        if (zeroA) {
-            // T_min − τ_min itself needs a sweep in of τ_min, which the empty account cannot make: a failure point.
-            dot(xl, 0, 5, nMin > 0 ? "fill:" + red : open + Zone.IN_RANGE.ink());
+        // With τ = 0 there is no jump: T_min (T_max) itself needs nothing, so it is In Range, a filled blue point.
+        String blue = "fill:" + Zone.IN_RANGE.ink();
+        if (nMin == 0) {
+            dot(xl, 0, 5, blue);
+        } else if (zeroA) {
+            dot(xl, 0, 5, "fill:" + red);              // T_min − τ_min needs τ_min, which the empty account cannot give
         } else {
-            if (nMin > 0) dot(xl, 0, 5, open + Zone.IN_RANGE.ink());
+            dot(xl, 0, 5, open + Zone.IN_RANGE.ink());
             dot(xl, nMin, 5, "fill:" + Zone.SWEPT_IN_FULL.ink());
         }
-        if (nMax > 0) dot(xr, 0, 5, open + Zone.IN_RANGE.ink());
-        dot(xr, nMax, 5, "fill:" + Zone.SWEPT_OUT.ink());
+        if (nMax == 0) {
+            dot(xr, 0, 5, blue);
+        } else {
+            dot(xr, 0, 5, open + Zone.IN_RANGE.ink());
+            dot(xr, nMax, 5, "fill:" + Zone.SWEPT_OUT.ink());
+        }
         if (xo < xZ) {
             // T_max + L is still allowed (a payment of exactly L): filled on the line; Overflow starts just after it.
             dot(xo, l, 5, "fill:" + Zone.SWEPT_OUT.ink());
@@ -198,31 +204,35 @@ public final class SvgRenderer {
         layer("labels");
         for (double[] q : xLabels) {
             line(g.x(q[0]), g.y(q[1]) + 5, g.x(q[0]), q[3] - 12, proj);
-            String colour = zeroA && q[0] == xl ? Zone.SWEPT_IN_ZERO.ink() : ink((int) q[4]);   // where Swept in zero ends
+            String colour = zeroA && nMin > 0 && q[0] == xl ? Zone.SWEPT_IN_ZERO.ink() : ink((int) q[4]);   // where Swept In Zero ends
             text(q[2], q[3], "middle", colour, esc(Money.compact(q[0])), "m", pf.font());
         }
         yLabels(ax);
         text(pf.right(), rowsBottom + 6, "end", "var(--soft)", "Current balance, $", "m", 12);
 
-        // The formula: one row per zone (the frames highlight theirs), then the parameters.
+        // The formula: one row per status, the status on the right (the frames highlight theirs and add the amount).
         layer("formula");
-        double fxLeft = pf.width() < 500 ? 8 : 40, colB = fxLeft + (pf.width() < 500 ? 120 : 190);
+        double fxLeft = 8, valX = fxLeft + (pf.width() < 500 ? 70 : 84), colB = valX + (pf.width() < 500 ? 128 : 150);
         double braceX = fxLeft + (pf.width() < 500 ? 46 : 62);
-        text(fxLeft, fxTop + rows.size() * rowH / 2 - 2, null, "var(--ink)", tex("y(x) ="), "m", pf.font() + 1);
+        text(fxLeft, fxTop + rows.size() * rowH / 2 + 4, null, "var(--ink)", tex("y(x) ="), "m", pf.font() + 1);
         double b1 = fxTop + 2, b2 = fxTop + rows.size() * rowH - 2, bm = (b1 + b2) / 2, bx = braceX + 6;
         cur.add(shape("path", "style", "fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round",
             "d", "M" + r(bx + 6) + " " + r(b1) + "Q" + r(bx) + " " + r(b1) + " " + r(bx) + " " + r(b1 + 8) + "V" + r(bm - 7)
                 + "Q" + r(bx) + " " + r(bm) + " " + r(bx - 6) + " " + r(bm) + "Q" + r(bx) + " " + r(bm) + " " + r(bx) + " " + r(bm + 7)
                 + "V" + r(b2 - 8) + "Q" + r(bx) + " " + r(b2) + " " + r(bx + 6) + " " + r(b2)));
         for (int i = 0; i < rows.size(); i++) {
+            Row row = rows.get(i);
             double yy = fxTop + (i + 0.72) * rowH;
-            text(braceX + 18, yy, null, "var(--ink)", tex(rows.get(i).value), "m", pf.font());
-            text(colB, yy, null, "var(--ink)", tex(rows.get(i).cond), "m", pf.font());
+            text(valX, yy, null, "var(--ink)", tex(row.value), "m", pf.font());
+            text(colB, yy, null, "var(--ink)", tex(row.cond), "m", pf.font());
+            if (pf.width() >= 500) {
+                text(pf.width() - 8, yy, "end", row.zone.ink(), row.zone.titleMarkup(700), null, pf.width() < 700 ? 11.5 : 12.5);
+            }
         }
         legend(legendY);
 
         // The frames.
-        frames(n, probe, rows, fxTop, rowH, colB);
+        frames(n, probe, rows, fxTop, rowH, valX);
 
         Map<String, Object> model = new HashMap<>();
         model.put("width", String.valueOf(pf.width()));
@@ -234,7 +244,7 @@ public final class SvgRenderer {
 
     // ---------------------------------------------------------------- frames
 
-    private void frames(int n, Long probe, List<Row> rows, double fxTop, double rowH, double colB) {
+    private void frames(int n, Long probe, List<Row> rows, double fxTop, double rowH, double valX) {
         // Sample balances evenly in pixels over all x pieces, snapped to the step of their piece.
         List<double[]> samples = new ArrayList<>();       // {balance, pixel, seg index}
         double total = 0;
@@ -298,9 +308,16 @@ public final class SvgRenderer {
             }
             statusLine(p);
             for (int k = 0; k < rows.size(); k++) {
-                if (rows.get(k).zones.contains(p.zone())) {
-                    cur.add(shape("rect", "x", r(colB - 8), "y", r(fxTop + k * rowH + 1), "width", r(pf.width() - colB),
+                Row row = rows.get(k);
+                if (row.zone == p.zone()) {
+                    // the row of this balance: highlighted, with the value of y right after its expression
+                    cur.add(shape("rect", "x", r(valX - 8), "y", r(fxTop + k * rowH + 1), "width", r(pf.width() - valX + 4),
                         "height", r(rowH - 2), "rx", "5", "style", "fill:" + p.zone().fill() + ";fill-opacity:.18"));
+                    if (p.amount() != null) {                  // ∄ needs no "= ∄"
+                        String v = pf.width() < 500 ? Money.compact(p.amount()) : Money.full(p.amount());
+                        cur.add(shape("text", "x", r(valX + plainWidth(row.value) + 10), "y", r(fxTop + (k + 0.72) * rowH), "style",
+                            "font-size:" + (pf.font() - 1) + "px;font-weight:600;fill:" + PURPLE, "body", esc("= " + v)));
+                    }
                 }
             }
             frames.add(f);
@@ -346,17 +363,17 @@ public final class SvgRenderer {
     private void statusLine(Sweep.Point p) {
         Zone z = p.zone();
         String title = z.title() + (z.terminal() ? " ⏚" : "");
-        double bw = title.length() * 6.9 + 18, y0 = 30;
+        double bw = title.length() * 7.1 + 18, y0 = 30;
         cur.add(shape("rect", "x", r(LABEL_W), "y", r(y0), "width", r(bw), "height", "22", "rx", "7",
             "style", "fill:" + z.fill() + ";fill-opacity:.18"));
-        text(LABEL_W + bw / 2, y0 + 15, "middle", z.ink(), esc(title), null, 12);
+        text(LABEL_W + bw / 2, y0 + 15, "middle", z.ink(), z.titleMarkup(700), null, 12);
         String y = p.amount() == null ? "∄ (terminal failure)" : Money.full(p.amount());
         cur.add(shape("text", "x", r(LABEL_W + bw + 10), "y", r(y0 + 15), "style", "font-size:13px;fill:var(--soft)",
             "body", "<tspan style=\"fill:" + PURPLE + ";font-weight:600\">" + Money.full(p.balance()) + "</tspan> → "
                 + "<tspan style=\"fill:" + PURPLE + ";font-weight:600\">" + esc(y) + "</tspan>"));
         String dir = direction(z);
         if (!dir.isEmpty()) {
-            boolean below = pf.width() < 700;          // on M and S the direction gets a line of its own
+            boolean below = pf.width() < 500;          // on S the direction gets a line of its own
             cur.add(shape("text", "x", below ? r(LABEL_W) : r(pf.width()), "y", r(below ? y0 + 38 : y0 + 15),
                 "anchor", below ? null : "end", "cls", "m", "style", "font-size:12.5px;fill:var(--soft)", "body", dir));
         }
@@ -367,7 +384,7 @@ public final class SvgRenderer {
         return switch (z) {
             case SWEPT_IN_PARTIAL, SWEPT_IN_FULL -> "from Investment-Account to DDA";
             case SWEPT_OUT -> "from DDA to Investment-Account";
-            case SWEPT_IN_ZERO, OVERFLOW -> "";
+            case SWEPT_IN_ZERO, SWEPT_OUT_OVERFLOW -> "";
             default -> "nothing to transfer";
         };
     }
@@ -408,7 +425,7 @@ public final class SvgRenderer {
             case 1 -> Zone.SWEPT_IN_FULL.ink();
             case 2 -> Zone.SWEPT_OUT.ink();
             case 3 -> Zone.SWEPT_IN_PARTIAL.ink();
-            case 4 -> Zone.OVERFLOW.ink();
+            case 4 -> Zone.SWEPT_OUT_OVERFLOW.ink();
             default -> "var(--ink)";
         };
     }
@@ -420,6 +437,8 @@ public final class SvgRenderer {
         if (pf.pri() >= 2 && s.nominalMin() > 0 && s.sweptInMax() > 0) ys.add(new double[] {s.nominalMin(), 1});
         if (pf.pri() >= 2 && s.nominalMax() > 0) ys.add(new double[] {s.nominalMax(), 2});
         ys.removeIf(q -> !g.visY(q[0]));
+        java.util.Set<Double> seen = new java.util.HashSet<>();
+        ys.removeIf(q -> !seen.add(q[0]));             // τ_min = τ_max: one label is enough
         ys.sort(Comparator.comparingDouble(q -> -g.y(q[0])));
         double prev = Double.MAX_VALUE;
         for (double[] q : ys) {
@@ -430,22 +449,33 @@ public final class SvgRenderer {
         }
     }
 
-    /** One row of the formula and the zones it covers. */
-    private record Row(String value, String cond, List<Zone> zones) {
+    /** One row of the formula: its value, its condition and its status. */
+    private record Row(String value, String cond, Zone zone) {
     }
 
+    /** Roughly how wide a formula text is drawn (for the amount after it). */
+    private double plainWidth(String t) {
+        return t.replace("_min", "mi").replace("_max", "ma").length() * pf.font() * 0.56;
+    }
+
+    /** One row per status, in the order of x; rows that cannot happen (τ = 0, T_min = T_max) are left out. */
     private List<Row> formulaRows() {
-        String tn = s.singleThreshold() ? "T" : "T_min", tx = s.singleThreshold() ? "T" : "T_max";
+        boolean t = s.singleThreshold();
+        String tn = t ? "T" : "T_min", tx = t ? "T" : "T_max";
+        boolean n0 = s.nominalMin() == 0, m0 = s.nominalMax() == 0;
+        String inEdge = n0 ? "x < " + tn : "x ≤ " + tn + " − τ_min";            // where a sweep In is needed
         List<Row> rows = new ArrayList<>();
         if (s.sweptInMax() == 0) {
-            rows.add(new Row("∄ ⏚", "x ≤ " + tn + " − τ_min", List.of(Zone.SWEPT_IN_ZERO)));
+            rows.add(new Row("∄ ⏚", inEdge, Zone.SWEPT_IN_ZERO));
         } else {
-            rows.add(new Row("A", "x < " + tn + " − A", List.of(Zone.SWEPT_IN_PARTIAL)));
-            rows.add(new Row(tn + " − x", tn + " − A ≤ x ≤ " + tn + " − τ_min", List.of(Zone.SWEPT_IN_FULL)));
+            rows.add(new Row("A", "x < " + tn + " − A", Zone.SWEPT_IN_PARTIAL));
+            rows.add(new Row(tn + " − x", tn + " − A ≤ " + inEdge, Zone.SWEPT_IN_FULL));
         }
-        rows.add(new Row("0", tn + " − τ_min < x < " + tx + " + τ_max", List.of(Zone.IN_NOMINAL_MIN, Zone.IN_RANGE, Zone.IN_NOMINAL_MAX)));
-        rows.add(new Row("x − " + tx, tx + " + τ_max ≤ x ≤ " + tx + " + L", List.of(Zone.SWEPT_OUT)));
-        rows.add(new Row("∄ ⏚", "x > " + tx + " + L", List.of(Zone.OVERFLOW)));
+        if (!n0) rows.add(new Row("0", tn + " − τ_min < x < " + tn, Zone.IN_NOMINAL_MIN));
+        rows.add(new Row("0", t ? "x = T" : tn + " ≤ x ≤ " + tx, Zone.IN_RANGE));
+        if (!m0) rows.add(new Row("0", tx + " < x < " + tx + " + τ_max", Zone.IN_NOMINAL_MAX));
+        rows.add(new Row("x − " + tx, (m0 ? tx + " < x" : tx + " + τ_max ≤ x") + " ≤ " + tx + " + L", Zone.SWEPT_OUT));
+        rows.add(new Row("∄ ⏚", "x > " + tx + " + L", Zone.SWEPT_OUT_OVERFLOW));
         return rows;
     }
 

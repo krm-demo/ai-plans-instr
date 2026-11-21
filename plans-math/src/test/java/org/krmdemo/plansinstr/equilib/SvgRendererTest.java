@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.Test;
@@ -45,19 +44,5 @@ class SvgRendererTest {
         assertEquals(12, SvgRenderer.frames(1));
         assertEquals(48, SvgRenderer.frames(40));
         assertEquals(96, SvgRenderer.frames(1000));
-    }
-
-    @Test
-    void lambdaAnswersSvgOr400() throws Exception {
-        String ok = EquilibHandler.respond("thresholdMin=40000&thresholdMax=60000&sweptOutMax=2%2C000%2C000&size=M");
-        assertTrue(ok.startsWith("{\"statusCode\":200"), ok.substring(0, 80));
-        assertTrue(ok.contains("image/svg+xml"));
-        String bad = EquilibHandler.respond("thresholdMin=70000&thresholdMax=60000");
-        assertTrue(bad.startsWith("{\"statusCode\":400"), bad);
-
-        String event = "{\"version\":\"2.0\",\"rawPath\":\"/\",\"rawQueryString\":\"frames=12&size=S\",\"headers\":{}}";
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new EquilibHandler().handleRequest(new ByteArrayInputStream(event.getBytes(StandardCharsets.UTF_8)), out);
-        assertTrue(out.toString(StandardCharsets.UTF_8).contains("\\\"f d\\\"") || out.toString(StandardCharsets.UTF_8).contains("f d"));
     }
 }

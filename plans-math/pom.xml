@@ -12,7 +12,7 @@
 
     <artifactId>plans-math</artifactId>
     <name>plans-math</name>
-    <description>The math of the plans: Balances Equilibrium (the swept amount per current balance as an SVG without JavaScript) and its Lambda</description>
+    <description>The math of the plans, as a library: Balances Equilibrium draws the swept amount per current balance as an SVG without JavaScript</description>
 
     <properties>
         <jacoco.version>0.8.14</jacoco.version>
@@ -28,11 +28,11 @@
             <groupId>org.thymeleaf</groupId>
             <artifactId>thymeleaf</artifactId>
         </dependency>
-        <!-- Thymeleaf logs through SLF4J; a Lambda has nothing to say there. -->
+        <!-- Thymeleaf logs through SLF4J; the tests and the pictures have nothing to say there. -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-nop</artifactId>
-            <scope>runtime</scope>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -140,35 +140,6 @@
                 </dependencies>
             </plugin>
 
-            <!-- The Lambda package: one jar with Thymeleaf inside (and the templates). -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.6.0</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                        <exclude>module-info.class</exclude>
-                                        <exclude>META-INF/versions/*/module-info.class</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 </project>

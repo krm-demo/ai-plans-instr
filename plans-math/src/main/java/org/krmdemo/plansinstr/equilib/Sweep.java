@@ -26,7 +26,7 @@ package org.krmdemo.plansinstr.equilib;
 public record Sweep(long thresholdMin, long thresholdMax, long nominalMin, long nominalMax,
                     long sweptInMax, long sweptOutMax) {
 
-    /** The demo of the README and of the Lambda without parameters: thresholds in thousands, L in millions. */
+    /** The demo of the README with L in millions (broken axes): thresholds in thousands. */
     public static final Sweep DEMO = new Sweep(40_000, 60_000, 8_000, 10_000, 25_000, 2_000_000);
 
     public Sweep {
@@ -57,7 +57,7 @@ public record Sweep(long thresholdMin, long thresholdMax, long nominalMin, long 
         }
         long excess = x - thresholdMax;
         if (excess > 0 && excess >= nominalMax) {
-            return excess > sweptOutMax ? new Point(x, Zone.OVERFLOW, null) : new Point(x, Zone.SWEPT_OUT, excess);
+            return excess > sweptOutMax ? new Point(x, Zone.SWEPT_OUT_OVERFLOW, null) : new Point(x, Zone.SWEPT_OUT, excess);
         }
         if (x < thresholdMin) return new Point(x, Zone.IN_NOMINAL_MIN, 0L);
         if (x <= thresholdMax) return new Point(x, Zone.IN_RANGE, 0L);
