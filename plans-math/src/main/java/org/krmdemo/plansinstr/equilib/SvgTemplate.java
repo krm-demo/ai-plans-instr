@@ -45,19 +45,31 @@ final class SvgTemplate {
             + " · Java " + Runtime.version() + " · Thymeleaf " + thymeleafVersion();
     }
 
-    /** From the pom.properties Maven puts into every jar (kept by the shade plugin), else from the manifest. */
+    /**
+     * Thymeleaf's own version: from its "org/thymeleaf/thymeleaf.properties", else from the pom.properties Maven puts
+     * into jars, else from its (package-private) class org.thymeleaf.Thymeleaf, else from the manifest.
+     */
     static String thymeleafVersion() {
-        try (var in = TemplateEngine.class.getResourceAsStream("/META-INF/maven/org.thymeleaf/thymeleaf/pom.properties")) {
-            if (in != null) {
-                java.util.Properties props = new java.util.Properties();
-                props.load(in);
-                String v = props.getProperty("version");
-                if (v != null) return v;
+        for (String[] res : new String[][] {{"/org/thymeleaf/thymeleaf.properties", "version"},
+                                            {"/META-INF/maven/org.thymeleaf/thymeleaf/pom.properties", "version"}}) {
+            try (var in = TemplateEngine.class.getResourceAsStream(res[0])) {
+                if (in != null) {
+                    java.util.Properties props = new java.util.Properties();
+                    props.load(in);
+                    String v = props.getProperty(res[1]);
+                    if (v != null && !v.isBlank() && !v.contains("${")) return v.trim();
+                }
+            } catch (java.io.IOException e) {
+                // try the next one
             }
-        } catch (java.io.IOException e) {
-            // fall through
         }
-        String v = TemplateEngine.class.getPackage().getImplementationVersion();
-        return v != null ? v : "3.x";
+        try {
+            var f = Class.forName("org.thymeleaf.Thymeleaf").getDeclaredField("VERSION");
+            f.setAccessible(true);
+            return String.valueOf(f.get(null));
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            String v = TemplateEngine.class.getPackage().getImplementationVersion();
+            return v != null ? v : "3.x";
+        }
     }
 }
