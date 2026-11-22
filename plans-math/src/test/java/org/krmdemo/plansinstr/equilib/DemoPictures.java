@@ -26,7 +26,7 @@ abstract class DemoPictures {
         Sweep s = frame.sweep();
         long x = probe.balance();
         assertEquals(DemoCases.expected(s, x), s.at(x), "status and amount at " + x);
-        String name = "sweep-" + Integer.toHexString(frame.title().hashCode()) + "-x-" + x + ".svg";
+        String name = DemoCases.pictureName(frame, probe);
         reporter.publishFile(name, MediaType.parse("image/svg+xml"),
             file -> Files.writeString(file, SvgRenderer.renderSheet(s, x), StandardCharsets.UTF_8));
     }

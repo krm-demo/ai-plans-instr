@@ -1,11 +1,11 @@
 # <img src="docs/icon-small.svg" width="56" height="32" alt=""> plans-math
 
 [![plans-math](https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml/badge.svg)](https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml)
-[![JUnit tests](https://img.shields.io/endpoint?url=https://krm-demo.github.io/ai-plans-instr/plans-math/badges/tests.json)](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/demo/index.html)
+[![JUnit tests](https://img.shields.io/endpoint?url=https://krm-demo.github.io/ai-plans-instr/plans-math/badges/tests.json)](https://krm-demo.github.io/ai-plans-instr/plans-math/demo-tests.html)
 [![JaCoCo coverage](https://img.shields.io/endpoint?url=https://krm-demo.github.io/ai-plans-instr/plans-math/badges/coverage.json)](https://krm-demo.github.io/ai-plans-instr/plans-math/jacoco/index.html)
 
 **[GitHub Pages of the project](https://krm-demo.github.io/ai-plans-instr/plans-math/)**: the interactive graph, the pictures, the reports ·
-[Demo tests](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/demo/index.html) · [Technical tests](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/tech/index.html) · [Coverage](https://krm-demo.github.io/ai-plans-instr/plans-math/jacoco/index.html) · [JavaDoc](https://krm-demo.github.io/ai-plans-instr/plans-math/apidocs/index.html) · [Site: krm-demo.org](https://krm-demo.org/)
+[Demo tests](https://krm-demo.github.io/ai-plans-instr/plans-math/demo-tests.html) · [Technical tests](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/tech/index.html) · [Coverage](https://krm-demo.github.io/ai-plans-instr/plans-math/jacoco/index.html) · [JavaDoc](https://krm-demo.github.io/ai-plans-instr/plans-math/apidocs/index.html) · [Site: krm-demo.org](https://krm-demo.org/)
 
 [![Balances Equilibrium: swept amount per current balance](https://krm-demo.github.io/ai-plans-instr/plans-math/svg/equilib-thousands.svg)](https://krm-demo.github.io/ai-plans-instr/plans-math/svg/equilib-thousands.svg)
 
@@ -21,7 +21,7 @@
 **Balances Equilibrium**, a Java library: for a current balance *x* of the DDA it finds the sweep status and the
 swept amount *y*, and draws both as one SVG without JavaScript. The picture above is rebuilt on every push; click it
 to open the SVG itself, move the mouse over it and make the window narrower. Everything the demo page can show,
-without moving a handle: [the demo tests](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/demo/index.html).
+without moving a handle: [the demo tests](https://krm-demo.github.io/ai-plans-instr/plans-math/demo-tests.html).
 
 The **demo page**, interactive, with handles to drag (JavaScript), is on the [GitHub Pages of the project](https://krm-demo.github.io/ai-plans-instr/plans-math/);
 its source is [`src/site/`](src/site), and it is rebuilt on every push to `main`. It is not part of the library.
@@ -152,7 +152,8 @@ Not published to Maven Central (yet): build it from this repository.
 ## Tests: demo and technical
 
 - **Demo tests** (`@Tag("demo")`, [`SweepDemoTest`](src/test/java/org/krmdemo/plansinstr/equilib/SweepDemoTest.java)):
-  the [report](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/demo/index.html) shows everything the demo page can show. Six groups (two thresholds with
+  [one page to scroll](https://krm-demo.github.io/ai-plans-instr/plans-math/demo-tests.html) (also
+  [as a test report](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/demo/index.html)) shows everything the demo page can show. Six groups (two thresholds with
   nominals; no nominals; target balance; Swept **In** Zero; coinciding ends; broken axes); in each, sets of
   parameters titled as over the graph (`threshold: −$8k [$40k ; $60k] +$10k · A $25k · L $30k`); in each set, the
   balances in increasing order (`x = $32k = Tₘᵢₙ − τₘᵢₙ → Swept In Full $8k`), each checked against the rules

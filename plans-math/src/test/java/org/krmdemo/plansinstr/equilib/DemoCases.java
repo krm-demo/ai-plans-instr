@@ -162,6 +162,11 @@ final class DemoCases {
         return "x = " + money(p.balance()) + sym + "  →  " + pt.zone().title() + (pt.zone().terminal() ? " ⏚" : "") + "  " + amount;
     }
 
+    /** The file of the picture a demo test publishes for a balance (the gallery of the demo page finds it by name). */
+    static String pictureName(Frame f, Probe p) {
+        return "sweep-" + Integer.toHexString(f.title().hashCode()) + "-x-" + p.balance() + ".svg";
+    }
+
     /** Compact ("$32k", "$2.1M"), unless that hides dollars that matter ("$2,065,000"). */
     static String money(long v) {
         String c = Money.compact(v);

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo tests · plans-math · Balances Equilibrium</title>
+    <link rel="icon" href="icon-small.svg" type="image/svg+xml">
+    <link href="page.css" rel="stylesheet">
+    <style>
+        main { max-width: 1760px; }
+        .set { margin: 1.4rem 0 2.2rem; }
+        .set h3 { font: 500 1rem/1.4 var(--font-mono); margin: 0 0 0.6rem; padding: 0.35rem 0.6rem; background: var(--surface); border-radius: 6px; }
+        .case { margin: 0 0 1.2rem; }
+        .case p { margin: 0 0 0.3rem; font-size: 0.95rem; }
+        .case .sym { color: var(--ink-soft); }
+        .case .amt { font-variant-numeric: tabular-nums; }
+        .case img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; background: #fff; }
+        .icons { display: flex; align-items: flex-end; gap: 24px; margin: 0.6rem 0 1rem; }
+        .icons figure { margin: 0; } .icons figcaption { font-size: 0.75rem; color: var(--ink-soft); }
+        nav.toc a { margin-right: 1rem; }
+    </style>
+</head>
+<body>
+<main>
+    <header class="head">
+        <h1><img src="icon.svg" width="84" height="48" alt=""> Demo tests</h1>
+        <p class="sub"><a href="./">Demo page</a> · <a href="tests/demo/index.html">the same as a test report</a> ·
+            <span th:text="${cases}">200</span> JUnit tests, all passed</p>
+    </header>
+    <p>Everything the <a href="./">demo page</a> can show, without moving a handle: the parameters in six groups, the
+        balances in increasing order, each with its status, amount and picture at S, M and L (phone, tablet, laptop).
+        Chosen by functional coverage: categories of the parameters, pairwise, every status and every boundary,
+        nothing that shows the same twice. Smaller than S, every picture is one of two icons, whatever the parameters:</p>
+    <div class="icons">
+        <figure><img src="icon-small.svg" width="56" height="32" alt=""><figcaption>below 80 px</figcaption></figure>
+        <figure><img src="icon.svg" width="140" height="80" alt=""><figcaption>below 200 px</figcaption></figure>
+    </div>
+    <nav class="toc"><a th:each="g, i : ${groups}" th:href="@{'#g' + ${i.count}}" th:text="${g.title}" href="#g1">1 · Group</a></nav>
+
+    <section th:each="g, i : ${groups}" th:id="'g' + ${i.count}">
+        <h2 th:text="${g.title}">1 · Two thresholds with nominals</h2>
+        <p th:text="${g.about}">The usual picture.</p>
+        <div class="set" th:each="s : ${g.sets}">
+            <h3 th:text="${s.title}">threshold: −$8k [$40k ; $60k] +$10k · A $25k · L $30k</h3>
+            <div class="case" th:each="c : ${s.cases}">
+                <p><b th:text="${c.x}">x = $32k</b> <span class="sym" th:if="${c.symbol}" th:text="${c.symbol}">= Tₘᵢₙ − τₘᵢₙ</span>
+                    → <b th:style="'color:' + ${c.color}" th:text="${c.status}">Swept In Full</b>
+                    <span class="amt" th:text="${c.amount}">$8k</span></p>
+                <img th:if="${c.src}" th:src="${c.src}" loading="lazy" alt="the picture at S, M and L" src="">
+            </div>
+        </div>
+    </section>
+</main>
+<footer>Built from <a href="https://github.com/krm-demo/ai-plans-instr/commit/" th:href="@{'https://github.com/krm-demo/ai-plans-instr/commit/' + ${commit}}" th:text="${commit7}">local</a>
+    on <span th:text="${date}">today</span> by the
+    <a href="https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml">plans-math workflow</a>.</footer>
+</body>
+</html>

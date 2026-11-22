@@ -9,7 +9,11 @@ import java.nio.file.StandardCopyOption;
 import java.time.ZonedDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -31,13 +35,16 @@ public final class DemoPage {
     private DemoPage() {
     }
 
+    /** The files of src/site that are Thymeleaf templates (the rest is copied as is). */
+    private static final List<String> TEMPLATES = List.of("index.html", "demo-tests.html");
+
     public static void main(String[] args) throws IOException {
         Path base = Path.of(args.length > 1 ? args[1] : ".");             // the module (exec:java runs in Maven's directory)
         Path out = Path.of(args.length > 0 ? args[0] : "target/pages/plans-math");
         Files.createDirectories(out.resolve("badges"));
         Path site = base.resolve("src/site");
         try (Stream<Path> files = Files.list(site)) {
-            for (Path f : files.filter(f -> !f.getFileName().toString().equals("index.html")).toList()) {
+            for (Path f : files.filter(f -> !TEMPLATES.contains(f.getFileName().toString())).toList()) {
                 Files.copy(f, out.resolve(f.getFileName()), StandardCopyOption.REPLACE_EXISTING);
             }
         }
@@ -61,6 +68,11 @@ public final class DemoPage {
         ctx.setVariable("date", ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'")));
         Files.writeString(out.resolve("index.html"), engine.process(site.resolve("index.html").toAbsolutePath().toString(), ctx), StandardCharsets.UTF_8);
 
+        ctx.setVariable("groups", gallery(base.resolve("target/open-test-report/demo")));
+        ctx.setVariable("cases", tests[0]);
+        Files.writeString(out.resolve("demo-tests.html"), engine.process(site.resolve("demo-tests.html").toAbsolutePath().toString(), ctx),
+            StandardCharsets.UTF_8);
+
         Files.writeString(out.resolve("badges/tests.json"), badge("JUnit tests",
             passed + " passed" + (tests[1] > 0 ? ", " + tests[1] + " failed" : ""), tests[1] > 0 ? "red" : "brightgreen"));
         Files.writeString(out.resolve("badges/coverage.json"), badge("JaCoCo coverage",
@@ -68,25 +80,72 @@ public final class DemoPage {
         System.out.printf("demo page: %d tests, %d passed, %d failed; coverage %.1f%% -> %s%n", tests[0], passed, tests[1], coverage, out);
     }
 
-    private static final Pattern SUITE = Pattern.compile("<testsuite\\b[^>]*>");
-
-    private static int attr(String tag, String name) {
-        Matcher m = Pattern.compile("\\s" + name + "=\"(\\d+)\"").matcher(tag);
-        return m.find() ? Integer.parseInt(m.group(1)) : 0;
+    /**
+     * The demo tests as one page to scroll: every group, set and balance, with the picture the test published (found
+     * by its name in the Open Test Reporting output, which the workflow copies to tests/demo/).
+     */
+    static List<Map<String, Object>> gallery(Path otr) throws IOException {
+        Map<String, String> pictures = new HashMap<>();
+        if (Files.isDirectory(otr)) {
+            try (Stream<Path> files = Files.walk(otr)) {
+                files.filter(f -> f.toString().endsWith(".svg")).forEach(f -> pictures.put(f.getFileName().toString(), url(otr.relativize(f))));
+            }
+        }
+        List<Map<String, Object>> groups = new ArrayList<>();
+        int n = 0;
+        for (DemoCases.Group g : DemoCases.groups()) {
+            n++;
+            List<Map<String, Object>> sets = new ArrayList<>();
+            for (DemoCases.Frame f : g.frames()) {
+                List<Map<String, Object>> cases = new ArrayList<>();
+                for (DemoCases.Probe p : f.probes()) {
+                    Sweep.Point pt = f.sweep().at(p.balance());
+                    Map<String, Object> c = new HashMap<>();
+                    c.put("x", "x = " + DemoCases.money(p.balance()));
+                    c.put("symbol", p.symbol() == null ? null : "= " + p.symbol().replace("_min", "ₘᵢₙ").replace("_max", "ₘₐₓ"));
+                    c.put("status", pt.zone().title() + (pt.zone().terminal() ? " ⏚" : ""));
+                    c.put("color", pt.zone().ink());
+                    c.put("amount", pt.amount() == null ? "∄" : DemoCases.money(pt.amount()));
+                    String pic = pictures.get(DemoCases.pictureName(f, p));
+                    c.put("src", pic == null ? null : "tests/demo/" + pic);
+                    cases.add(c);
+                }
+                sets.add(Map.of("title", f.title(), "cases", cases));
+            }
+            groups.add(Map.of("title", n + " · " + g.title(), "about", g.about(), "sets", sets));
+        }
+        return groups;
     }
 
-    /** Sums the surefire XML of every test class: tests, failed (failures and errors), skipped. */
+    private static String url(Path rel) {
+        StringBuilder u = new StringBuilder();
+        for (Path part : rel) {
+            if (!u.isEmpty()) u.append('/');
+            u.append(URLEncoder.encode(part.toString(), StandardCharsets.UTF_8).replace("+", "%20"));
+        }
+        return u.toString();
+    }
+
+    private static int count(String xml, String regex) {
+        Matcher m = Pattern.compile(regex).matcher(xml);
+        int n = 0;
+        while (m.find()) n++;
+        return n;
+    }
+
+    /**
+     * Counts the test cases in the surefire XML of every test class: tests, failed (failures and errors), skipped.
+     * By the cases, not the suite totals: the suite of a class with nested and parameterized classes reports 0.
+     */
     static int[] tests(Path dir) throws IOException {
         int[] t = new int[3];
         if (!Files.isDirectory(dir)) return t;
         try (Stream<Path> files = Files.list(dir)) {
             for (Path f : files.filter(f -> f.getFileName().toString().matches("TEST-.*\\.xml")).toList()) {
-                Matcher m = SUITE.matcher(Files.readString(f, StandardCharsets.UTF_8));
-                if (!m.find()) continue;
-                String tag = m.group();
-                t[0] += attr(tag, "tests");
-                t[1] += attr(tag, "failures") + attr(tag, "errors");
-                t[2] += attr(tag, "skipped");
+                String xml = Files.readString(f, StandardCharsets.UTF_8);
+                t[0] += count(xml, "<testcase\\b");
+                t[1] += count(xml, "<failure\\b") + count(xml, "<error\\b");
+                t[2] += count(xml, "<skipped\\b");
             }
         }
         return t;
