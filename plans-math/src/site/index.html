@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>plans-math · Balances Equilibrium</title>
+    <title>Demo page · plans-math · Balances Equilibrium</title>
     <meta name="description" content="Balances Equilibrium: the swept amount of a cash sweep per current balance. The interactive graph, the Java library's SVG pictures and its test and coverage reports.">
     <link rel="icon" href="icon-small.svg" type="image/svg+xml">
     <link href="page.css" rel="stylesheet">
@@ -23,7 +23,7 @@
             <a href="https://krm-demo.org/">krm-demo.org</a></p>
         <p class="badges">
             <a href="https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml"><img alt="plans-math workflow" src="https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml/badge.svg"></a>
-            <a href="tests/index.html"><img alt="tests" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkrm-demo.github.io%2Fai-plans-instr%2Fplans-math%2Fbadges%2Ftests.json"></a>
+            <a href="tests/demo/index.html"><img alt="tests" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkrm-demo.github.io%2Fai-plans-instr%2Fplans-math%2Fbadges%2Ftests.json"></a>
             <a href="jacoco/index.html"><img alt="coverage" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkrm-demo.github.io%2Fai-plans-instr%2Fplans-math%2Fbadges%2Fcoverage.json"></a>
         </p>
     </header>
@@ -38,7 +38,7 @@
     </div>
 
     <h2>Sweep statuses</h2>
-    <!-- statuses -->
+    <div th:utext="${statuses}">(the status list, from Zone)</div>
 
     <h2 id="palette">Colours of Swept <b>In</b></h2>
     <p>Three softer, coffee-and-cream variants of the two Swept <b>In</b> slices to choose from; everything else stays the same.
@@ -67,11 +67,17 @@
 
     <h2>Reports</h2>
     <ul>
-        <li><a href="tests/index.html">Test report</a> (Open Test Reporting): {{tests}}, with the picture of every case.</li>
-        <li><a href="jacoco/index.html">Coverage report</a> (JaCoCo): {{coverage}} of lines.</li>
+        <li><a href="tests/demo/index.html">Demo tests</a>: everything this page can show, without moving a handle —
+            six groups of parameters, the balances in increasing order, each with its status, amount and picture
+            (S, M and L side by side).</li>
+        <li><a href="tests/tech/index.html">Technical tests</a> (Open Test Reporting) and the
+            <a href="jacoco/index.html">coverage report</a> (JaCoCo): <span th:text="${tests}">19 JUnit tests passed</span>,
+            <span th:text="${coverage}">93%</span> of lines.</li>
+        <li><a href="apidocs/index.html">JavaDoc</a> of the library.</li>
     </ul>
 </main>
-<footer>Built from <a href="https://github.com/krm-demo/ai-plans-instr/commit/{{commit}}">{{commit7}}</a> on {{date}} by the
+<footer>Built from <a href="https://github.com/krm-demo/ai-plans-instr/commit/" th:href="@{'https://github.com/krm-demo/ai-plans-instr/commit/' + ${commit}}" th:text="${commit7}">local</a>
+    on <span th:text="${date}">today</span> by the
     <a href="https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml">plans-math workflow</a>.</footer>
 </body>
 </html>

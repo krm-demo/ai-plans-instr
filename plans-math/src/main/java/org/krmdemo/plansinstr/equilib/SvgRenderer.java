@@ -82,6 +82,7 @@ public final class SvgRenderer {
 
     /** The nearest allowed number of frames. */
     public static int frames(int n) {
+        if (n <= 0) return 0;                   // static: the default frame only
         int best = DEFAULT_FRAMES;
         for (int c : FRAME_COUNTS) if (Math.abs(c - n) < Math.abs(best - n)) best = c;
         return best;
@@ -113,6 +114,35 @@ public final class SvgRenderer {
      */
     public static String render(Sweep sweep, String tier, int frames) {
         return SvgTemplate.render(singleModel(sweep, tier, frames, null));
+    }
+
+    /**
+     * The tiers S, M and L side by side at their own sizes, static (only the frame at {@code probe}): one picture
+     * that shows how the same parameters look on a phone, a tablet and a laptop (the test report shows these).
+     */
+    public static String renderSheet(Sweep sweep, long probe) {
+        return SvgTemplate.render(sheetModel(sweep, probe));
+    }
+
+    static Map<String, Object> sheetModel(Sweep sweep, long probe) {
+        List<Map<String, Object>> tiers = new ArrayList<>();
+        double x = 0, h = 0;
+        for (Detail d : new Detail[] {Detail.S, Detail.M, Detail.L}) {
+            Map<String, Object> t = new SvgRenderer(sweep, d).draw(0, probe);
+            t.put("cls", t.get("cls") + " one");
+            t.put("boxX", r(x));
+            t.put("boxW", t.get("width"));
+            t.put("boxH", t.get("height"));
+            x += Double.parseDouble((String) t.get("width")) + 24;
+            h = Math.max(h, Double.parseDouble((String) t.get("height")));
+            tiers.add(t);
+        }
+        Map<String, Object> model = new HashMap<>();
+        model.put("width", r(x - 24));
+        model.put("height", r(h));
+        model.put("viewBox", "0 0 " + r(x - 24) + " " + r(h));
+        model.put("tiers", tiers);
+        return model;
     }
 
     static Map<String, Object> adaptiveModel(Sweep sweep, int frames, Long probe) {
@@ -279,6 +309,8 @@ public final class SvgRenderer {
 
         Map<String, Object> tier = new HashMap<>();
         tier.put("cls", "tier t" + detail.name());
+        tier.put("boxW", "100%");               // a sheet places the tiers side by side instead
+        tier.put("boxH", "100%");
         tier.put("layers", layers);
         if (!detail.text()) {           // the slices only: cropped to the plot and its arrows
             double x0 = pf.left() - 8, y0t = g.plotTop - 12;
@@ -362,6 +394,9 @@ public final class SvgRenderer {
             }
         }
         // The default frame: the given probe, or about 30% into Swept out (as far as it is in view).
+        if (samples.isEmpty() && probe == null) {
+            probe = Math.round(s.thresholdMax() + s.nominalMax() + 0.3 * (Math.min(s.sweptOutMax(), g.xs.get(0).d1()) - s.nominalMax()));
+        }
         int dflt;
         if (probe != null) {
             probe = Math.max(Math.round(g.xMin()), Math.min(Math.round(g.xMax()), probe));   // keep it in view

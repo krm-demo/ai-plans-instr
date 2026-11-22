@@ -1,27 +1,44 @@
 package org.krmdemo.plansinstr.equilib;
 
 /**
- * The parameters of a cash sweep, in whole dollars, and the swept amount for any current balance.
+ * The parameters of a cash sweep, in whole dollars, and the swept amount <i>y</i> for any current balance <i>x</i>
+ * of the DDA (the current account).
  *
- * <pre>
- *   y = A               x &lt; T_min − A                     Swept in partial   (A &gt; 0)
- *   y = T_min − x       T_min − A ≤ x ≤ T_min − τ_min     Swept in full      (A &gt; 0)
- *   ∄ (⏚)               x ≤ T_min − τ_min                 Swept in zero      (A = 0)
- *   y = 0               T_min − τ_min &lt; x &lt; T_max + τ_max  In nominal min / In range / In nominal max
- *   y = x − T_max       T_max + τ_max ≤ x ≤ T_max + L     Swept out
- *   ∄ (⏚)               x &gt; T_max + L                     Overflow
- * </pre>
+ * <table class="striped">
+ * <caption>The swept amount and the sweep status ({@link Zone})</caption>
+ * <thead>
+ * <tr><th scope="col"><i>y</i></th><th scope="col">when</th><th scope="col">status</th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><td><i>A</i></td><td><i>x</i> &lt; <i>T</i><sub>min</sub> − <i>A</i></td><td>Swept <b>In</b> Partial (<i>A</i> &gt; 0)</td></tr>
+ * <tr><td><i>T</i><sub>min</sub> − <i>x</i></td><td><i>T</i><sub>min</sub> − <i>A</i> ≤ <i>x</i> ≤ <i>T</i><sub>min</sub> − <i>τ</i><sub>min</sub></td><td>Swept <b>In</b> Full (<i>A</i> &gt; 0)</td></tr>
+ * <tr><td>∄ ⏚</td><td><i>x</i> ≤ <i>T</i><sub>min</sub> − <i>τ</i><sub>min</sub></td><td>Swept <b>In</b> Zero (<i>A</i> = 0)</td></tr>
+ * <tr><td>0</td><td><i>T</i><sub>min</sub> − <i>τ</i><sub>min</sub> &lt; <i>x</i> &lt; <i>T</i><sub>min</sub></td><td><b>In</b> Nominal Min</td></tr>
+ * <tr><td>0</td><td><i>T</i><sub>min</sub> ≤ <i>x</i> ≤ <i>T</i><sub>max</sub></td><td><b>In</b> Range</td></tr>
+ * <tr><td>0</td><td><i>T</i><sub>max</sub> &lt; <i>x</i> &lt; <i>T</i><sub>max</sub> + <i>τ</i><sub>max</sub></td><td><b>In</b> Nominal Max</td></tr>
+ * <tr><td><i>x</i> − <i>T</i><sub>max</sub></td><td><i>T</i><sub>max</sub> + <i>τ</i><sub>max</sub> ≤ <i>x</i> ≤ <i>T</i><sub>max</sub> + <i>L</i></td><td>Swept <b>Out</b></td></tr>
+ * <tr><td>∄ ⏚</td><td><i>x</i> &gt; <i>T</i><sub>max</sub> + <i>L</i></td><td>Swept <b>Out</b> Overflow</td></tr>
+ * </tbody>
+ * </table>
  *
- * The nominals are the smallest transfers worth making: a sweep happens only if it moves at least τ (and more
- * than nothing). So y jumps at T_min − τ_min and at T_max + τ_max, and the point of the jump belongs to the sweep.
+ * <p>The nominals are the smallest transfers worth making: a sweep happens only if it moves at least <i>τ</i> (and
+ * more than nothing). So <i>y</i> jumps at <i>T</i><sub>min</sub> − <i>τ</i><sub>min</sub> and at
+ * <i>T</i><sub>max</sub> + <i>τ</i><sub>max</sub>, and the point of the jump belongs to the sweep.
  *
- * @param thresholdMin T_min, the lowest balance the DDA should keep
- * @param thresholdMax T_max, the highest balance the DDA should keep (T_min ≤ T_max; just T when equal)
- * @param nominalMin   τ_min, the smallest sweep in worth making
- * @param nominalMax   τ_max, the smallest sweep out worth making
- * @param sweptInMax   A, available: the balance of the investment account, the most one sweep in can bring back;
- *                     0, or at least τ_min (a smaller A could never move a whole nominal)
- * @param sweptOutMax  L, limit: the largest single payment into the investment account (at least τ_max, above 0)
+ * <p>The graph, the demo page and the tests name the components by their symbols (in parentheses below); the
+ * threshold is written as over the graph: <code>−$8k [$40k ; $60k] +$10k</code> (<code>[$50k]</code> for a target
+ * balance, zero nominals left out).
+ *
+ * @param thresholdMin (<i>T</i><sub>min</sub>) the lowest balance the DDA should keep
+ * @param thresholdMax (<i>T</i><sub>max</sub>) the highest balance the DDA should keep; <i>T</i><sub>min</sub> ≤
+ *                     <i>T</i><sub>max</sub>, and when they are equal, just <i>T</i>: the target balance
+ * @param nominalMin   (<i>τ</i><sub>min</sub>) the smallest sweep <b>In</b> worth making
+ * @param nominalMax   (<i>τ</i><sub>max</sub>) the smallest sweep <b>Out</b> worth making
+ * @param sweptInMax   (<i>A</i>, available) the balance of the investment account: the most one sweep <b>In</b> can
+ *                     bring back; 0, or at least <i>τ</i><sub>min</sub> (a smaller <i>A</i> could never move a whole
+ *                     nominal)
+ * @param sweptOutMax  (<i>L</i>, limit) the largest single payment into the investment account: above 0 and at
+ *                     least <i>τ</i><sub>max</sub>
  */
 public record Sweep(long thresholdMin, long thresholdMax, long nominalMin, long nominalMax,
                     long sweptInMax, long sweptOutMax) {

@@ -7,23 +7,17 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.MediaType;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 /**
- * One test per essentially different set of parameters: each checks the sweep status at the balances that matter
- * for it and publishes its picture into the Open Test Reporting report (GitHub Pages), so the report shows every
- * layout the library draws.
+ * Technical checks of the statuses: hand-written expectations at the balances that matter for each kind of
+ * parameters (the demo tests, {@link SweepDemoTest}, show the pictures).
  */
-class SweepStatusGalleryTest {
+class SweepStatusTest {
 
     /** A balance to check: the expected status and amount (null: ∄). */
     record Check(long balance, Zone zone, Long amount) {
@@ -82,7 +76,7 @@ class SweepStatusGalleryTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("variants")
-    void variant(Variant v, TestReporter reporter) {
+    void variant(Variant v) {
         Sweep s = v.sweep();
         for (Check c : v.checks()) {
             Sweep.Point p = s.at(c.balance());
@@ -94,19 +88,6 @@ class SweepStatusGalleryTest {
         String svg = "adaptive".equals(v.size()) ? SvgRenderer.render(s) : SvgRenderer.render(s, v.size(), SvgRenderer.DEFAULT_FRAMES);
         assertTrue(svg.contains("class=\"f d\""), "the default frame");
 
-        Map<String, String> entries = new LinkedHashMap<>();
-        entries.put("about", v.about());
-        entries.put("parameters", (s.singleThreshold() ? "T " + Money.full(s.thresholdMin())
-                : "T_min " + Money.full(s.thresholdMin()) + ", T_max " + Money.full(s.thresholdMax()))
-            + ", τ_min " + Money.full(s.nominalMin()) + ", τ_max " + Money.full(s.nominalMax())
-            + ", A " + Money.full(s.sweptInMax()) + ", L " + Money.full(s.sweptOutMax()));
-        entries.put(SvgRenderer.thresholdLabel(s).replace(":", ""), SvgRenderer.thresholdClosed(s) + "  " + SvgRenderer.thresholdOpen(s));
-        entries.put("checked", v.checks().stream()
-            .map(c -> Money.full(c.balance()) + " → " + c.zone().title() + " " + (c.amount() == null ? "∄" : Money.full(c.amount())))
-            .collect(Collectors.joining("; ")));
-        reporter.publishEntry(entries);
-        reporter.publishFile(v.title().toLowerCase().replaceAll("[^a-z0-9]+", "-") + ".svg", MediaType.parse("image/svg+xml"),
-            file -> Files.writeString(file, svg, StandardCharsets.UTF_8));
     }
 
     /** The README lists the statuses under the picture: word for word Zone.description(), so there is only one text. */

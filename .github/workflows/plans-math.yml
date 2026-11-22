@@ -38,31 +38,34 @@ jobs:
       - name: Build and test
         run: mvn -B -pl plans-math -am verify
 
-      - name: Test report (Open Test Reporting → HTML)
+      - name: Test reports (Open Test Reporting → HTML), demo and technical
         run: |
-          XML=$(find plans-math/target -name 'open-test-report*.xml' | head -1)
-          echo "Open Test Reporting XML: $XML"
-          test -n "$XML"
-          mvn -B -q -pl plans-math exec:java@open-test-html -Dotr.xml="$XML" -Dotr.html="$(dirname "$XML")/index.html"
-          echo "OTR_DIR=$(dirname "$XML")" >> "$GITHUB_ENV"
-          echo "--- the report and the files the tests published:"
-          find "$(dirname "$XML")" -type f | sed 's/^/  /' | head -40
-          grep -o '[^"/]*\.svg' "$(dirname "$XML")/index.html" | sort -u | head -20 || true
+          for kind in demo tech; do
+            XML=$(find plans-math/target/open-test-report/$kind -name 'open-test-report*.xml' | head -1)
+            echo "$kind: $XML"
+            test -n "$XML"
+            mvn -B -q -pl plans-math exec:java@open-test-html -Dotr.xml="$XML" -Dotr.html="$(dirname "$XML")/index.html"
+            echo "  $(find "$(dirname "$XML")" -name '*.svg' | wc -l) pictures"
+          done
 
-      - name: Pages content and badge numbers
+      - name: Pages content
         run: |
+          # target/pages/plans-math holds the demo page, its scripts, the pictures and the badge numbers (DemoPage,
+          # EquilibDocs); add the reports and the JavaDoc.
           P=site/plans-math
-          mkdir -p $P/tests $P/jacoco $P/svg $P/badges
-          cp -r "$OTR_DIR"/. $P/tests/
+          mkdir -p $P/tests $P/jacoco $P/apidocs
+          cp -r plans-math/target/pages/plans-math/. $P/
+          for kind in demo tech; do
+            mkdir -p $P/tests/$kind
+            cp -r "$(dirname "$(find plans-math/target/open-test-report/$kind -name 'open-test-report*.xml' | head -1)")"/. $P/tests/$kind/
+          done
           cp -r plans-math/target/site/jacoco/. $P/jacoco/
-          cp plans-math/target/pages/plans-math/svg/*.svg $P/svg/
-          cp -r plans-math/src/site/. $P/
-          python3 plans-math/src/site/fill-page.py "$P" plans-math/target/pages/plans-math/svg/statuses.html "$GITHUB_SHA"
+          cp -r plans-math/target/reports/apidocs/. $P/apidocs/
           printf '<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=plans-math/"><a href="plans-math/">plans-math</a>\n' > site/index.html
-          rm -f $P/fill-page.py
           {
             echo "### plans-math"
             echo "- $(jq -r .message $P/badges/tests.json) · coverage $(jq -r .message $P/badges/coverage.json)"
+            echo "- $(find $P/tests/demo -name '*.svg' | wc -l) pictures in the demo tests"
             echo "- https://krm-demo.github.io/ai-plans-instr/plans-math/"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -75,3 +78,4 @@ jobs:
           user_name: github-actions[bot]
           user_email: 41898282+github-actions[bot]@users.noreply.github.com
           full_commit_message: "plans-math: pages from ${{ github.sha }}"
+          force_orphan: true      # only the latest pages: the pictures of old runs do not pile up in the history

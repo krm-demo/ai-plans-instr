@@ -1,11 +1,11 @@
 # <img src="docs/icon-small.svg" width="56" height="32" alt=""> plans-math
 
 [![plans-math](https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml/badge.svg)](https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml)
-[![JUnit tests](https://img.shields.io/endpoint?url=https://krm-demo.github.io/ai-plans-instr/plans-math/badges/tests.json)](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html)
+[![JUnit tests](https://img.shields.io/endpoint?url=https://krm-demo.github.io/ai-plans-instr/plans-math/badges/tests.json)](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/demo/index.html)
 [![JaCoCo coverage](https://img.shields.io/endpoint?url=https://krm-demo.github.io/ai-plans-instr/plans-math/badges/coverage.json)](https://krm-demo.github.io/ai-plans-instr/plans-math/jacoco/index.html)
 
 **[GitHub Pages of the project](https://krm-demo.github.io/ai-plans-instr/plans-math/)**: the interactive graph, the pictures, the reports ·
-[Test report](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html) · [Coverage](https://krm-demo.github.io/ai-plans-instr/plans-math/jacoco/index.html) · [Site: krm-demo.org](https://krm-demo.org/)
+[Demo tests](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/demo/index.html) · [Technical tests](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/tech/index.html) · [Coverage](https://krm-demo.github.io/ai-plans-instr/plans-math/jacoco/index.html) · [JavaDoc](https://krm-demo.github.io/ai-plans-instr/plans-math/apidocs/index.html) · [Site: krm-demo.org](https://krm-demo.org/)
 
 [![Balances Equilibrium: swept amount per current balance](https://krm-demo.github.io/ai-plans-instr/plans-math/svg/equilib-thousands.svg)](https://krm-demo.github.io/ai-plans-instr/plans-math/svg/equilib-thousands.svg)
 
@@ -20,11 +20,11 @@
 
 **Balances Equilibrium**, a Java library: for a current balance *x* of the DDA it finds the sweep status and the
 swept amount *y*, and draws both as one SVG without JavaScript. The picture above is rebuilt on every push; click it
-to open the SVG itself, move the mouse over it and make the window narrower. More layouts, one per test:
-[the test report](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/index.html).
+to open the SVG itself, move the mouse over it and make the window narrower. Everything the demo page can show,
+without moving a handle: [the demo tests](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/demo/index.html).
 
-The interactive page with handles to drag (JavaScript) is on the [GitHub Pages of the project](https://krm-demo.github.io/ai-plans-instr/plans-math/); its source is
-[`src/site/`](src/site), and it is rebuilt on every push to `main`. It is not part of the library.
+The **demo page**, interactive, with handles to drag (JavaScript), is on the [GitHub Pages of the project](https://krm-demo.github.io/ai-plans-instr/plans-math/);
+its source is [`src/site/`](src/site), and it is rebuilt on every push to `main`. It is not part of the library.
 
 ## Contents
 
@@ -33,6 +33,7 @@ The interactive page with handles to drag (JavaScript) is on the [GitHub Pages o
 - [One picture, every size](#one-picture-every-size)
 - [The Thymeleaf template](#the-thymeleaf-template)
 - [Use it](#use-it)
+- [Tests: demo and technical](#tests-demo-and-technical)
 - [Build](#build)
 - [GitHub Pages](#github-pages)
 - [Files](#files)
@@ -148,47 +149,68 @@ String s = SvgRenderer.render(sweep, "S", 48);   // one tier alone
 
 Not published to Maven Central (yet): build it from this repository.
 
+## Tests: demo and technical
+
+- **Demo tests** (`@Tag("demo")`, [`SweepDemoTest`](src/test/java/org/krmdemo/plansinstr/equilib/SweepDemoTest.java)):
+  the [report](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/demo/index.html) shows everything the demo page can show. Six groups (two thresholds with
+  nominals; no nominals; target balance; Swept **In** Zero; coinciding ends; broken axes); in each, sets of
+  parameters titled as over the graph (`threshold: −$8k [$40k ; $60k] +$10k · A $25k · L $30k`); in each set, the
+  balances in increasing order (`x = $32k = Tₘᵢₙ − τₘᵢₙ → Swept In Full $8k`), each checked against the rules
+  written once more and shown at S, M and L side by side. About 170 cases, chosen by functional coverage: category
+  partition, pairwise combination, equivalence classes and boundary values, output uniqueness
+  ([`DemoCases`](src/test/java/org/krmdemo/plansinstr/equilib/DemoCases.java) explains).
+  Change a colour or a font, push, scroll: every case shows the change.
+- **Technical tests** (untagged): validation, frames, tiers, the README's status list —
+  [report](https://krm-demo.github.io/ai-plans-instr/plans-math/tests/tech/index.html).
+
 ## Build
 
 Java 21 and Maven, from the root of the repository:
 
 ```bash
-mvn -pl plans-math -am verify                      # build, tests, coverage, pictures
+mvn -pl plans-math -am verify                      # build, both kinds of tests, coverage, JavaDoc, pictures, demo page
+mvn -pl plans-math -am verify -Dgroups=demo        # only the demo tests (or -DexcludedGroups=demo)
 mvn -pl plans-math compile exec:java@docs          # only the pictures, into plans-math/docs
 ```
 
-`verify` leaves in `plans-math/target/`: `surefire-reports/`, `open-test-report/` (Open Test Reporting XML),
-`site/jacoco/` (coverage) and `pages/plans-math/svg/` (the pictures and the status list of the GitHub Pages). The HTML
-test report: `mvn -pl plans-math exec:java@open-test-html -Dotr.xml=… -Dotr.html=…` (as the workflow does).
+`verify` leaves in `plans-math/target/`: `open-test-report/demo/` and `open-test-report/tech/` (Open Test Reporting
+XML and the pictures), `site/jacoco/` (coverage), `reports/apidocs/` (JavaDoc) and `pages/plans-math/` (the demo page
+with its numbers, the pictures, the badge JSON). HTML from a test report:
+`mvn -pl plans-math exec:java@open-test-html -Dotr.xml=… -Dotr.html=…` (as the workflow does).
 
 ## GitHub Pages
 
 Every push to `main` that touches `plans-math/` runs [`.github/workflows/plans-math.yml`](../.github/workflows/plans-math.yml):
-it builds and tests, turns the Open Test Reporting XML into HTML, puts together `plans-math/` — the page from
-[`src/site/`](src/site) (the status list filled in from `Zone`, the numbers of the tests and the coverage), the
-pictures, the test report, the coverage report, the badge JSON — and **commits** it to the `gh-pages` branch, which
+it builds and tests; `DemoPage` (a Thymeleaf template, [`src/site/index.html`](src/site/index.html)) writes the demo
+page with the status list from `Zone` and the numbers of the tests and the coverage; the workflow turns the two
+Open Test Reporting XMLs into HTML, adds them, the coverage report and the JavaDoc, and **commits** the lot to the
+`gh-pages` branch (only the latest: the pictures of old runs do not pile up), which
 GitHub Pages serves at [https://krm-demo.github.io/ai-plans-instr/plans-math/](https://krm-demo.github.io/ai-plans-instr/plans-math/).
 
 ## Files
 
 ```
-pom.xml                         Thymeleaf; JaCoCo; exec:java@docs (pictures), exec:java@open-test-html (report)
+pom.xml                         Thymeleaf; JaCoCo; surefire: demo and technical tests; JavaDoc; exec:java@docs,
+                                @demo-page, @open-test-html
 src/main/java/org/krmdemo/plansinstr/equilib/
   Sweep                         the parameters, the swept amount at() a balance, snapping
   Zone                          the statuses: titles, colours, terminal or not, the one description of each
   Layout                        data ranges and pixels, broken axes, 45° everywhere, clipping
   SvgRenderer                   the geometry: the tiers, zones, function, labels, formula, legend, the frames
   SvgTemplate                   renders it with Thymeleaf
-  EquilibDocs                   writes the pictures of this README and the status list (for GitHub Pages)
+  EquilibDocs                   writes the pictures of this README
 src/main/resources/templates/equilib.svg   the Thymeleaf template of every picture
-src/site/                       the GitHub Pages: index.html, the JavaScript widget, page.js (palettes), fill-page.py
-src/test/java/…                 SweepTest, SvgRendererTest, SweepStatusGalleryTest (one test per layout; and the
-                                check that the status list above is Zone's, word for word)
+src/site/                       the demo page: index.html (Thymeleaf), the JavaScript widget, page.js (palettes)
+src/test/java/…                 SweepDemoTest, DemoPictures, DemoProbes, DemoCases: the demo tests;
+                                SweepTest, SvgRendererTest, SweepStatusTest: the technical ones;
+                                DemoPage: writes the demo page
 docs/                           the two icons
 ```
 
 ## References
 
+- T. J. Ostrand, M. J. Balcer, *The category-partition method for specifying and generating functional tests*, CACM 31(6), 1988;
+  N. Alshahwan, M. Harman, *Coverage and fault detection of the output-uniqueness test selection criteria*, ISSTA 2014
 - [Thymeleaf](https://www.thymeleaf.org/doc/tutorials/3.1/usingthymeleaf.html), [Open Test Reporting](https://github.com/ota4j-team/open-test-reporting), [JaCoCo](https://www.jacoco.org/jacoco/)
 - [Liang–Barsky line clipping](https://en.wikipedia.org/wiki/Liang%E2%80%93Barsky_algorithm)
 - [Media queries in SVG](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries/Using_media_queries) apply to the SVG's own viewport

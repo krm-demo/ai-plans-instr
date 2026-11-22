@@ -79,13 +79,63 @@
                 <configuration>
                     <!-- @{argLine}: the JaCoCo agent -->
                     <argLine>@{argLine}</argLine>
-                    <properties>
-                        <configurationParameters>
-                            junit.platform.reporting.open.xml.enabled = true
-                            junit.platform.reporting.output.dir = ${project.build.directory}/open-test-report
-                        </configurationParameters>
-                    </properties>
                 </configuration>
+                <executions>
+                    <!-- The technical tests: everything not tagged "demo"; their own Open Test Reporting XML. -->
+                    <execution>
+                        <id>default-test</id>
+                        <configuration>
+                            <excludedGroups>demo</excludedGroups>
+                            <properties>
+                                <configurationParameters>
+                                    junit.platform.reporting.open.xml.enabled = true
+                                    junit.platform.reporting.output.dir = ${project.build.directory}/open-test-report/tech
+                                </configurationParameters>
+                            </properties>
+                        </configuration>
+                    </execution>
+                    <!-- The demo tests (@Tag("demo")): what the demo page shows, with the pictures; a report of their own. -->
+                    <execution>
+                        <id>demo-test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <groups>demo</groups>
+                            <properties>
+                                <configurationParameters>
+                                    junit.platform.reporting.open.xml.enabled = true
+                                    junit.platform.reporting.output.dir = ${project.build.directory}/open-test-report/demo
+                                </configurationParameters>
+                            </properties>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- The JavaDoc of the library (target/reports/apidocs), published on GitHub Pages next to the reports. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.11.2</version>
+                <configuration>
+                    <doctitle>plans-math: Balances Equilibrium</doctitle>
+                    <windowtitle>plans-math</windowtitle>
+                    <doclint>all,-missing</doclint>
+                    <links>
+                        <link>https://docs.oracle.com/en/java/javase/21/docs/api/</link>
+                    </links>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>apidocs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>javadoc</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!--
@@ -110,6 +160,21 @@
                             <mainClass>org.krmdemo.plansinstr.equilib.EquilibDocs</mainClass>
                             <arguments>
                                 <argument>${project.build.directory}/pages/plans-math/svg</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- The demo page (src/site, Thymeleaf) with the numbers of the tests and the coverage. -->
+                        <id>demo-page</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <classpathScope>test</classpathScope>
+                            <mainClass>org.krmdemo.plansinstr.equilib.DemoPage</mainClass>
+                            <arguments>
+                                <argument>${project.build.directory}/pages/plans-math</argument>
                             </arguments>
                         </configuration>
                     </execution>

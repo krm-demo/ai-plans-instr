@@ -22,7 +22,6 @@ public final class EquilibDocs {
         write(dir, "equilib-millions.svg", Sweep.DEMO);
         write(dir, "equilib-swept-in-zero.svg", new Sweep(40_000, 60_000, 8_000, 10_000, 0, 30_000));
         write(dir, "equilib-target-balance.svg", new Sweep(50_000, 50_000, 5_000, 5_000, 20_000, 25_000));
-        Files.writeString(dir.resolve("statuses.html"), Zone.statusListHtml(), StandardCharsets.UTF_8);   // for the GitHub Pages
     }
 
     private static void write(Path dir, String name, Sweep s) throws IOException {

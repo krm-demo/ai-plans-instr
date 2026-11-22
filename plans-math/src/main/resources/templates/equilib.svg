@@ -70,7 +70,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Aria
   <circle cx="79" cy="33" r="2.2" style="fill:#8B5CF6;stroke:none"/>
 </svg>
 </th:block>
-<svg th:each="t : ${tiers}" th:attr="class=${t.cls},viewBox=${t.viewBox}" width="100%" height="100%"
+<svg th:each="t : ${tiers}" th:attr="class=${t.cls},viewBox=${t.viewBox},x=${t.boxX},width=${t.boxW},height=${t.boxH}"
      preserveAspectRatio="xMidYMin meet">
 <rect width="100%" height="100%" style="fill:var(--bg)"/>
 <g th:each="layer : ${t.layers}" th:attr="class=${layer.cls}">
