@@ -26,7 +26,7 @@ import java.util.UUID;
 final class H2Target implements BenchTarget {
 
     private static final String COLUMNS =
-            "id, version, created_at, last_updated_at, CAST(payload AS VARCHAR) AS payload";
+            "id, version, created_at, last_updated_at, CAST(payload AS VARCHAR) AS payload ";
 
     private final SingleConnectionDataSource ds;
     private final JdbcClient jdbc;
@@ -62,6 +62,11 @@ final class H2Target implements BenchTarget {
     public String about() {
         return "H2 " + jdbc.sql("SELECT H2VERSION()").query(String.class).single()
                 + " in memory, in the JVM of the test; its own table (columns + JSON), not our Postgres schema";
+    }
+
+    @Override
+    public void ping() {
+        jdbc.sql("SELECT 1").query(Integer.class).single();
     }
 
     @Override

@@ -97,6 +97,11 @@ final class PostgresTarget implements BenchTarget {
     @Override public String about() { return about; }
 
     @Override
+    public void ping() {
+        jdbc.sql("SELECT 1").query(Integer.class).single();
+    }
+
+    @Override
     public PlanInstructions create(PlanInstructions plan) {
         return plans.save(plan, "benchmark: create");
     }

@@ -31,6 +31,12 @@ interface BenchTarget extends AutoCloseable {
     /** One line about where it runs, for the report. */
     String about();
 
+    /**
+     * The cheapest request there is ({@code SELECT 1}, reading a key that does not exist): the
+     * round trip to the database. The rest of the report minus this is the database itself.
+     */
+    void ping();
+
     /** A new plan: {@code planId} and {@code version} are null; returns the stored plan. */
     PlanInstructions create(PlanInstructions plan);
 

@@ -21,6 +21,7 @@ managed services that the Lambdas would use.
 
 ### The scenario
 
+0. ping: `SELECT 1` (DynamoDB: a read of a missing key) a thousand times — the round trip alone;
 1. create N plans (`-Dmanual.plans`, 10 000 by default), ten per user, of random types;
 2. load each by id; update each with a version check;
 3. per user: lookup(user, type), plans of the user, active plans of the user, plans of the DDA account;

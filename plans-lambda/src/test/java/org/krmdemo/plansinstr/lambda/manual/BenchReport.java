@@ -113,6 +113,9 @@ final class BenchReport {
             <details><summary>What was measured and how to read it</summary>
 
             **The scenario**, the same on every target:
+            0. *ping*: the cheapest request (`SELECT 1`; in DynamoDB a read of a key that does not
+               exist), a thousand times: the round trip alone. Every other line minus *ping* is the
+               database itself;
             1. *create*: N new plans, ten per user, of random types;
             2. *load by id*: each of them;
             3. *update (version check)*: each of them, with optimistic locking (the stored version must match);
@@ -133,8 +136,9 @@ final class BenchReport {
             - *p95*: 95 of 100 were faster, 1 in 20 was slower; *p99*: 1 in 100 was slower;
             - *max*: the slowest one, usually among the first (JIT warm-up, caches, a database waking up).
 
-            The cloud numbers include the round trip from the GitHub runner (Azure) to AWS; from a
-            Lambda in the same region they would be lower. The local targets cost nothing and need no
+            The cloud numbers include the round trip from the GitHub runner (Azure) to AWS. Where
+            the runner is changes from run to run, and with it *ping*: compare the cloud lines
+            with the *ping* of the same run. From a Lambda in the same region they would be lower. The local targets cost nothing and need no
             network, but only the embedded Postgres runs our real code (JSONB, the Flyway migrations);
             H2 and DynamoDB need their own table and queries.
 

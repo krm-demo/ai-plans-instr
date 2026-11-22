@@ -139,6 +139,13 @@ class CrudBenchmarkTest {
         List<OpStats> stats = new ArrayList<>();
 
         try {
+            OpStats ping = add(stats, "ping (round trip, no data)");
+            for (int i = 0; i < Math.min(1000, PLANS); i++) {
+                long t0 = System.nanoTime();
+                db.ping();
+                ping.since(t0);
+            }
+
             OpStats create = add(stats, "create");
             List<PlanInstructions> plans = new ArrayList<>(PLANS);
             for (int i = 0; i < PLANS; i++) {

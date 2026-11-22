@@ -103,6 +103,14 @@ final class DynamoDbTarget implements BenchTarget {
 
     @Override public String about() { return about; }
 
+    /** DynamoDB has no "SELECT 1": a strongly consistent read of a key that does not exist. */
+    @Override
+    public void ping() {
+        ddb.getItem(b -> b.tableName(table).key(PING_KEY).consistentRead(true));
+    }
+
+    private static final Map<String, AttributeValue> PING_KEY = Map.of("id", AttributeValue.fromS("ping"));
+
     @Override
     public PlanInstructions create(PlanInstructions plan) {
         if (plan.planId() != null || plan.version() != null) {
