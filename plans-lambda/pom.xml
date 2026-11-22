@@ -17,6 +17,12 @@
         <start-class>org.krmdemo.plansinstr.lambda.PlansLambdaApplication</start-class>
         <!-- CI overrides this with -Dbuild.number=...; it ends up in restInfo.runtimeInfo.buildNumber -->
         <build.number>local</build.number>
+        <!--
+          Tests tagged "manual" (the CRUD benchmark against Aurora and DynamoDB) do not run in the
+          normal build. The manual-tests workflow runs only them:
+            mvn -pl plans-lambda -am verify -Dgroups=manual -Dtests.excluded=none -Dsurefire.failIfNoSpecifiedTests=false
+        -->
+        <tests.excluded>manual</tests.excluded>
     </properties>
 
     <dependencies>
@@ -66,6 +72,12 @@
             <artifactId>embedded-postgres</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- manual tests: the same CRUD scenario against DynamoDB -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>dynamodb-enhanced</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -87,6 +99,13 @@
             </resource>
         </resources>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>${tests.excluded}</excludedGroups>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
