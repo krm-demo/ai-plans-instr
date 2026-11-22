@@ -205,7 +205,7 @@ class CrudBenchmarkTest {
             assertTrue(found > 0, "lookup found nothing");
 
             if (db.latestPlanPerUser(userPrefix).isPresent()) {
-                OpStats distinctOn = add(stats, "search: newest plan per user (DISTINCT ON)");
+                OpStats distinctOn = add(stats, "search: newest plan per user");
                 for (int i = 0; i < 10; i++) {
                     long t0 = System.nanoTime();
                     OptionalInt n = db.latestPlanPerUser(userPrefix);

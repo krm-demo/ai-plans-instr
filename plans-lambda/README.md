@@ -25,7 +25,7 @@ managed services that the Lambdas would use.
 1. create N plans (`-Dmanual.plans`, 10 000 by default), ten per user, of random types;
 2. load each by id; update each with a version check;
 3. per user: lookup(user, type), plans of the user, active plans of the user, plans of the DDA account;
-4. the newest plan of every user in one query (`DISTINCT ON`; Postgres and H2 only), ten times;
+4. the newest plan of every user in one query, ten times: `DISTINCT ON` in Postgres, `ROW_NUMBER()` in H2 (it has no `DISTINCT ON`), none in DynamoDB;
 5. delete each.
 
 One operation at a time, one thread, one open connection: these are latencies, not throughput.

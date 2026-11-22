@@ -141,14 +141,18 @@ final class H2Target implements BenchTarget {
                 .param("dda", ddaAccNum).query(rows()).list();
     }
 
-    /** H2 has {@code DISTINCT ON} too. */
+    /**
+     * H2 has no {@code DISTINCT ON} (Postgres has it, few others do): the portable way is a
+     * window function that numbers the plans of each user and keeps the first.
+     */
     @Override
     public OptionalInt latestPlanPerUser(String userIdPrefix) {
         return OptionalInt.of(jdbc.sql("""
-                        SELECT DISTINCT ON (user_id) id
-                          FROM plan_instructions
-                         WHERE user_id LIKE :prefix
-                         ORDER BY user_id, last_updated_at DESC""")
+                        SELECT id FROM (
+                            SELECT id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY last_updated_at DESC) AS n
+                              FROM plan_instructions
+                             WHERE user_id LIKE :prefix
+                        ) WHERE n = 1""")
                 .param("prefix", userIdPrefix + "%")
                 .query(UUID.class).list().size());
     }

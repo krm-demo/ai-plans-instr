@@ -78,7 +78,7 @@ final class BenchReport {
             }
             md.append("\n");
         }
-        md.append("\n— : the target has no such query (DynamoDB has no `DISTINCT ON`; it would be a scan or a separate index).\n\n");
+        md.append("\n— : the target has no such query (DynamoDB has neither `DISTINCT ON` nor window functions; it would be a scan or a separate index).\n\n");
 
         md.append(HOW_TO_READ);
 
@@ -121,7 +121,8 @@ final class BenchReport {
             3. *update (version check)*: each of them, with optimistic locking (the stored version must match);
             4. per user: *lookup(user, type)* (the newest plan of a type that is not cancelled),
                *plans of a user*, *active plans of a user*, *plans of a DDA account*;
-            5. *newest plan per user*: one query over all users (`DISTINCT ON` in Postgres and H2), ten times;
+            5. *newest plan per user*: one query over all users, ten times: `DISTINCT ON` in Postgres,
+               `ROW_NUMBER() OVER (PARTITION BY …)` in H2, which has no `DISTINCT ON`;
             6. *delete*: each of them.
 
             **One operation at a time**, by one thread, over one open connection (JDBC) or the SDK's
