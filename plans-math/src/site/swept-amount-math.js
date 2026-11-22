@@ -99,7 +99,10 @@
     page:   { ink: 'var(--ink, #18212c)', soft: 'var(--ink-soft, #5a6777)', rule: 'var(--rule, #d6dde7)', bg: 'var(--bg, #fbfcfe)' },
     static: { ink: '#4b5563', soft: '#6b7280', rule: '#c7ccd4', bg: '#ffffff' }
   };
-  var SERIF = "Georgia, 'Times New Roman', serif", SANS = 'system-ui, -apple-system, \'Segoe UI\', sans-serif';
+  // Formula labels look like LaTeX: KaTeX's own fonts (Computer Modern, loaded with KaTeX's CSS) and fallbacks.
+  var SERIF = "KaTeX_Main, 'Latin Modern Roman', 'CMU Serif', 'STIX Two Text', 'Cambria Math', Cambria, 'Times New Roman', serif",
+      CAPS = "Georgia, 'Times New Roman', serif",   // the captions of the axes: text, not math
+      MATH = "KaTeX_Math, 'Latin Modern Math', 'STIX Two Math', 'Cambria Math', Cambria, 'Times New Roman', serif", SANS = 'system-ui, -apple-system, \'Segoe UI\', sans-serif';
   // The watermarks of the slices: a friendly sans, not mono-looking (no wide letter-spacing).
   var WM_SANS = "'Avenir Next', 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif";
 
@@ -211,17 +214,19 @@
     if (a >= K) return sign + '$' + trim1(a / K) + 'k';
     return sign + '$' + Math.round(a);
   }
-  // 'T_min − τ_min' → italic letters with subscripts as <tspan>s.
+  // 'T_min − τ_min' → as TeX sets it: math-italic letters, upright subscripts a little below the baseline, upright digits.
   function tex(s) {
-    var o = '', i = 0, m, re = /([A-Za-zα-ω]+)_([a-z]+)/g, sh = false;
+    var o = '', i = 0, m, re = /([A-Za-zα-ω]+)(?:_([a-z]+))?/g, sh = false, up = '-0.2em', dn = '0.2em';
     while ((m = re.exec(s))) {
       var pre = s.slice(i, m.index);
-      if (pre) { o += '<tspan dy="' + (sh ? -4 : 0) + '">' + pre + '</tspan>'; sh = false; }
-      o += '<tspan dy="' + (sh ? -4 : 0) + '">' + m[1] + '</tspan><tspan dy="4" font-size="0.78em" font-style="normal">' + m[2] + '</tspan>';
-      sh = true; i = re.lastIndex;
+      if (pre) { o += '<tspan dy="' + (sh ? up : 0) + '">' + pre + '</tspan>'; sh = false; }
+      o += '<tspan dy="' + (sh ? up : 0) + '" style="font-family:' + MATH + ';font-style:italic">' + m[1] + '</tspan>';
+      sh = !!m[2];
+      if (sh) o += '<tspan dy="' + dn + '" style="font-size:0.7em">' + m[2] + '</tspan>';
+      i = re.lastIndex;
     }
     var post = s.slice(i);
-    if (post) o += '<tspan dy="' + (sh ? -4 : 0) + '">' + post + '</tspan>';
+    if (post) o += '<tspan dy="' + (sh ? up : 0) + '">' + post + '</tspan>';
     return o;
   }
 
@@ -265,8 +270,8 @@
     var xl = tmin - nmin, xr = tmax + nmax, xk = tmin - imax, xo = tmax + omax, xc = (tmin + tmax) / 2, yc = (tmin - tmax) / 2;
     var xA = GX[0].d0, xZ = GX[GX.length - 1].d1, yA = GY[0].d0, yZ = GY[GY.length - 1].d1;
     var y0 = Y(0), ax = X(0), xoc = Math.min(xo, xZ), Z = ZONES;
-    var LAB = 'font-family:' + SERIF + ';font-style:italic;font-size:' + pf.font + 'px';
-    var CAP = 'font-family:' + SERIF + ';font-style:italic;font-size:' + Math.max(13, pf.font - 1) + 'px;fill:' + th.soft;
+    var LAB = 'font-family:' + SERIF + ';font-size:' + pf.font + 'px';   // upright, as TeX: tex() makes the letters italic
+    var CAP = 'font-family:' + CAPS + ';font-style:italic;font-size:' + Math.max(13, pf.font - 1) + 'px;fill:' + th.soft;
 
     var h = '<defs><pattern id="' + id + '-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
       '<line x1="0" y1="0" x2="0" y2="6" style="stroke:#E24B4A;stroke-width:1;stroke-opacity:.35"/></pattern>' +
@@ -382,9 +387,9 @@
     var proj = stroke(GRAY, 0.6, '1.5 3', 0.8);
     xs.forEach(function (q) { h += line(X(q.x), Y(q.y) + 5, X(q.x), rowY(q.r) - 13 * f, proj); });
     ys.forEach(function (q) { if (q.px !== null && Math.abs(q.y) > 1) h += line(q.px, Y(q.y), ax, Y(q.y), proj); });
-    // The y fraction stands right of the axis with its bar on the projection, which stops at the fraction.
     var fyW = tw('T_min − T_max') + 4, fyX = ax + 8 + fyW / 2;
-    if (mids) h += line(X(xc), Y(yc), sym ? fyX + fyW / 2 + 4 : ax, Y(yc), proj) + line(X(xc), Y(yc) - 5, X(xc), y0, proj);
+    // The y fraction sits above its projection, as the other y labels do, so its bar never reads as a piece of it.
+    if (mids) h += line(X(xc) - 5, Y(yc), ax, Y(yc), proj) + line(X(xc), Y(yc) - 5, X(xc), y0, proj);
     if (!zeroA) h += line(RL, Y(imax), X(xl), Y(imax), stroke(Z.inp.ink, 1, '1 3'));
     if (visY(omax)) h += line(ax, Y(omax), RR, Y(omax), stroke(Z.over.ink, 1, '1 3', 0.9));
 
@@ -438,20 +443,21 @@
       }
     }
 
-    var text = function (x, y, anchor, col, body) {
-      return '<text x="' + n2(x) + '" y="' + n2(y) + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + ' style="' + LAB + ';fill:' + col + '">' + body + '</text>';
+    var text = function (x, y, anchor, col, body, extra) {
+      return '<text x="' + n2(x) + '" y="' + n2(y) + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + ' style="' + LAB + ';fill:' + col + (extra || '') + '">' + body + '</text>';
     };
-    // A two-storey fraction centred on (cx, bar).
+    // A two-storey fraction centred on (cx, bar): a solid bar in the colour of the text, apart from the helper lines.
     var frac = function (cx, bar, num, den, col) {
-      var w = tw(num) + 4;
-      return text(cx, bar - 5, 'middle', col, tex(num)) + line(cx - w / 2, bar, cx + w / 2, bar, stroke(col, 1)) +
-        text(cx, bar + pf.font + 1, 'middle', col, tex(den));
+      var w = tw(num) + 2;
+      return text(cx, bar - 6, 'middle', col, tex(num)) +
+        '<rect x="' + n2(cx - w / 2) + '" y="' + n2(bar - 0.6) + '" width="' + n2(w) + '" height="1.2" style="fill:' + col + '"/>' +
+        text(cx, bar + pf.font - 1, 'middle', col, tex(den));
     };
     if (mids) {
       var mx = X(xc), myY = Y(yc), fy = 'T_min − T_max', fx = 'T_min + T_max';
       if (sym) {
         h += frac(mx, y0 - pf.font - 9, fx, '2', GRAY);
-        h += frac(fyX, myY, fy, '2', GRAY);
+        h += frac(fyX, myY - pf.font - 5, fy, '2', GRAY);
       } else {
         h += text(mx, y0 - 8, 'middle', GRAY, money(xc)) + text(ax + 7, myY - 4, null, GRAY, money(yc));
       }

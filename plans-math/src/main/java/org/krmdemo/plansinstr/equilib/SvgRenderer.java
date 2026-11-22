@@ -293,12 +293,12 @@ public final class SvgRenderer {
         for (double[] q : xLabels) {
             line(g.x(q[0]), g.y(q[1]) + 5, g.x(q[0]), q[3] - 12, proj);
             String colour = zeroA && nMin > 0 && q[0] == xl ? Zone.SWEPT_IN_ZERO.ink() : ink((int) q[4]);   // where Swept In Zero ends
-            text(q[2], q[3], "middle", colour, esc(Money.compact(q[0])), "m", pf.font());
+            text(q[2], q[3], "middle", colour, esc(Money.compact(q[0])), "tx", pf.font());
         }
         yLabels(ax);
         text(pf.right() + 12, rowsBottom + 8, "end", "var(--soft)", "Current balance, $", "m", pf.font() - 1);
         // The origin: "0" below the x axis and left of the y axis, where no line crosses it.
-        if (g.xs.get(0).has(0)) text(ax - 6, y0 + pf.font() + 1, "end", "var(--soft)", "0", "m", pf.font());
+        if (g.xs.get(0).has(0)) text(ax - 6, y0 + pf.font() + 1, "end", "var(--soft)", "0", "tx", pf.font());
 
         // The formula: one row per status, the status on the right (the frames highlight theirs and add the amount).
         if (detail.formula()) formula(rows, fxTop, rowH, legendY);
@@ -316,7 +316,7 @@ public final class SvgRenderer {
         layer("formula");
         double fxLeft = 8, valX = valX(), colB = valX + (pf.width() < 500 ? 128 : 150);
         double braceX = fxLeft + (pf.width() < 500 ? 46 : 62);
-        text(fxLeft, fxTop + rows.size() * rowH / 2 + 4, null, "var(--ink)", tex("y(x) ="), "m", pf.font() + 1);
+        text(fxLeft, fxTop + rows.size() * rowH / 2 + 4, null, "var(--ink)", tex("y(x) ="), "tx", pf.font() + 1);
         double b1 = fxTop + 2, b2 = fxTop + rows.size() * rowH - 2, bm = (b1 + b2) / 2, bx = braceX + 6;
         cur.add(shape("path", "style", "fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round",
             "d", "M" + r(bx + 6) + " " + r(b1) + "Q" + r(bx) + " " + r(b1) + " " + r(bx) + " " + r(b1 + 8) + "V" + r(bm - 7)
@@ -326,8 +326,8 @@ public final class SvgRenderer {
             Row row = rows.get(i);
             double yy = fxTop + (i + 0.72) * rowH;
             String col = row.zone.terminal() ? row.zone.ink() : "var(--ink)";   // no money moves: red, both of them
-            text(valX, yy, null, col, tex(row.value), "m", pf.font());
-            text(colB, yy, null, col, tex(row.cond), "m", pf.font());
+            text(valX, yy, null, col, tex(row.value), "tx", pf.font());
+            text(colB, yy, null, col, tex(row.cond), "tx", pf.font());
             if (pf.width() >= 500) {
                 text(pf.width() - 8, yy, "end", row.zone.ink(), row.zone.titleMarkup(700), null, pf.width() < 700 ? 11.5 : 12.5);
             }
@@ -544,7 +544,7 @@ public final class SvgRenderer {
             double cy = Math.min(g.y(q[0]), prev - 15);
             prev = cy;
             line(ax - 3, g.y(q[0]), ax + 3, g.y(q[0]), stroke(ink((int) q[1]), 1.2, null, 1));
-            text(ax + 7, cy - 4, null, ink((int) q[1]), esc(Money.compact(q[0])), "m", pf.font());
+            text(ax + 7, cy - 4, null, ink((int) q[1]), esc(Money.compact(q[0])), "tx", pf.font());
         }
     }
 
@@ -596,7 +596,7 @@ public final class SvgRenderer {
         for (int i = 0; i < items.size(); i++) {
             double x = 8 + (i % perLine) * colW, yy = y + (i / perLine) * 17;
             cur.add(shape("text", "x", r(x), "y", r(yy), "style", "font-size:12px;fill:var(--soft)",
-                "body", "<tspan class=\"m\" style=\"font-size:13px;fill:var(--ink)\">" + tex(items.get(i)[0]) + "</tspan>"
+                "body", "<tspan class=\"tx\" style=\"font-size:13px;fill:var(--ink)\">" + tex(items.get(i)[0]) + "</tspan>"
                     + "<tspan dx=\"4\">" + items.get(i)[1] + "</tspan>"));
         }
     }
@@ -677,27 +677,31 @@ public final class SvgRenderer {
         if (z.terminal()) cur.add(shape("rect", "x", x, "y", y, "width", wd, "height", ht, "fill", "url(#hatch)"));
     }
 
-    private static final Pattern SUB = Pattern.compile("([A-Za-zα-ω]+)_([a-z]+)");
+    private static final Pattern SUB = Pattern.compile("([A-Za-zα-ω]+)(?:_([a-z]+))?");
 
-    /** "T_min − τ_min" → letters with subscripts as tspans (escaped markup). */
+    /**
+     * "T_min − τ_min" → as TeX sets it: math-italic letters (class "mi"), upright subscripts a little below the
+     * baseline, upright digits and operators (escaped markup).
+     */
     static String tex(String t) {
         StringBuilder o = new StringBuilder();
         Matcher m = SUB.matcher(t);
         int i = 0;
         boolean shifted = false;
+        String up = "-0.2em", dn = "0.2em";
         while (m.find()) {
             String pre = esc(t.substring(i, m.start()));
             if (!pre.isEmpty()) {
-                o.append("<tspan dy=\"").append(shifted ? -4 : 0).append("\">").append(pre).append("</tspan>");
+                o.append("<tspan dy=\"").append(shifted ? up : "0").append("\">").append(pre).append("</tspan>");
                 shifted = false;
             }
-            o.append("<tspan dy=\"").append(shifted ? -4 : 0).append("\">").append(m.group(1)).append("</tspan>")
-                .append("<tspan dy=\"4\" style=\"font-size:0.75em;font-style:normal\">").append(m.group(2)).append("</tspan>");
-            shifted = true;
+            o.append("<tspan class=\"mi\" dy=\"").append(shifted ? up : "0").append("\">").append(m.group(1)).append("</tspan>");
+            shifted = m.group(2) != null;
+            if (shifted) o.append("<tspan dy=\"").append(dn).append("\" style=\"font-size:0.7em\">").append(m.group(2)).append("</tspan>");
             i = m.end();
         }
         String post = esc(t.substring(i));
-        if (!post.isEmpty()) o.append("<tspan dy=\"").append(shifted ? -4 : 0).append("\">").append(post).append("</tspan>");
+        if (!post.isEmpty()) o.append("<tspan dy=\"").append(shifted ? up : "0").append("\">").append(post).append("</tspan>");
         return o.toString();
     }
 
