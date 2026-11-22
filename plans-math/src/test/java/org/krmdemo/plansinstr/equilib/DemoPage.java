@@ -24,7 +24,7 @@ import org.thymeleaf.templateresolver.FileTemplateResolver;
  * numbers of the tests and the coverage; the other files of {@code src/site} are copied as they are; the badge
  * numbers go to {@code badges/*.json} (shields.io endpoint). The workflow only adds the reports and commits.
  *
- * <pre>  java … DemoPage &lt;pages dir&gt;     (run from plans-math; exec:java@demo-page)</pre>
+ * <pre>  java … DemoPage &lt;pages dir&gt; &lt;plans-math dir&gt;     (exec:java@demo-page)</pre>
  */
 public final class DemoPage {
 
@@ -32,17 +32,18 @@ public final class DemoPage {
     }
 
     public static void main(String[] args) throws IOException {
+        Path base = Path.of(args.length > 1 ? args[1] : ".");             // the module (exec:java runs in Maven's directory)
         Path out = Path.of(args.length > 0 ? args[0] : "target/pages/plans-math");
         Files.createDirectories(out.resolve("badges"));
-        Path site = Path.of("src/site");
+        Path site = base.resolve("src/site");
         try (Stream<Path> files = Files.list(site)) {
             for (Path f : files.filter(f -> !f.getFileName().toString().equals("index.html")).toList()) {
                 Files.copy(f, out.resolve(f.getFileName()), StandardCopyOption.REPLACE_EXISTING);
             }
         }
 
-        int[] tests = tests(Path.of("target/surefire-reports"));       // {tests, failed, skipped}
-        double coverage = coverage(Path.of("target/site/jacoco/jacoco.csv"));
+        int[] tests = tests(base.resolve("target/surefire-reports"));       // {tests, failed, skipped}
+        double coverage = coverage(base.resolve("target/site/jacoco/jacoco.csv"));
         int passed = tests[0] - tests[1] - tests[2];
         String sha = System.getenv().getOrDefault("GITHUB_SHA", "local");
 
@@ -58,7 +59,7 @@ public final class DemoPage {
         ctx.setVariable("commit", sha);
         ctx.setVariable("commit7", sha.length() > 7 ? sha.substring(0, 7) : sha);
         ctx.setVariable("date", ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'")));
-        Files.writeString(out.resolve("index.html"), engine.process(site.resolve("index.html").toString(), ctx), StandardCharsets.UTF_8);
+        Files.writeString(out.resolve("index.html"), engine.process(site.resolve("index.html").toAbsolutePath().toString(), ctx), StandardCharsets.UTF_8);
 
         Files.writeString(out.resolve("badges/tests.json"), badge("JUnit tests",
             passed + " passed" + (tests[1] > 0 ? ", " + tests[1] + " failed" : ""), tests[1] > 0 ? "red" : "brightgreen"));

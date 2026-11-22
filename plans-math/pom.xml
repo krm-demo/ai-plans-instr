@@ -175,6 +175,7 @@
                             <mainClass>org.krmdemo.plansinstr.equilib.DemoPage</mainClass>
                             <arguments>
                                 <argument>${project.build.directory}/pages/plans-math</argument>
+                                <argument>${project.basedir}</argument>
                             </arguments>
                         </configuration>
                     </execution>
