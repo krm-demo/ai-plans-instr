@@ -3,7 +3,8 @@ run-name: manual-tests ${{ github.ref_name }} (${{ inputs.plans || '10000' }} pl
 
 # Started by hand only (Actions > manual-tests > Run workflow). Runs the tests tagged "manual"
 # (CrudBenchmarkTest): the same CRUD scenario on the embedded Postgres (Zonky), on Aurora
-# Serverless v2 PostgreSQL and on DynamoDB, and shows the numbers on the summary page of the run.
+# Serverless v2 PostgreSQL, on the embedded DynamoDB (DynamoDB Local) and on DynamoDB, and shows
+# the numbers on the summary page of the run.
 #
 #   1. .github/actions/aurora up: creates Aurora and the DynamoDB table if they are not there
 #      (about 10 minutes), starts the cluster if someone stopped it; a paused one wakes up on
@@ -16,8 +17,6 @@ run-name: manual-tests ${{ github.ref_name }} (${{ inputs.plans || '10000' }} pl
 # One-time setup: deploy infra/manual-tests-role.yaml and save its RoleArn as the repository
 # variable MANUAL_TESTS_ROLE_ARN (Settings > Secrets and variables > Actions > Variables).
 on:
-  push:                    # TEMPORARY: to try the workflow before it is on main
-    branches: [manual-tests]
   workflow_dispatch:
     inputs:
       plans:
@@ -41,15 +40,14 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # TEMPORARY until the repository variable MANUAL_TESTS_ROLE_ARN is set
-  ROLE_ARN: ${{ vars.MANUAL_TESTS_ROLE_ARN || 'arn:aws:iam::560574854768:role/plans-manual-tests' }}
   AWS_REGION: ${{ vars.MANUAL_TESTS_REGION || 'us-east-1' }}
   STACK: plans-manual-tests
   PLANS: ${{ inputs.plans || '10000' }}
   # without the role (not set up yet) only the embedded Postgres takes part
-  WITH_AWS: true
-  WITH_AURORA: ${{ github.event_name != 'workflow_dispatch' || inputs.aurora }}
-  WITH_DYNAMODB: ${{ github.event_name != 'workflow_dispatch' || inputs.dynamodb }}
+  # without the role (not set up yet) only the embedded databases take part
+  WITH_AWS: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' }}
+  WITH_AURORA: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' && inputs.aurora }}
+  WITH_DYNAMODB: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' && inputs.dynamodb }}
 
 jobs:
   manual-tests:
@@ -67,7 +65,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         if: env.WITH_AWS == 'true'
         with:
-          role-to-assume: ${{ env.ROLE_ARN }}
+          role-to-assume: ${{ vars.MANUAL_TESTS_ROLE_ARN }}
           role-session-name: manual-tests-${{ github.run_id }}
           aws-region: ${{ env.AWS_REGION }}
           role-duration-seconds: 7200
