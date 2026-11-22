@@ -5,12 +5,12 @@ run-name: manual-tests ${{ github.ref_name }} (${{ inputs.plans || '10000' }} pl
 # (CrudBenchmarkTest): the same CRUD scenario on the embedded Postgres (Zonky), on Aurora
 # Serverless v2 PostgreSQL and on DynamoDB, and shows the numbers on the summary page of the run.
 #
-#   1. deploys infra/manual-tests.yaml: creates Aurora and the DynamoDB table if they are not
-#      there (about 10 minutes), otherwise does nothing;
-#   2. starts the Aurora cluster if someone stopped it; a paused one wakes up on the first
-#      connection (about 15 s), the test waits for it;
-#   3. opens port 5432 for the IP of this runner only, and closes it at the end;
-#   4. runs the tests, writes the summary.
+#   1. .github/actions/aurora up: creates Aurora and the DynamoDB table if they are not there
+#      (about 10 minutes), starts the cluster if someone stopped it; a paused one wakes up on
+#      the first connection (about 15 s), the test waits for it;
+#   2. .github/actions/aurora open: port 5432 for the IP of this runner only (close at the end);
+#   3. runs the tests, writes the summary.
+# To create, stop or delete the databases without the tests: the workflow "aurora".
 # The databases stay: Aurora pauses itself after 15 idle minutes, DynamoDB costs nothing idle.
 #
 # One-time setup: deploy infra/manual-tests-role.yaml and save its RoleArn as the repository
@@ -41,13 +41,15 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  # TEMPORARY until the repository variable MANUAL_TESTS_ROLE_ARN is set
+  ROLE_ARN: ${{ vars.MANUAL_TESTS_ROLE_ARN || 'arn:aws:iam::560574854768:role/plans-manual-tests' }}
   AWS_REGION: ${{ vars.MANUAL_TESTS_REGION || 'us-east-1' }}
   STACK: plans-manual-tests
   PLANS: ${{ inputs.plans || '10000' }}
   # without the role (not set up yet) only the embedded Postgres takes part
-  WITH_AWS: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' }}
-  WITH_AURORA: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' && (github.event_name != 'workflow_dispatch' || inputs.aurora) }}
-  WITH_DYNAMODB: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' && (github.event_name != 'workflow_dispatch' || inputs.dynamodb) }}
+  WITH_AWS: true
+  WITH_AURORA: ${{ github.event_name != 'workflow_dispatch' || inputs.aurora }}
+  WITH_DYNAMODB: ${{ github.event_name != 'workflow_dispatch' || inputs.dynamodb }}
 
 jobs:
   manual-tests:
@@ -65,65 +67,28 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         if: env.WITH_AWS == 'true'
         with:
-          role-to-assume: ${{ vars.MANUAL_TESTS_ROLE_ARN }}
+          role-to-assume: ${{ env.ROLE_ARN }}
           role-session-name: manual-tests-${{ github.run_id }}
           aws-region: ${{ env.AWS_REGION }}
           role-duration-seconds: 7200
 
-      - name: Databases (create when missing)
+      - name: Databases are up (created when missing, started when stopped)
         if: env.WITH_AWS == 'true'
-        run: |
-          VPC=$(aws ec2 describe-vpcs --filters Name=is-default,Values=true --query 'Vpcs[0].VpcId' --output text)
-          SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VPC Name=default-for-az,Values=true \
-                      --query 'Subnets[].SubnetId' --output text | tr '\t' ',')
-          echo "default VPC $VPC, subnets $SUBNETS"
-          aws cloudformation deploy --stack-name "$STACK" --template-file infra/manual-tests.yaml \
-            --parameter-overrides VpcId=$VPC SubnetIds=$SUBNETS --no-fail-on-empty-changeset
-          out() { aws cloudformation describe-stacks --stack-name "$STACK" \
-                    --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
-          {
-            echo "DB_CLUSTER=$(out ClusterId)"
-            echo "DB_HOST=$(out Endpoint)"
-            echo "DB_PORT=$(out Port)"
-            echo "DB_SECRET=$(out SecretArn)"
-            echo "DB_SG=$(out SecurityGroupId)"
-            echo "DDB_TABLE=$(out TableName)"
-          } >> "$GITHUB_ENV"
-
-      - name: Aurora is running
-        if: env.WITH_AURORA == 'true'
-        run: |
-          STATUS=$(aws rds describe-db-clusters --db-cluster-identifier "$DB_CLUSTER" --query 'DBClusters[0].Status' --output text)
-          echo "cluster: $STATUS"
-          if [ "$STATUS" = "stopped" ]; then
-            aws rds start-db-cluster --db-cluster-identifier "$DB_CLUSTER" > /dev/null
-            STATUS=starting
-          fi
-          if [ "$STATUS" != "available" ]; then
-            echo "waiting until it is available…"
-            aws rds wait db-cluster-available --db-cluster-identifier "$DB_CLUSTER"
-          fi
-          # paused (0 ACU) is still "available": the first connection wakes it up
+        uses: ./.github/actions/aurora
+        with:
+          command: up
 
       - name: Open Postgres for this runner
-        if: env.WITH_AURORA == 'true'
-        run: |
-          IP=$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')
-          echo "RUNNER_IP=$IP" >> "$GITHUB_ENV"
-          aws ec2 authorize-security-group-ingress --group-id "$DB_SG" --ip-permissions \
-            "IpProtocol=tcp,FromPort=$DB_PORT,ToPort=$DB_PORT,IpRanges=[{CidrIp=$IP/32,Description=manual-tests run ${{ github.run_id }}}]" > /dev/null
-          PASSWORD=$(aws secretsmanager get-secret-value --secret-id "$DB_SECRET" --query SecretString --output text | jq -r .password)
-          USER=$(aws secretsmanager get-secret-value --secret-id "$DB_SECRET" --query SecretString --output text | jq -r .username)
-          echo "::add-mask::$PASSWORD"
-          {
-            echo "PLANS_PG_URL=jdbc:postgresql://$DB_HOST:$DB_PORT/plans?sslmode=require&connectTimeout=30"
-            echo "PLANS_PG_USER=$USER"
-            echo "PLANS_PG_PASSWORD=$PASSWORD"
-          } >> "$GITHUB_ENV"
+        if: env.WITH_AWS == 'true'
+        uses: ./.github/actions/aurora
+        with:
+          command: open
 
-      - name: DynamoDB table
-        if: env.WITH_DYNAMODB == 'true'
-        run: echo "PLANS_DDB_TABLE=$DDB_TABLE" >> "$GITHUB_ENV"
+      - name: Only the chosen targets
+        if: env.WITH_AWS == 'true'
+        run: |
+          [ "$WITH_AURORA" = "true" ] || echo "PLANS_PG_URL=" >> "$GITHUB_ENV"
+          [ "$WITH_DYNAMODB" = "true" ] || echo "PLANS_DDB_TABLE=" >> "$GITHUB_ENV"
 
       - name: Manual tests
         run: mvn -B -pl plans-lambda -am test -Dgroups=manual -Dtests.excluded=none -Dmanual.plans=$PLANS
@@ -151,7 +116,7 @@ jobs:
           retention-days: 30
 
       - name: Close Postgres again
-        if: always() && env.RUNNER_IP != ''
-        run: |
-          aws ec2 revoke-security-group-ingress --group-id "$DB_SG" --protocol tcp --port "$DB_PORT" \
-            --cidr "$RUNNER_IP/32" > /dev/null && echo "closed for $RUNNER_IP"
+        if: always() && env.AURORA_RUNNER_IP != ''
+        uses: ./.github/actions/aurora
+        with:
+          command: close

@@ -1,0 +1,154 @@
+name: aurora
+description: >-
+  The databases of the manual tests (infra/manual-tests.yaml: Aurora Serverless v2 PostgreSQL and
+  a DynamoDB table): create, delete, start, stop, open Postgres for this runner and close it again.
+  AWS credentials must already be in the job (aws-actions/configure-aws-credentials).
+
+  Commands:
+    status  prints the state; sets the outputs
+    up      creates the stack when missing (about 10 minutes), updates it when the template
+            changed, starts a stopped cluster and waits until it is available
+    start   starts a stopped cluster and waits until it is available
+    stop    stops the cluster (AWS starts a stopped cluster again by itself after 7 days)
+    down    deletes the stack: Aurora with its data, the DynamoDB table, the security group
+    open    opens the Postgres port for this runner's IP only and puts PLANS_PG_URL,
+            PLANS_PG_USER, PLANS_PG_PASSWORD (masked) and PLANS_DDB_TABLE into the job's environment
+    close   closes the port again (run it with if: always())
+
+inputs:
+  command:
+    description: status | up | start | stop | down | open | close
+    required: true
+  stack:
+    description: CloudFormation stack name
+    default: plans-manual-tests
+  template:
+    description: The template for "up"
+    default: infra/manual-tests.yaml
+
+outputs:
+  status:
+    description: Cluster status (available, stopped, starting, …) or "none" when there is no stack
+    value: ${{ steps.state.outputs.status }}
+  cluster:
+    value: ${{ steps.state.outputs.cluster }}
+  host:
+    value: ${{ steps.state.outputs.host }}
+  port:
+    value: ${{ steps.state.outputs.port }}
+  table:
+    value: ${{ steps.state.outputs.table }}
+
+runs:
+  using: composite
+  steps:
+    - id: state
+      shell: bash
+      env:
+        COMMAND: ${{ inputs.command }}
+        STACK: ${{ inputs.stack }}
+        TEMPLATE: ${{ inputs.template }}
+      run: |
+        set -euo pipefail
+
+        out() { aws cloudformation describe-stacks --stack-name "$STACK" \
+                  --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
+        stack_exists() { aws cloudformation describe-stacks --stack-name "$STACK" > /dev/null 2>&1; }
+        cluster_status() { aws rds describe-db-clusters --db-cluster-identifier "$(out ClusterId)" \
+                             --query 'DBClusters[0].Status' --output text; }
+        wait_for() {   # wait_for <status>
+          local s
+          for _ in $(seq 1 120); do
+            s=$(cluster_status); echo "  cluster: $s"
+            [ "$s" = "$1" ] && return 0
+            sleep 15
+          done
+          echo "::error::the cluster is still $s, not $1"; return 1
+        }
+        start_if_stopped() {
+          local s; s=$(cluster_status); echo "cluster: $s"
+          case "$s" in
+            available) ;;
+            stopped) aws rds start-db-cluster --db-cluster-identifier "$(out ClusterId)" > /dev/null; wait_for available ;;
+            *) wait_for available ;;
+          esac
+        }
+        runner_ip() { curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]'; }
+
+        case "$COMMAND" in
+          up)
+            VPC=$(aws ec2 describe-vpcs --filters Name=is-default,Values=true --query 'Vpcs[0].VpcId' --output text)
+            SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VPC Name=default-for-az,Values=true \
+                        --query 'Subnets[].SubnetId' --output text | tr '\t' ',')
+            echo "default VPC $VPC, subnets $SUBNETS"
+            aws cloudformation deploy --stack-name "$STACK" --template-file "$TEMPLATE" \
+              --parameter-overrides VpcId=$VPC SubnetIds=$SUBNETS --no-fail-on-empty-changeset
+            start_if_stopped
+            ;;
+          start)
+            start_if_stopped
+            ;;
+          stop)
+            s=$(cluster_status); echo "cluster: $s"
+            if [ "$s" = "available" ]; then
+              aws rds stop-db-cluster --db-cluster-identifier "$(out ClusterId)" > /dev/null
+              wait_for stopped
+            elif [ "$s" != "stopped" ]; then
+              wait_for available
+              aws rds stop-db-cluster --db-cluster-identifier "$(out ClusterId)" > /dev/null
+              wait_for stopped
+            fi
+            echo "::notice::Stopped. AWS starts a stopped Aurora cluster again by itself after 7 days."
+            ;;
+          down)
+            if stack_exists; then
+              aws cloudformation delete-stack --stack-name "$STACK"
+              echo "deleting $STACK (Aurora, the DynamoDB table, the security group)…"
+              aws cloudformation wait stack-delete-complete --stack-name "$STACK"
+            fi
+            echo "status=none" >> "$GITHUB_OUTPUT"
+            echo "::notice::$STACK is deleted"
+            exit 0
+            ;;
+          open)
+            IP=$(runner_ip)
+            SG=$(out SecurityGroupId); PORT=$(out Port); SECRET=$(out SecretArn)
+            aws ec2 authorize-security-group-ingress --group-id "$SG" --ip-permissions \
+              "IpProtocol=tcp,FromPort=$PORT,ToPort=$PORT,IpRanges=[{CidrIp=$IP/32,Description=run $GITHUB_RUN_ID}]" > /dev/null \
+              || echo "(already open for $IP)"
+            echo "port $PORT is open for $IP"
+            CREDS=$(aws secretsmanager get-secret-value --secret-id "$SECRET" --query SecretString --output text)
+            PASSWORD=$(jq -r .password <<< "$CREDS")
+            echo "::add-mask::$PASSWORD"
+            {
+              echo "AURORA_RUNNER_IP=$IP"
+              echo "PLANS_PG_URL=jdbc:postgresql://$(out Endpoint):$PORT/plansdb?sslmode=require&connectTimeout=30"
+              echo "PLANS_PG_USER=$(jq -r .username <<< "$CREDS")"
+              echo "PLANS_PG_PASSWORD=$PASSWORD"
+              echo "PLANS_DDB_TABLE=$(out TableName)"
+            } >> "$GITHUB_ENV"
+            ;;
+          close)
+            IP=${AURORA_RUNNER_IP:-$(runner_ip)}
+            aws ec2 revoke-security-group-ingress --group-id "$(out SecurityGroupId)" --protocol tcp \
+              --port "$(out Port)" --cidr "$IP/32" > /dev/null && echo "closed for $IP" || echo "(was not open for $IP)"
+            ;;
+          status) ;;
+          *)
+            echo "::error::unknown command '$COMMAND' (status | up | start | stop | down | open | close)"; exit 1 ;;
+        esac
+
+        if ! stack_exists; then
+          echo "status=none" >> "$GITHUB_OUTPUT"
+          echo "::notice::there is no stack $STACK (command 'up' creates it)"
+          exit 0
+        fi
+        STATUS=$(cluster_status)
+        {
+          echo "status=$STATUS"
+          echo "cluster=$(out ClusterId)"
+          echo "host=$(out Endpoint)"
+          echo "port=$(out Port)"
+          echo "table=$(out TableName)"
+        } >> "$GITHUB_OUTPUT"
+        echo "cluster $(out ClusterId): $STATUS"

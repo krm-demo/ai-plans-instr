@@ -1,0 +1,63 @@
+name: aurora
+run-name: aurora ${{ inputs.command }}
+
+# By hand: the databases of the manual tests (infra/manual-tests.yaml) through the action
+# .github/actions/aurora.
+#   status  what is there now
+#   up      create (about 10 minutes) or update, and start
+#   start   start a stopped cluster
+#   stop    stop it (AWS starts it again by itself after 7 days; a paused cluster costs the same)
+#   down    delete everything, with the data; type "down" into "confirm"
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        type: choice
+        options: [status, up, start, stop, down]
+        default: status
+      confirm:
+        description: For "down" only — type "down" to delete the databases with their data
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: manual-tests      # never together with a run of the manual tests
+  cancel-in-progress: false
+
+jobs:
+  aurora:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Confirmed
+        if: inputs.command == 'down' && inputs.confirm != 'down'
+        run: |
+          echo "::error::'down' deletes Aurora and the DynamoDB table with all their data. Type down into 'confirm'."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.MANUAL_TESTS_ROLE_ARN }}
+          role-session-name: aurora-${{ github.run_id }}
+          aws-region: ${{ vars.MANUAL_TESTS_REGION || 'us-east-1' }}
+
+      - id: aurora
+        uses: ./.github/actions/aurora
+        with:
+          command: ${{ inputs.command }}
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### aurora ${{ inputs.command }}"
+            echo "- cluster: \`${{ steps.aurora.outputs.cluster || 'none' }}\` — **${{ steps.aurora.outputs.status || 'unknown' }}**"
+            [ -n "${{ steps.aurora.outputs.host }}" ] && echo "- endpoint: \`${{ steps.aurora.outputs.host }}:${{ steps.aurora.outputs.port }}\` (closed except during a run)"
+            [ -n "${{ steps.aurora.outputs.table }}" ] && echo "- DynamoDB: \`${{ steps.aurora.outputs.table }}\`"
+            true
+          } >> "$GITHUB_STEP_SUMMARY"

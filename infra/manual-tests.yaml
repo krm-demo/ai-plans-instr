@@ -14,7 +14,7 @@ Parameters:
     Description: Two or more subnets of that VPC in different availability zones
   EngineVersion:
     Type: String
-    Default: '17.4'
+    Default: '17.6'   # the same as the embedded Postgres of the tests (Zonky)
     Description: aurora-postgresql version that can scale to 0 ACU
   MaxCapacity:
     Type: Number
@@ -55,7 +55,7 @@ Resources:
       DBClusterIdentifier: plans-manual-tests
       Engine: aurora-postgresql
       EngineVersion: !Ref EngineVersion
-      DatabaseName: plans
+      DatabaseName: plansdb      # "plans" is a reserved word for aurora-postgresql
       MasterUsername: plans_admin
       # The password is generated and kept by Secrets Manager; the workflow reads it there.
       ManageMasterUserPassword: true
