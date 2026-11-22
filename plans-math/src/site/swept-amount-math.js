@@ -387,7 +387,7 @@
     var proj = stroke(GRAY, 0.6, '1.5 3', 0.8);
     xs.forEach(function (q) { h += line(X(q.x), Y(q.y) + 5, X(q.x), rowY(q.r) - 13 * f, proj); });
     ys.forEach(function (q) { if (q.px !== null && Math.abs(q.y) > 1) h += line(q.px, Y(q.y), ax, Y(q.y), proj); });
-    var fyW = tw('T_min − T_max') + 4, fyX = ax + 8 + fyW / 2;
+    var fyW = tw('T_min − T_max') * 0.8 + 4, fyX = ax + 8 + fyW / 2;
     // The y fraction sits above its projection, as the other y labels do, so its bar never reads as a piece of it.
     if (mids) h += line(X(xc) - 5, Y(yc), ax, Y(yc), proj) + line(X(xc), Y(yc) - 5, X(xc), y0, proj);
     if (!zeroA) h += line(RL, Y(imax), X(xl), Y(imax), stroke(Z.inp.ink, 1, '1 3'));
@@ -447,17 +447,21 @@
       return '<text x="' + n2(x) + '" y="' + n2(y) + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + ' style="' + LAB + ';fill:' + col + (extra || '') + '">' + body + '</text>';
     };
     // A two-storey fraction centred on (cx, bar): a solid bar in the colour of the text, apart from the helper lines.
+    // The midpoint is the least important point, so its fractions are smaller and lighter than the other labels.
+    var fs = Math.round(pf.font * 0.8), small = ';font-size:' + fs + 'px;fill-opacity:.85';
     var frac = function (cx, bar, num, den, col) {
-      var w = tw(num) + 2;
-      return text(cx, bar - 6, 'middle', col, tex(num)) +
-        '<rect x="' + n2(cx - w / 2) + '" y="' + n2(bar - 0.6) + '" width="' + n2(w) + '" height="1.2" style="fill:' + col + '"/>' +
-        text(cx, bar + pf.font - 1, 'middle', col, tex(den));
+      var w = tw(num) * 0.8 + 2;
+      return text(cx, bar - 4, 'middle', col, tex(num), small) +
+        '<rect x="' + n2(cx - w / 2) + '" y="' + n2(bar - 0.5) + '" width="' + n2(w) + '" height="1" style="fill:' + col + ';fill-opacity:.85"/>' +
+        text(cx, bar + fs, 'middle', col, tex(den), small);
     };
     if (mids) {
       var mx = X(xc), myY = Y(yc), fy = 'T_min − T_max', fx = 'T_min + T_max';
       if (sym) {
-        h += frac(mx, y0 - pf.font - 9, fx, '2', GRAY);
-        h += frac(fyX, myY - pf.font - 5, fy, '2', GRAY);
+        // (T_min + T_max)/2 a little higher, with a dotted leader down to its point on the axis.
+        var fxBar = y0 - 2 * fs - 14;
+        h += frac(mx, fxBar, fx, '2', GRAY) + line(mx, fxBar + fs + 5, mx, y0 - 3, stroke(GRAY, 1, '1 2.5', 0.8));
+        h += frac(fyX, myY - fs - 5, fy, '2', GRAY);
       } else {
         h += text(mx, y0 - 8, 'middle', GRAY, money(xc)) + text(ax + 7, myY - 4, null, GRAY, money(yc));
       }
