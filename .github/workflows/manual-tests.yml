@@ -16,6 +16,8 @@ run-name: manual-tests ${{ github.ref_name }} (${{ inputs.plans || '10000' }} pl
 # One-time setup: deploy infra/manual-tests-role.yaml and save its RoleArn as the repository
 # variable MANUAL_TESTS_ROLE_ARN (Settings > Secrets and variables > Actions > Variables).
 on:
+  push:                    # TEMPORARY: to try the workflow before it is on main
+    branches: [manual-tests]
   workflow_dispatch:
     inputs:
       plans:
@@ -42,8 +44,10 @@ env:
   AWS_REGION: ${{ vars.MANUAL_TESTS_REGION || 'us-east-1' }}
   STACK: plans-manual-tests
   PLANS: ${{ inputs.plans || '10000' }}
-  WITH_AURORA: ${{ github.event_name != 'workflow_dispatch' || inputs.aurora }}
-  WITH_DYNAMODB: ${{ github.event_name != 'workflow_dispatch' || inputs.dynamodb }}
+  # without the role (not set up yet) only the embedded Postgres takes part
+  WITH_AWS: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' }}
+  WITH_AURORA: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' && (github.event_name != 'workflow_dispatch' || inputs.aurora) }}
+  WITH_DYNAMODB: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' && (github.event_name != 'workflow_dispatch' || inputs.dynamodb) }}
 
 jobs:
   manual-tests:
@@ -59,6 +63,7 @@ jobs:
           cache: maven
 
       - uses: aws-actions/configure-aws-credentials@v4
+        if: env.WITH_AWS == 'true'
         with:
           role-to-assume: ${{ vars.MANUAL_TESTS_ROLE_ARN }}
           role-session-name: manual-tests-${{ github.run_id }}
@@ -66,6 +71,7 @@ jobs:
           role-duration-seconds: 7200
 
       - name: Databases (create when missing)
+        if: env.WITH_AWS == 'true'
         run: |
           VPC=$(aws ec2 describe-vpcs --filters Name=is-default,Values=true --query 'Vpcs[0].VpcId' --output text)
           SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VPC Name=default-for-az,Values=true \
