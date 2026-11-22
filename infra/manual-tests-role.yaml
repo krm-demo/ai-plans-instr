@@ -9,6 +9,12 @@ Parameters:
   GitHubRepo:
     Type: String
     Default: krm-demo/ai-plans-instr
+  GitHubRepoWithIds:
+    Type: String
+    Default: krm-demo@149853618/ai-plans-instr@1458467325
+    Description: >-
+      The same repository as owner@ownerId/name@repoId: the form of the OIDC subject when the
+      account uses immutable ids (gh api repos/OWNER/REPO --jq '.owner.id, .id')
   CreateOidcProvider:
     Type: String
     Default: 'true'
@@ -48,8 +54,10 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-                # any branch of this repository: the workflow only starts by hand
-                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubRepo}:ref:refs/heads/*
+                # any branch of this repository: the workflows only start by hand
+                token.actions.githubusercontent.com:sub:
+                  - !Sub repo:${GitHubRepo}:ref:refs/heads/*
+                  - !Sub repo:${GitHubRepoWithIds}:ref:refs/heads/*
       Policies:
         - PolicyName: manual-tests
           PolicyDocument:

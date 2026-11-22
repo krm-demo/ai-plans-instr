@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * One operation at a time over one connection: these are latencies, not throughput under load.
  *
  * <p>Tagged {@code manual}: the normal build skips it; the {@code manual-tests} workflow runs it.
- * The embedded Postgres always takes part. Aurora takes part when {@code PLANS_PG_URL},
+ * The embedded Postgres and the embedded DynamoDB (DynamoDB Local) always take part. Aurora takes part when {@code PLANS_PG_URL},
  * {@code PLANS_PG_USER} and {@code PLANS_PG_PASSWORD} are set, DynamoDB when
  * {@code PLANS_DDB_TABLE} is set (and AWS credentials and region are in the environment).
  *
@@ -86,10 +86,18 @@ class CrudBenchmarkTest {
 
     @Test
     @Order(3)
+    void embeddedDynamoDb() throws IOException {
+        try (DynamoDbTarget ddb = DynamoDbTarget.embedded()) {
+            run(ddb, null, prefix -> 0);
+        }
+    }
+
+    @Test
+    @Order(4)
     void dynamoDb() throws IOException {
         String table = System.getenv("PLANS_DDB_TABLE");
         assumeTrue(table != null && !table.isBlank(), "PLANS_DDB_TABLE is not set");
-        try (DynamoDbTarget ddb = new DynamoDbTarget(table)) {
+        try (DynamoDbTarget ddb = DynamoDbTarget.aws(table)) {
             run(ddb, null, prefix -> 0);
         }
     }

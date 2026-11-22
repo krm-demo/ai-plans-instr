@@ -101,7 +101,7 @@ jobs:
             echo
             echo "CRUD on \`PlanInstructions\` (JSONB in Postgres, a native map in DynamoDB), $PLANS plans, region $AWS_REGION."
             echo
-            for f in embedded-postgres aurora-postgres dynamodb; do
+            for f in embedded-postgres aurora-postgres embedded-dynamodb dynamodb; do
               if [ -f plans-lambda/target/manual-tests/$f.md ]; then cat plans-lambda/target/manual-tests/$f.md; echo; fi
             done
           } >> "$GITHUB_STEP_SUMMARY"

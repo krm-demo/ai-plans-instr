@@ -6,7 +6,16 @@ import org.krmdemo.plansinstr.core.model.enums.PlanType;
 import org.krmdemo.plansinstr.core.persistence.UuidV7Generator;
 import software.amazon.awssdk.enhanced.dynamodb.document.EnhancedDocument;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
+import software.amazon.awssdk.services.dynamodb.model.GlobalSecondaryIndex;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ProjectionType;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
+import software.amazon.dynamodb.services.local.embedded.DynamoDBEmbedded;
+import software.amazon.dynamodb.services.local.shared.access.AmazonDynamoDBLocal;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue;
 import tools.jackson.databind.json.JsonMapper;
@@ -34,22 +43,64 @@ import java.util.UUID;
  */
 final class DynamoDbTarget implements BenchTarget {
 
+    private final String name;
+    private final String about;
     private final DynamoDbClient ddb;
+    private final AmazonDynamoDBLocal local;
     private final String table;
     private final JsonMapper json = JsonMapper.builder().build();
     private final UuidV7Generator ids = new UuidV7Generator();
 
-    DynamoDbTarget(String table) {
-        this.ddb = DynamoDbClient.create();
+    private DynamoDbTarget(String name, String about, DynamoDbClient ddb, AmazonDynamoDBLocal local, String table) {
+        this.name = name;
+        this.about = about;
+        this.ddb = ddb;
+        this.local = local;
         this.table = table;
     }
 
-    @Override public String name() { return "dynamodb"; }
-
-    @Override
-    public String about() {
-        return "table " + table + " in " + ddb.serviceClientConfiguration().region() + ", on demand";
+    /** The real DynamoDB: credentials and region from the environment, the table from infra/manual-tests.yaml. */
+    static DynamoDbTarget aws(String table) {
+        DynamoDbClient ddb = DynamoDbClient.create();
+        return new DynamoDbTarget("dynamodb", "table " + table + " in " + ddb.serviceClientConfiguration().region()
+                + ", on demand", ddb, null, table);
     }
+
+    /**
+     * DynamoDB Local in this JVM, in memory (SQLite inside), no Docker and no network: what Zonky
+     * is for Postgres. The table and its indexes are created here as in infra/manual-tests.yaml.
+     */
+    static DynamoDbTarget embedded() {
+        AmazonDynamoDBLocal local = DynamoDBEmbedded.create();
+        DynamoDbClient ddb = local.dynamoDbClient();
+        String table = "plans-manual-tests";
+        ddb.createTable(b -> b.tableName(table)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .attributeDefinitions(attr("id"), attr("userId"), attr("ddaAccNum"))
+                .keySchema(key("id", KeyType.HASH))
+                .globalSecondaryIndexes(index("byUser", "userId"), index("byDda", "ddaAccNum")));
+        return new DynamoDbTarget("embedded-dynamodb", "DynamoDB Local (in-process, in memory) on the runner",
+                ddb, local, table);
+    }
+
+    private static AttributeDefinition attr(String name) {
+        return AttributeDefinition.builder().attributeName(name).attributeType(ScalarAttributeType.S).build();
+    }
+
+    private static KeySchemaElement key(String name, KeyType type) {
+        return KeySchemaElement.builder().attributeName(name).keyType(type).build();
+    }
+
+    private static GlobalSecondaryIndex index(String name, String hashKey) {
+        return GlobalSecondaryIndex.builder().indexName(name)
+                .keySchema(key(hashKey, KeyType.HASH), key("id", KeyType.RANGE))
+                .projection(p -> p.projectionType(ProjectionType.ALL))
+                .build();
+    }
+
+    @Override public String name() { return name; }
+
+    @Override public String about() { return about; }
 
     @Override
     public PlanInstructions create(PlanInstructions plan) {
@@ -129,6 +180,9 @@ final class DynamoDbTarget implements BenchTarget {
     @Override
     public void close() {
         ddb.close();
+        if (local != null) {
+            local.shutdown();
+        }
     }
 
     // ---------------------------------------------------------------- mapping
