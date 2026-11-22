@@ -45,9 +45,9 @@ final class DemoCases {
     private static final String[][] GROUPS = {
         {"Two thresholds with nominals", "The usual picture: every status, both jumps."},
         {"No nominals on one side or both", "τ = 0: no jump on that side, no In Nominal status; the threshold itself is In Range."},
-        {"Target balance [T]", "T_min = T_max = T: In Range is the single point x = T."},
+        {"Target balance [T]", "Tₘᵢₙ = Tₘₐₓ = T: In Range is the single point x = T."},
         {"Swept In Zero: A = 0", "The investment account is empty: the whole left side is a terminal failure ⏚."},
-        {"Coinciding ends: A = τ_min or L = τ_max", "Swept In Full or Swept Out shrinks to a single point."},
+        {"Coinciding ends: A = τₘᵢₙ or L = τₘₐₓ", "Swept In Full or Swept Out shrinks to a single point."},
         {"Huge L: broken axes", "L in millions: one scale, the axes cut along the Swept Out line."},
     };
 
