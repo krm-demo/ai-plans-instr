@@ -17,8 +17,6 @@ run-name: manual-tests ${{ github.ref_name }} (${{ inputs.plans || '10000' }} pl
 # One-time setup: deploy infra/manual-tests-role.yaml and save its RoleArn as the repository
 # variable MANUAL_TESTS_ROLE_ARN (Settings > Secrets and variables > Actions > Variables).
 on:
-  push:                    # TEMPORARY: to try the changes before they are on main
-    branches: [manual-tests]
   workflow_dispatch:
     inputs:
       plans:
