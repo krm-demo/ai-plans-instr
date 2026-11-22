@@ -15,8 +15,18 @@ import java.util.UUID;
  */
 interface BenchTarget extends AutoCloseable {
 
+    /** Where the database runs; the report keeps the two kinds apart. */
+    enum Kind {
+        /** In the JVM of the test (or on the same machine): for local games and unit tests. */
+        LOCAL,
+        /** A real managed database in AWS, reached over the network from the GitHub runner. */
+        CLOUD
+    }
+
     /** Short name for the report, for example {@code embedded-postgres}. */
     String name();
+
+    Kind kind();
 
     /** One line about where it runs, for the report. */
     String about();

@@ -78,6 +78,12 @@
             <artifactId>dynamodb-enhanced</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- manual tests: H2 in memory, a local target of the benchmark (version from the Spring Boot BOM) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- "EmbeddedDynamoDB": AWS's DynamoDB Local in-process (SQLite inside), no Docker; like Zonky for Postgres -->
         <dependency>
             <groupId>software.amazon.dynamodb</groupId>

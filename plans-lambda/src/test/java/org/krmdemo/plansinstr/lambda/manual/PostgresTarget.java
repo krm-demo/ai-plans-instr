@@ -93,6 +93,7 @@ final class PostgresTarget implements BenchTarget {
     }
 
     @Override public String name() { return name; }
+    @Override public Kind kind() { return embedded != null ? Kind.LOCAL : Kind.CLOUD; }
     @Override public String about() { return about; }
 
     @Override

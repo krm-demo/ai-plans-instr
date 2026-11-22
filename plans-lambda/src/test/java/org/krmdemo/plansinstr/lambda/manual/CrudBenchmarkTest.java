@@ -1,5 +1,6 @@
 package org.krmdemo.plansinstr.lambda.manual;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -48,12 +49,13 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * One operation at a time over one connection: these are latencies, not throughput under load.
  *
  * <p>Tagged {@code manual}: the normal build skips it; the {@code manual-tests} workflow runs it.
- * The embedded Postgres and the embedded DynamoDB (DynamoDB Local) always take part. Aurora takes part when {@code PLANS_PG_URL},
+ * The local targets (H2, the embedded Postgres, the embedded DynamoDB) always take part. Aurora takes part when {@code PLANS_PG_URL},
  * {@code PLANS_PG_USER} and {@code PLANS_PG_PASSWORD} are set, DynamoDB when
  * {@code PLANS_DDB_TABLE} is set (and AWS credentials and region are in the environment).
  *
- * <p>Each target writes {@code target/manual-tests/<target>.md}; the workflow shows them on the
- * summary page of the run.
+ * <p>The test explains its own numbers: {@link BenchReport} writes
+ * {@code target/manual-tests/summary.md} (what was measured, how to read p50/p95/p99, the local
+ * and the cloud databases apart); the workflow only shows that file on the summary page of the run.
  */
 @Tag("manual")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -64,22 +66,28 @@ class CrudBenchmarkTest {
     private static final Path REPORTS = Path.of("target", "manual-tests");
     private static final PlanType[] TYPES = PlanType.values();
     private static final PlanStatus[] UPDATED_STATUSES = {PlanStatus.PAUSED, PlanStatus.ACTIVE, PlanStatus.CANCELLED};
+    private static final BenchReport REPORT = new BenchReport(PLANS, PLANS_PER_USER);
+
+    @AfterAll
+    static void writeReport() throws IOException {
+        REPORT.write(REPORTS);
+        System.out.println(REPORT.markdown());
+    }
+
+    // ---------------------------------------------------------------- local: in this JVM
 
     @Test
     @Order(1)
-    void embeddedPostgres() throws IOException {
-        try (PostgresTarget pg = PostgresTarget.embedded()) {
-            run(pg, pg.firstConnect, pg::deleteByUserPrefix);
+    void h2() throws IOException {
+        try (H2Target h2 = new H2Target()) {
+            run(h2, h2.firstConnect, prefix -> 0);
         }
     }
 
     @Test
     @Order(2)
-    void auroraPostgres() throws IOException {
-        String url = System.getenv("PLANS_PG_URL");
-        assumeTrue(url != null && !url.isBlank(), "PLANS_PG_URL is not set");
-        try (PostgresTarget pg = PostgresTarget.remote("aurora-postgres", url,
-                System.getenv("PLANS_PG_USER"), System.getenv("PLANS_PG_PASSWORD"), Duration.ofMinutes(3))) {
+    void embeddedPostgres() throws IOException {
+        try (PostgresTarget pg = PostgresTarget.embedded()) {
             run(pg, pg.firstConnect, pg::deleteByUserPrefix);
         }
     }
@@ -92,8 +100,21 @@ class CrudBenchmarkTest {
         }
     }
 
+    // ---------------------------------------------------------------- cloud: AWS
+
     @Test
     @Order(4)
+    void auroraPostgres() throws IOException {
+        String url = System.getenv("PLANS_PG_URL");
+        assumeTrue(url != null && !url.isBlank(), "PLANS_PG_URL is not set");
+        try (PostgresTarget pg = PostgresTarget.remote("aurora-postgres", url,
+                System.getenv("PLANS_PG_USER"), System.getenv("PLANS_PG_PASSWORD"), Duration.ofMinutes(3))) {
+            run(pg, pg.firstConnect, pg::deleteByUserPrefix);
+        }
+    }
+
+    @Test
+    @Order(5)
     void dynamoDb() throws IOException {
         String table = System.getenv("PLANS_DDB_TABLE");
         assumeTrue(table != null && !table.isBlank(), "PLANS_DDB_TABLE is not set");
@@ -208,25 +229,8 @@ class CrudBenchmarkTest {
         return s;
     }
 
-    private static void report(BenchTarget db, Duration firstConnect, int removed, List<OpStats> stats)
-            throws IOException {
-        StringBuilder md = new StringBuilder();
-        md.append("#### ").append(db.name()).append("\n\n");
-        md.append("- ").append(db.about()).append("\n");
-        md.append(String.format(Locale.ROOT, "- %,d plans, %d per user, one operation at a time%n", PLANS, PLANS_PER_USER));
-        if (firstConnect != null) {
-            md.append(String.format(Locale.ROOT, "- first connection: %.1f s%n", firstConnect.toMillis() / 1000.0));
-        }
-        if (removed > 0) {
-            md.append("- removed ").append(removed).append(" plans left by an earlier run\n");
-        }
-        md.append("\n").append(OpStats.MARKDOWN_HEADER).append("\n");
-        for (OpStats s : stats) {
-            md.append(s.markdownRow(db.name())).append("\n");
-        }
-        Files.createDirectories(REPORTS);
-        Files.writeString(REPORTS.resolve(db.name() + ".md"), md);
-        System.out.println(md);
+    private static void report(BenchTarget db, Duration firstConnect, int removed, List<OpStats> stats) {
+        REPORT.add(new BenchReport.Result(db.kind(), db.name(), db.about(), firstConnect, removed, List.copyOf(stats)));
     }
 
     private static PlanInstructions newPlan(String userId, PlanType type) {

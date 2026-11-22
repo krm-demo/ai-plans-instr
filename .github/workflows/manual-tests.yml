@@ -2,9 +2,9 @@ name: manual-tests
 run-name: manual-tests ${{ github.ref_name }} (${{ inputs.plans || '10000' }} plans)
 
 # Started by hand only (Actions > manual-tests > Run workflow). Runs the tests tagged "manual"
-# (CrudBenchmarkTest): the same CRUD scenario on the embedded Postgres (Zonky), on Aurora
-# Serverless v2 PostgreSQL, on the embedded DynamoDB (DynamoDB Local) and on DynamoDB, and shows
-# the numbers on the summary page of the run.
+# (CrudBenchmarkTest): the same CRUD scenario on local databases (H2, Zonky's embedded Postgres,
+# DynamoDB Local) and on cloud ones (Aurora Serverless v2 PostgreSQL, DynamoDB), and shows the
+# page that the test writes (target/manual-tests/summary.md) on the summary page of the run.
 #
 #   1. .github/actions/aurora up: creates Aurora and the DynamoDB table if they are not there
 #      (about 10 minutes), starts the cluster if someone stopped it; a paused one wakes up on
@@ -17,6 +17,8 @@ run-name: manual-tests ${{ github.ref_name }} (${{ inputs.plans || '10000' }} pl
 # One-time setup: deploy infra/manual-tests-role.yaml and save its RoleArn as the repository
 # variable MANUAL_TESTS_ROLE_ARN (Settings > Secrets and variables > Actions > Variables).
 on:
+  push:                    # TEMPORARY: to try the changes before they are on main
+    branches: [manual-tests]
   workflow_dispatch:
     inputs:
       plans:
@@ -46,8 +48,8 @@ env:
   # without the role (not set up yet) only the embedded Postgres takes part
   # without the role (not set up yet) only the embedded databases take part
   WITH_AWS: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' }}
-  WITH_AURORA: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' && inputs.aurora }}
-  WITH_DYNAMODB: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' && inputs.dynamodb }}
+  WITH_AURORA: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' && (github.event_name != 'workflow_dispatch' || inputs.aurora) }}
+  WITH_DYNAMODB: ${{ vars.MANUAL_TESTS_ROLE_ARN != '' && (github.event_name != 'workflow_dispatch' || inputs.dynamodb) }}
 
 jobs:
   manual-tests:
@@ -91,18 +93,12 @@ jobs:
       - name: Manual tests
         run: mvn -B -pl plans-lambda -am test -Dgroups=manual -Dtests.excluded=none -Dmanual.plans=$PLANS
 
+      # the test writes the page itself (BenchReport): what was measured, how to read it, the numbers
       - name: Summary
         if: always()
         run: |
-          {
-            echo "### Что тебе снится, крейсер Аврора?"
-            echo
-            echo "CRUD on \`PlanInstructions\` (JSONB in Postgres, a native map in DynamoDB), $PLANS plans, region $AWS_REGION."
-            echo
-            for f in embedded-postgres aurora-postgres embedded-dynamodb dynamodb; do
-              if [ -f plans-lambda/target/manual-tests/$f.md ]; then cat plans-lambda/target/manual-tests/$f.md; echo; fi
-            done
-          } >> "$GITHUB_STEP_SUMMARY"
+          f=plans-lambda/target/manual-tests/summary.md
+          if [ -f "$f" ]; then cat "$f" >> "$GITHUB_STEP_SUMMARY"; else echo "no $f: the tests did not get that far" >> "$GITHUB_STEP_SUMMARY"; fi
 
       - uses: actions/upload-artifact@v4
         if: always()

@@ -99,6 +99,7 @@ final class DynamoDbTarget implements BenchTarget {
     }
 
     @Override public String name() { return name; }
+    @Override public Kind kind() { return local != null ? Kind.LOCAL : Kind.CLOUD; }
 
     @Override public String about() { return about; }
 

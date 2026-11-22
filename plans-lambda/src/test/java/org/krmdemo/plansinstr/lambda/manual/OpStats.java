@@ -46,13 +46,13 @@ final class OpStats {
         return sorted[Math.max(0, Math.min(i, count - 1))] / 1e6;
     }
 
-    /** One row of the Markdown table of {@link CrudBenchmarkTest}. */
-    String markdownRow(String target) {
-        return String.format(Locale.ROOT, "| %s | %s | %,d | %.2f | %,.0f | %.3f | %.3f | %.3f | %.3f |",
-                target, op, count, totalSeconds(), opsPerSecond(), p(50), p(95), p(99), p(100));
+    /** One row of the Markdown table of {@link BenchReport}. */
+    String markdownRow() {
+        return String.format(Locale.ROOT, "| %s | %,d | %.2f | %,.0f | %.3f | %.3f | %.3f | %.3f |",
+                op, count, totalSeconds(), opsPerSecond(), p(50), p(95), p(99), p(100));
     }
 
     static final String MARKDOWN_HEADER = """
-            | target | operation | count | total, s | ops/s | p50, ms | p95, ms | p99, ms | max, ms |
-            |---|---|--:|--:|--:|--:|--:|--:|--:|""";
+            | operation | count | total, s | ops/s | p50, ms | p95, ms | p99, ms | max, ms |
+            |---|--:|--:|--:|--:|--:|--:|--:|""";
 }
