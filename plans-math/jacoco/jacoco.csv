@@ -1,0 +1,13 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+plans-math,org.krmdemo.plansinstr.equilib,Layout,20,655,1,29,2,61,3,27,2,13
+plans-math,org.krmdemo.plansinstr.equilib,SvgRenderer.Row,0,12,0,0,0,1,0,1,0,1
+plans-math,org.krmdemo.plansinstr.equilib,SvgRenderer,64,5866,38,313,1,471,38,186,1,45
+plans-math,org.krmdemo.plansinstr.equilib,Sweep.Point,0,12,0,0,0,1,0,1,0,1
+plans-math,org.krmdemo.plansinstr.equilib,SvgTemplate,28,139,8,6,7,24,7,5,0,5
+plans-math,org.krmdemo.plansinstr.equilib,Layout.Seg,0,81,0,4,0,6,0,8,0,6
+plans-math,org.krmdemo.plansinstr.equilib,Zone,75,231,4,10,8,34,4,16,2,11
+plans-math,org.krmdemo.plansinstr.equilib,EquilibDocs,76,0,2,0,10,0,3,0,2,0
+plans-math,org.krmdemo.plansinstr.equilib,SvgRenderer.Detail,2,75,1,11,0,12,1,11,0,5
+plans-math,org.krmdemo.plansinstr.equilib,Money,2,77,1,9,0,9,1,7,0,3
+plans-math,org.krmdemo.plansinstr.equilib,Layout.Profile,2,87,1,4,0,8,1,5,0,3
+plans-math,org.krmdemo.plansinstr.equilib,Sweep,54,237,7,37,6,26,7,21,1,5

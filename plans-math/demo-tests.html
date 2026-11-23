@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo tests · plans-math · Balances Equilibrium</title>
+    <link rel="icon" href="icon-small.svg" type="image/svg+xml">
+    <link href="page.css" rel="stylesheet">
+    <style>
+        main { max-width: 1760px; }
+        .set { margin: 1.4rem 0 2.2rem; }
+        .set h3 { font: 500 1rem/1.4 var(--font-mono); margin: 0 0 0.6rem; padding: 0.35rem 0.6rem; background: var(--surface); border-radius: 6px; }
+        .case { margin: 0 0 1.2rem; }
+        .case p { margin: 0 0 0.3rem; font-size: 0.95rem; }
+        .case .sym { color: var(--ink-soft); }
+        .case .amt { font-variant-numeric: tabular-nums; }
+        .case img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; background: #fff; }
+        .icons { display: flex; align-items: flex-end; gap: 24px; margin: 0.6rem 0 1rem; }
+        .icons figure { margin: 0; } .icons figcaption { font-size: 0.75rem; color: var(--ink-soft); }
+        nav.toc a { margin-right: 1rem; }
+    </style>
+</head>
+<body>
+<main>
+    <header class="head">
+        <h1><img src="icon.svg" width="84" height="48" alt=""> Demo tests</h1>
+        <p class="sub"><a href="./">Demo page</a> · <a href="tests/demo/index.html">the same as a test report</a> ·
+            <span>189</span> JUnit tests, all passed</p>
+    </header>
+    <p>Everything the <a href="./">demo page</a> can show, without moving a handle: the parameters in six groups, the
+        balances in increasing order, each with its status, amount and picture at S, M and L (phone, tablet, laptop).
+        Chosen by functional coverage: categories of the parameters, pairwise, every status and every boundary,
+        nothing that shows the same twice. Smaller than S, every picture is one of two icons, whatever the parameters:</p>
+    <div class="icons">
+        <figure><img src="icon-small.svg" width="56" height="32" alt=""><figcaption>below 80 px</figcaption></figure>
+        <figure><img src="icon.svg" width="140" height="80" alt=""><figcaption>below 200 px</figcaption></figure>
+    </div>
+    <nav class="toc"><a href="#g1">1 · Two thresholds with nominals</a><a href="#g2">2 · No nominals on one side or both</a><a href="#g3">3 · Target balance [T]</a><a href="#g4">4 · Swept In Zero: A = 0</a><a href="#g5">5 · Coinciding ends: A = τₘᵢₙ or L = τₘₐₓ</a><a href="#g6">6 · Huge L: broken axes</a></nav>
+
+    <section id="g1">
+        <h2>1 · Two thresholds with nominals</h2>
+        <p>The usual picture: every status, both jumps.</p>
+        <div class="set">
+            <h3>threshold: −$8k [$40k ; $60k] +$10k  ·  A $25k  ·  L $30k</h3>
+            <div class="case">
+                <p><b>x = $10k</b> 
+                    → <b style="color:#8A5418">Swept In Partial</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-4a1a1ad5-x-10000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $15k</b> <span class="sym">= Tₘᵢₙ − A</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-4a1a1ad5-x-15000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $23.5k</b> 
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$16.5k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-4a1a1ad5-x-23500.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $32k</b> <span class="sym">= Tₘᵢₙ − τₘᵢₙ</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$8k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-4a1a1ad5-x-32000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $36k</b> 
+                    → <b style="color:#378ADD">In Nominal Min</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-4a1a1ad5-x-36000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $40k</b> <span class="sym">= Tₘᵢₙ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-4a1a1ad5-x-40000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> 
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-4a1a1ad5-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= Tₘₐₓ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-4a1a1ad5-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $65k</b> 
+                    → <b style="color:#378ADD">In Nominal Max</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-4a1a1ad5-x-65000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $70k</b> <span class="sym">= Tₘₐₓ + τₘₐₓ</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$10k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_10/sweep-4a1a1ad5-x-70000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $80k</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$20k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_11/sweep-4a1a1ad5-x-80000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $90k</b> <span class="sym">= Tₘₐₓ + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$30k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_12/sweep-4a1a1ad5-x-90000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $95k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TwoThresholds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_13/sweep-4a1a1ad5-x-95000.svg">
+            </div>
+        </div>
+    </section>
+
+    <section id="g2">
+        <h2>2 · No nominals on one side or both</h2>
+        <p>τ = 0: no jump on that side, no In Nominal status; the threshold itself is In Range.</p>
+        <div class="set">
+            <h3>threshold: −$8k [$40k ; $60k]  ·  A $25k  ·  L $30k</h3>
+            <div class="case">
+                <p><b>x = $10k</b> 
+                    → <b style="color:#8A5418">Swept In Partial</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-b8cada42-x-10000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $15k</b> <span class="sym">= Tₘᵢₙ − A</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-b8cada42-x-15000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $23.5k</b> 
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$16.5k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-b8cada42-x-23500.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $32k</b> <span class="sym">= Tₘᵢₙ − τₘᵢₙ</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$8k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-b8cada42-x-32000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $36k</b> 
+                    → <b style="color:#378ADD">In Nominal Min</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-b8cada42-x-36000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $40k</b> <span class="sym">= Tₘᵢₙ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-b8cada42-x-40000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> 
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-b8cada42-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= Tₘₐₓ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-b8cada42-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $75k</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$15k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-b8cada42-x-75000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $90k</b> <span class="sym">= Tₘₐₓ + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$30k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_10/sweep-b8cada42-x-90000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $95k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_11/sweep-b8cada42-x-95000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>threshold: [$40k ; $60k]  ·  A $25k  ·  L $30k</h3>
+            <div class="case">
+                <p><b>x = $10k</b> 
+                    → <b style="color:#8A5418">Swept In Partial</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-de90439b-x-10000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $15k</b> <span class="sym">= Tₘᵢₙ − A</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-de90439b-x-15000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $27.5k</b> 
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$12.5k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-de90439b-x-27500.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $40k</b> <span class="sym">= Tₘᵢₙ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-de90439b-x-40000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> 
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-de90439b-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= Tₘₐₓ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-de90439b-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $75k</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$15k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-de90439b-x-75000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $90k</b> <span class="sym">= Tₘₐₓ + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$30k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-de90439b-x-90000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $95k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/NoNominals/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-de90439b-x-95000.svg">
+            </div>
+        </div>
+    </section>
+
+    <section id="g3">
+        <h2>3 · Target balance [T]</h2>
+        <p>Tₘᵢₙ = Tₘₐₓ = T: In Range is the single point x = T.</p>
+        <div class="set">
+            <h3>target balance: [$50k]  ·  A $25k  ·  L $30k</h3>
+            <div class="case">
+                <p><b>x = $20k</b> 
+                    → <b style="color:#8A5418">Swept In Partial</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-bd82a9c4-x-20000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $25k</b> <span class="sym">= T − A</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-bd82a9c4-x-25000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $37.5k</b> 
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$12.5k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-bd82a9c4-x-37500.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> <span class="sym">= T</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-bd82a9c4-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $65k</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$15k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-bd82a9c4-x-65000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $80k</b> <span class="sym">= T + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$30k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-bd82a9c4-x-80000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $85k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-bd82a9c4-x-85000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>target balance: [$50k] +$10k  ·  A $25k  ·  L $30k</h3>
+            <div class="case">
+                <p><b>x = $20k</b> 
+                    → <b style="color:#8A5418">Swept In Partial</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-b064c0d7-x-20000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $25k</b> <span class="sym">= T − A</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-b064c0d7-x-25000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $37.5k</b> 
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$12.5k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-b064c0d7-x-37500.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> <span class="sym">= T</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-b064c0d7-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $55k</b> 
+                    → <b style="color:#378ADD">In Nominal Max</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-b064c0d7-x-55000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= T + τₘₐₓ</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$10k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-b064c0d7-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $70k</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$20k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-b064c0d7-x-70000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $80k</b> <span class="sym">= T + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$30k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-b064c0d7-x-80000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $85k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-b064c0d7-x-85000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>target balance: −$5k [$50k] +$5k  ·  A $20k  ·  L $25k</h3>
+            <div class="case">
+                <p><b>x = $25k</b> 
+                    → <b style="color:#8A5418">Swept In Partial</b>
+                    <span class="amt">$20k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-d0cddac4-x-25000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $30k</b> <span class="sym">= T − A</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$20k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-d0cddac4-x-30000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $37.5k</b> 
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$12.5k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-d0cddac4-x-37500.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $45k</b> <span class="sym">= T − τₘᵢₙ</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$5k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-d0cddac4-x-45000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $47.5k</b> 
+                    → <b style="color:#378ADD">In Nominal Min</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-d0cddac4-x-47500.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> <span class="sym">= T</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-d0cddac4-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $52.5k</b> 
+                    → <b style="color:#378ADD">In Nominal Max</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-d0cddac4-x-52500.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $55k</b> <span class="sym">= T + τₘₐₓ</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$5k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-d0cddac4-x-55000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $65k</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$15k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-d0cddac4-x-65000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $75k</b> <span class="sym">= T + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_10/sweep-d0cddac4-x-75000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $80k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/TargetBalance/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_11/sweep-d0cddac4-x-80000.svg">
+            </div>
+        </div>
+    </section>
+
+    <section id="g4">
+        <h2>4 · Swept In Zero: A = 0</h2>
+        <p>The investment account is empty: the whole left side is a terminal failure ⏚.</p>
+        <div class="set">
+            <h3>threshold: [$40k ; $60k]  ·  A $0  ·  L $30k</h3>
+            <div class="case">
+                <p><b>x = $35k</b> 
+                    → <b style="color:#E24B4A">Swept In Zero ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-2229d873-x-35000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $40k</b> <span class="sym">= Tₘᵢₙ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-2229d873-x-40000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> 
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-2229d873-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= Tₘₐₓ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-2229d873-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $75k</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$15k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-2229d873-x-75000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $90k</b> <span class="sym">= Tₘₐₓ + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$30k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-2229d873-x-90000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $95k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-2229d873-x-95000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>target balance: [$50k] +$10k  ·  A $0  ·  L $10k</h3>
+            <div class="case">
+                <p><b>x = $45k</b> 
+                    → <b style="color:#E24B4A">Swept In Zero ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-4c346d2d-x-45000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> <span class="sym">= T</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-4c346d2d-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $55k</b> 
+                    → <b style="color:#378ADD">In Nominal Max</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-4c346d2d-x-55000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= T + τₘₐₓ</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$10k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-4c346d2d-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $65k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-4c346d2d-x-65000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>threshold: [$40k ; $60k] +$10k  ·  A $0  ·  L $30k</h3>
+            <div class="case">
+                <p><b>x = $35k</b> 
+                    → <b style="color:#E24B4A">Swept In Zero ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-96a34b06-x-35000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $40k</b> <span class="sym">= Tₘᵢₙ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-96a34b06-x-40000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> 
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-96a34b06-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= Tₘₐₓ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-96a34b06-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $65k</b> 
+                    → <b style="color:#378ADD">In Nominal Max</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-96a34b06-x-65000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $70k</b> <span class="sym">= Tₘₐₓ + τₘₐₓ</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$10k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-96a34b06-x-70000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $80k</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$20k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-96a34b06-x-80000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $90k</b> <span class="sym">= Tₘₐₓ + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$30k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-96a34b06-x-90000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $95k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-96a34b06-x-95000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>threshold: −$8k [$40k ; $60k]  ·  A $0  ·  L $30k</h3>
+            <div class="case">
+                <p><b>x = $27k</b> 
+                    → <b style="color:#E24B4A">Swept In Zero ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-9f97ecda-x-27000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $32k</b> <span class="sym">= Tₘᵢₙ − τₘᵢₙ</span>
+                    → <b style="color:#E24B4A">Swept In Zero ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-9f97ecda-x-32000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $36k</b> 
+                    → <b style="color:#378ADD">In Nominal Min</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-9f97ecda-x-36000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $40k</b> <span class="sym">= Tₘᵢₙ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-9f97ecda-x-40000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> 
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-9f97ecda-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= Tₘₐₓ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-9f97ecda-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $75k</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$15k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-9f97ecda-x-75000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $90k</b> <span class="sym">= Tₘₐₓ + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$30k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-9f97ecda-x-90000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $95k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-9f97ecda-x-95000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>target balance: −$8k [$50k] +$10k  ·  A $0  ·  L $10k</h3>
+            <div class="case">
+                <p><b>x = $37k</b> 
+                    → <b style="color:#E24B4A">Swept In Zero ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-7eafe062-x-37000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $42k</b> <span class="sym">= T − τₘᵢₙ</span>
+                    → <b style="color:#E24B4A">Swept In Zero ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-7eafe062-x-42000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $46k</b> 
+                    → <b style="color:#378ADD">In Nominal Min</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-7eafe062-x-46000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> <span class="sym">= T</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-7eafe062-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $55k</b> 
+                    → <b style="color:#378ADD">In Nominal Max</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-7eafe062-x-55000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= T + τₘₐₓ</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$10k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-7eafe062-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $65k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-7eafe062-x-65000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>threshold: −$8k [$40k ; $60k] +$10k  ·  A $0  ·  L $30k</h3>
+            <div class="case">
+                <p><b>x = $27k</b> 
+                    → <b style="color:#E24B4A">Swept In Zero ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_6/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-ed4362d-x-27000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $32k</b> <span class="sym">= Tₘᵢₙ − τₘᵢₙ</span>
+                    → <b style="color:#E24B4A">Swept In Zero ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_6/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-ed4362d-x-32000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $36k</b> 
+                    → <b style="color:#378ADD">In Nominal Min</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_6/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-ed4362d-x-36000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $40k</b> <span class="sym">= Tₘᵢₙ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_6/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-ed4362d-x-40000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> 
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_6/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-ed4362d-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= Tₘₐₓ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_6/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-ed4362d-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $65k</b> 
+                    → <b style="color:#378ADD">In Nominal Max</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_6/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-ed4362d-x-65000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $70k</b> <span class="sym">= Tₘₐₓ + τₘₐₓ</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$10k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_6/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-ed4362d-x-70000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $80k</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$20k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_6/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-ed4362d-x-80000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $90k</b> <span class="sym">= Tₘₐₓ + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$30k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_6/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_10/sweep-ed4362d-x-90000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $95k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/SweptInZero/_6/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_11/sweep-ed4362d-x-95000.svg">
+            </div>
+        </div>
+    </section>
+
+    <section id="g5">
+        <h2>5 · Coinciding ends: A = τₘᵢₙ or L = τₘₐₓ</h2>
+        <p>Swept In Full or Swept Out shrinks to a single point.</p>
+        <div class="set">
+            <h3>threshold: [$40k ; $60k] +$10k  ·  A $25k  ·  L $10k</h3>
+            <div class="case">
+                <p><b>x = $10k</b> 
+                    → <b style="color:#8A5418">Swept In Partial</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-1a7755ec-x-10000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $15k</b> <span class="sym">= Tₘᵢₙ − A</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-1a7755ec-x-15000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $27.5k</b> 
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$12.5k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-1a7755ec-x-27500.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $40k</b> <span class="sym">= Tₘᵢₙ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-1a7755ec-x-40000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> 
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-1a7755ec-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= Tₘₐₓ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-1a7755ec-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $65k</b> 
+                    → <b style="color:#378ADD">In Nominal Max</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-1a7755ec-x-65000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $70k</b> <span class="sym">= Tₘₐₓ + τₘₐₓ</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$10k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-1a7755ec-x-70000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $75k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-1a7755ec-x-75000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>target balance: −$8k [$50k]  ·  A $8k  ·  L $30k</h3>
+            <div class="case">
+                <p><b>x = $37k</b> 
+                    → <b style="color:#8A5418">Swept In Partial</b>
+                    <span class="amt">$8k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-f764ce96-x-37000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $42k</b> <span class="sym">= T − τₘᵢₙ</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$8k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-f764ce96-x-42000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $46k</b> 
+                    → <b style="color:#378ADD">In Nominal Min</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-f764ce96-x-46000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> <span class="sym">= T</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-f764ce96-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $65k</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$15k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-f764ce96-x-65000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $80k</b> <span class="sym">= T + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$30k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-f764ce96-x-80000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $85k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-f764ce96-x-85000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>threshold: −$8k [$40k ; $60k] +$10k  ·  A $8k  ·  L $10k</h3>
+            <div class="case">
+                <p><b>x = $27k</b> 
+                    → <b style="color:#8A5418">Swept In Partial</b>
+                    <span class="amt">$8k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-1125d038-x-27000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $32k</b> <span class="sym">= Tₘᵢₙ − τₘᵢₙ</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$8k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-1125d038-x-32000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $36k</b> 
+                    → <b style="color:#378ADD">In Nominal Min</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-1125d038-x-36000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $40k</b> <span class="sym">= Tₘᵢₙ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-1125d038-x-40000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> 
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-1125d038-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= Tₘₐₓ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-1125d038-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $65k</b> 
+                    → <b style="color:#378ADD">In Nominal Max</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-1125d038-x-65000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $70k</b> <span class="sym">= Tₘₐₓ + τₘₐₓ</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$10k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-1125d038-x-70000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $75k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_3/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-1125d038-x-75000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>target balance: −$8k [$50k] +$10k  ·  A $8k  ·  L $30k</h3>
+            <div class="case">
+                <p><b>x = $37k</b> 
+                    → <b style="color:#8A5418">Swept In Partial</b>
+                    <span class="amt">$8k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-9cc05ce3-x-37000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $42k</b> <span class="sym">= T − τₘᵢₙ</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$8k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-9cc05ce3-x-42000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $46k</b> 
+                    → <b style="color:#378ADD">In Nominal Min</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-9cc05ce3-x-46000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> <span class="sym">= T</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-9cc05ce3-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $55k</b> 
+                    → <b style="color:#378ADD">In Nominal Max</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-9cc05ce3-x-55000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= T + τₘₐₓ</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$10k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-9cc05ce3-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $70k</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$20k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-9cc05ce3-x-70000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $80k</b> <span class="sym">= T + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$30k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-9cc05ce3-x-80000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $85k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_4/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-9cc05ce3-x-85000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>target balance: −$8k [$50k] +$10k  ·  A $25k  ·  L $10k</h3>
+            <div class="case">
+                <p><b>x = $20k</b> 
+                    → <b style="color:#8A5418">Swept In Partial</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-31d0334a-x-20000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $25k</b> <span class="sym">= T − A</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-31d0334a-x-25000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $33.5k</b> 
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$16.5k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-31d0334a-x-33500.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $42k</b> <span class="sym">= T − τₘᵢₙ</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$8k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-31d0334a-x-42000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $46k</b> 
+                    → <b style="color:#378ADD">In Nominal Min</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-31d0334a-x-46000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> <span class="sym">= T</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-31d0334a-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $55k</b> 
+                    → <b style="color:#378ADD">In Nominal Max</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-31d0334a-x-55000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= T + τₘₐₓ</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$10k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-31d0334a-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $65k</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/CoincidingEnds/_5/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-31d0334a-x-65000.svg">
+            </div>
+        </div>
+    </section>
+
+    <section id="g6">
+        <h2>6 · Huge L: broken axes</h2>
+        <p>L in millions: one scale, the axes cut along the Swept Out line.</p>
+        <div class="set">
+            <h3>threshold: −$8k [$40k ; $60k] +$10k  ·  A $25k  ·  L $2M</h3>
+            <div class="case">
+                <p><b>x = $10k</b> 
+                    → <b style="color:#8A5418">Swept In Partial</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-263f054-x-10000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $15k</b> <span class="sym">= Tₘᵢₙ − A</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$25k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-263f054-x-15000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $23.5k</b> 
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$16.5k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-263f054-x-23500.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $32k</b> <span class="sym">= Tₘᵢₙ − τₘᵢₙ</span>
+                    → <b style="color:#BA7517">Swept In Full</b>
+                    <span class="amt">$8k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-263f054-x-32000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $36k</b> 
+                    → <b style="color:#378ADD">In Nominal Min</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-263f054-x-36000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $40k</b> <span class="sym">= Tₘᵢₙ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_6/sweep-263f054-x-40000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> 
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_7/sweep-263f054-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $60k</b> <span class="sym">= Tₘₐₓ</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_8/sweep-263f054-x-60000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $65k</b> 
+                    → <b style="color:#378ADD">In Nominal Max</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_9/sweep-263f054-x-65000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $70k</b> <span class="sym">= Tₘₐₓ + τₘₐₓ</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$10k</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_10/sweep-263f054-x-70000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $1,065,000</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$1,005,000</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_11/sweep-263f054-x-1065000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $2,060,000</b> <span class="sym">= Tₘₐₓ + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$2M</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_12/sweep-263f054-x-2060000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $2,065,000</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_1/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_13/sweep-263f054-x-2065000.svg">
+            </div>
+        </div>
+        <div class="set">
+            <h3>target balance: [$50k]  ·  A $0  ·  L $2M</h3>
+            <div class="case">
+                <p><b>x = $45k</b> 
+                    → <b style="color:#E24B4A">Swept In Zero ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_1/sweep-c20d796d-x-45000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $50k</b> <span class="sym">= T</span>
+                    → <b style="color:#378ADD">In Range</b>
+                    <span class="amt">$0</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_2/sweep-c20d796d-x-50000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $1,050,000</b> 
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$1M</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_3/sweep-c20d796d-x-1050000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $2,050,000</b> <span class="sym">= T + L</span>
+                    → <b style="color:#1D9E75">Swept Out</b>
+                    <span class="amt">$2M</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_4/sweep-c20d796d-x-2050000.svg">
+            </div>
+            <div class="case">
+                <p><b>x = $2,055,000</b> 
+                    → <b style="color:#E24B4A">Swept Out Overflow ⏚</b>
+                    <span class="amt">∄</span></p>
+                <img loading="lazy" alt="the picture at S, M and L" src="tests/demo/junit-jupiter/org.krmdemo.plansinstr.equilib.SweepDemoTest/BrokenAxes/_2/balance%28org.krmdemo.plansinstr.equilib.DemoCases_Probe%2C%20org.junit.jupiter.api.TestReporter%29/_5/sweep-c20d796d-x-2055000.svg">
+            </div>
+        </div>
+    </section>
+</main>
+<footer>Built from <a href="https://github.com/krm-demo/ai-plans-instr/commit/03995e96fd5c27ec192cc1dddf42f396c24c0d61">03995e9</a>
+    on <span>2026-11-23 19:05 UTC</span> by the
+    <a href="https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml">plans-math workflow</a>.</footer>
+</body>
+</html>

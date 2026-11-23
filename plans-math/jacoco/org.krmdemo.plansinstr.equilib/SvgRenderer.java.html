@@ -1,0 +1,790 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SvgRenderer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">plans-math</a> &gt; <a href="index.source.html" class="el_package">org.krmdemo.plansinstr.equilib</a> &gt; <span class="el_source">SvgRenderer.java</span></div><h1>SvgRenderer.java</h1><pre class="source lang-java linenums">package org.krmdemo.plansinstr.equilib;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Draws the swept amount per current balance as one SVG that needs no JavaScript.
+ * &lt;p&gt;
+ * This class does the geometry and builds a &lt;b&gt;model&lt;/b&gt;: layers of plain shapes (line, rect, circle, path, text),
+ * each a map of its attributes. The markup is the Thymeleaf template {@code templates/equilib.svg}, rendered by
+ * {@link SvgTemplate}. Maps rather than records, because Thymeleaf's expressions (OGNL) read map keys directly.
+ * &lt;p&gt;
+ * Besides the static picture, the model has a finite number of &lt;b&gt;frames&lt;/b&gt;: one per sampled current balance. A
+ * frame is a thin transparent vertical strip around its balance and, hidden until the mouse is over that strip, the
+ * purple probe, the status line on top and the highlight of its row of the formula. CSS {@code :hover} does the rest,
+ * so only the frame under the mouse is shown; with the mouse elsewhere, the default frame is.
+ */
+public final class SvgRenderer {
+
+    /** Allowed numbers of frames: a finite set, so that every picture can be rendered ahead of time. */
+<span class="fc" id="L28">    public static final int[] FRAME_COUNTS = {12, 24, 48, 96};</span>
+    public static final int DEFAULT_FRAMES = 48;
+
+    static final String PURPLE = &quot;#8B5CF6&quot;;
+    static final String GRAY = &quot;#888780&quot;;
+
+    /**
+     * How much of the picture a tier draws. The adaptive SVG holds them all and shows the one that fits the width it
+     * is shown at; ICON_S and ICON are the fixed cart icons in the template.
+     * &lt;ul&gt;
+     * &lt;li&gt;MINI: S geometry, only the coloured slices, the axes, the function and its points: no text, no frames;&lt;/li&gt;
+     * &lt;li&gt;S: the graph with its labels and the status lines (the formula would break the harmony of a phone);&lt;/li&gt;
+     * &lt;li&gt;M and L: everything, the formula and the legend under the graph.&lt;/li&gt;
+     * &lt;/ul&gt;
+     */
+<span class="fc" id="L43">    enum Detail {</span>
+<span class="fc" id="L44">        MINI(&quot;S&quot;), S(&quot;S&quot;), M(&quot;M&quot;), L(&quot;L&quot;);</span>
+
+        final String profile;
+
+<span class="fc" id="L48">        Detail(String profile) {</span>
+<span class="fc" id="L49">            this.profile = profile;</span>
+<span class="fc" id="L50">        }</span>
+
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        boolean text() { return this != MINI; }</span>
+
+<span class="fc bfc" id="L54" title="All 4 branches covered.">        boolean formula() { return this == M || this == L; }</span>
+
+        static Detail of(String name) {
+<span class="pc bpc" id="L57" title="1 of 6 branches missed.">            return switch (name == null ? &quot;L&quot; : name.toUpperCase()) {</span>
+<span class="fc" id="L58">                case &quot;MINI&quot; -&gt; MINI;</span>
+<span class="fc" id="L59">                case &quot;S&quot; -&gt; S;</span>
+<span class="fc" id="L60">                case &quot;M&quot; -&gt; M;</span>
+<span class="fc" id="L61">                default -&gt; L;</span>
+            };
+        }
+    }
+
+    /** The widths (CSS px of the rendered picture) where the adaptive SVG switches to the next tier. */
+<span class="fc" id="L67">    public static final int[] TIER_WIDTHS = {80, 200, 340, 540, 740};</span>
+
+    private final Sweep s;
+    private final Layout g;
+    private final Layout.Profile pf;
+    private final Detail detail;
+<span class="fc" id="L73">    private final List&lt;Map&lt;String, Object&gt;&gt; layers = new ArrayList&lt;&gt;();</span>
+    private List&lt;Map&lt;String, Object&gt;&gt; cur;            // the shapes being added to
+
+<span class="fc" id="L76">    private SvgRenderer(Sweep s, Detail detail) {</span>
+<span class="fc" id="L77">        this.s = s;</span>
+<span class="fc" id="L78">        this.detail = detail;</span>
+<span class="fc" id="L79">        this.pf = Layout.Profile.of(detail.profile);</span>
+<span class="fc" id="L80">        this.g = new Layout(s, pf);</span>
+<span class="fc" id="L81">    }</span>
+
+    /** The nearest allowed number of frames. */
+    public static int frames(int n) {
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        if (n &lt;= 0) return 0;                   // static: the default frame only</span>
+<span class="fc" id="L86">        int best = DEFAULT_FRAMES;</span>
+<span class="fc bfc" id="L87" title="All 4 branches covered.">        for (int c : FRAME_COUNTS) if (Math.abs(c - n) &lt; Math.abs(best - n)) best = c;</span>
+<span class="fc" id="L88">        return best;</span>
+    }
+
+    /**
+     * The adaptive picture: one SVG that looks like an icon when shown small and like the full graph, with its
+     * frames, when shown large. Its own CSS media queries pick the tier by the width the SVG is shown at
+     * (in {@code &lt;img&gt;}, {@code &lt;object&gt;} or opened directly; inline in HTML the page's width counts instead):
+     * below 80 px the small cart icon, below 200 px the icon with the $ in the cart, below 340 px the coloured
+     * slices only, below 540 px S, below 740 px M, from 740 px L. Its natural size is that of L.
+     *
+     * @param sweep the parameters (use {@link Sweep#snapped()} for a finite set of pictures)
+     */
+    public static String render(Sweep sweep) {
+<span class="fc" id="L101">        return render(sweep, DEFAULT_FRAMES, null);</span>
+    }
+
+    /**
+     * The adaptive picture with {@code frames} sampled balances (rounded to one of {@link #FRAME_COUNTS}) and its
+     * default frame (shown when the mouse is elsewhere) at exactly {@code probe}, or 30% into Swept Out when null.
+     */
+    public static String render(Sweep sweep, int frames, Long probe) {
+<span class="fc" id="L109">        return SvgTemplate.render(adaptiveModel(sweep, frames, probe));</span>
+    }
+
+    /**
+     * One tier only, at its fixed size: &quot;L&quot; (760 px), &quot;M&quot; (560 px), &quot;S&quot; (380 px) or &quot;mini&quot; (the slices, 380 px).
+     */
+    public static String render(Sweep sweep, String tier, int frames) {
+<span class="fc" id="L116">        return SvgTemplate.render(singleModel(sweep, tier, frames, null));</span>
+    }
+
+    /**
+     * The tiers S, M and L side by side at their own sizes, static (only the frame at {@code probe}): one picture
+     * that shows how the same parameters look on a phone, a tablet and a laptop (the test report shows these).
+     */
+    public static String renderSheet(Sweep sweep, long probe) {
+<span class="fc" id="L124">        return SvgTemplate.render(sheetModel(sweep, probe));</span>
+    }
+
+    static Map&lt;String, Object&gt; sheetModel(Sweep sweep, long probe) {
+<span class="fc" id="L128">        List&lt;Map&lt;String, Object&gt;&gt; tiers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L129">        double x = 0, h = 0;</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        for (Detail d : new Detail[] {Detail.S, Detail.M, Detail.L}) {</span>
+<span class="fc" id="L131">            Map&lt;String, Object&gt; t = new SvgRenderer(sweep, d).draw(0, probe);</span>
+<span class="fc" id="L132">            t.put(&quot;cls&quot;, t.get(&quot;cls&quot;) + &quot; one&quot;);</span>
+<span class="fc" id="L133">            t.put(&quot;boxX&quot;, r(x));</span>
+<span class="fc" id="L134">            t.put(&quot;boxW&quot;, t.get(&quot;width&quot;));</span>
+<span class="fc" id="L135">            t.put(&quot;boxH&quot;, t.get(&quot;height&quot;));</span>
+<span class="fc" id="L136">            x += Double.parseDouble((String) t.get(&quot;width&quot;)) + 24;</span>
+<span class="fc" id="L137">            h = Math.max(h, Double.parseDouble((String) t.get(&quot;height&quot;)));</span>
+<span class="fc" id="L138">            tiers.add(t);</span>
+        }
+<span class="fc" id="L140">        Map&lt;String, Object&gt; model = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L141">        model.put(&quot;width&quot;, r(x - 24));</span>
+<span class="fc" id="L142">        model.put(&quot;height&quot;, r(h));</span>
+<span class="fc" id="L143">        model.put(&quot;viewBox&quot;, &quot;0 0 &quot; + r(x - 24) + &quot; &quot; + r(h));</span>
+<span class="fc" id="L144">        model.put(&quot;tiers&quot;, tiers);</span>
+<span class="fc" id="L145">        return model;</span>
+    }
+
+    static Map&lt;String, Object&gt; adaptiveModel(Sweep sweep, int frames, Long probe) {
+<span class="fc" id="L149">        List&lt;Map&lt;String, Object&gt;&gt; tiers = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        for (Detail d : Detail.values()) tiers.add(new SvgRenderer(sweep, d).draw(frames(frames), probe));</span>
+<span class="fc" id="L151">        Map&lt;String, Object&gt; l = tiers.get(tiers.size() - 1);</span>
+<span class="fc" id="L152">        Map&lt;String, Object&gt; model = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L153">        model.put(&quot;adaptive&quot;, Boolean.TRUE);</span>
+<span class="fc" id="L154">        model.put(&quot;width&quot;, l.get(&quot;width&quot;));</span>
+<span class="fc" id="L155">        model.put(&quot;height&quot;, l.get(&quot;height&quot;));</span>
+<span class="fc" id="L156">        model.put(&quot;viewBox&quot;, &quot;0 0 &quot; + l.get(&quot;width&quot;) + &quot; &quot; + l.get(&quot;height&quot;));</span>
+<span class="fc" id="L157">        model.put(&quot;tiers&quot;, tiers);</span>
+<span class="fc" id="L158">        return model;</span>
+    }
+
+    static Map&lt;String, Object&gt; singleModel(Sweep sweep, String tier, int frames, Long probe) {
+<span class="fc" id="L162">        Map&lt;String, Object&gt; t = new SvgRenderer(sweep, Detail.of(tier)).draw(frames(frames), probe);</span>
+<span class="fc" id="L163">        t.put(&quot;cls&quot;, t.get(&quot;cls&quot;) + &quot; one&quot;);</span>
+<span class="fc" id="L164">        Map&lt;String, Object&gt; model = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L165">        model.put(&quot;width&quot;, t.get(&quot;width&quot;));</span>
+<span class="fc" id="L166">        model.put(&quot;height&quot;, t.get(&quot;height&quot;));</span>
+<span class="fc" id="L167">        model.put(&quot;viewBox&quot;, &quot;0 0 &quot; + t.get(&quot;width&quot;) + &quot; &quot; + t.get(&quot;height&quot;));</span>
+<span class="fc" id="L168">        model.put(&quot;tiers&quot;, List.of(t));</span>
+<span class="fc" id="L169">        return model;</span>
+    }
+
+    // ---------------------------------------------------------------- drawing
+
+    private Map&lt;String, Object&gt; draw(int n, Long probe) {
+<span class="fc" id="L175">        double tMin = s.thresholdMin(), tMax = s.thresholdMax(), nMin = s.nominalMin(), nMax = s.nominalMax();</span>
+<span class="fc" id="L176">        double a = s.sweptInMax(), l = s.sweptOutMax();</span>
+<span class="fc" id="L177">        double xl = tMin - nMin, xr = tMax + nMax, xk = tMin - a, xo = tMax + l;</span>
+<span class="fc" id="L178">        double xA = g.xMin(), xZ = g.xMax(), y0 = g.y(0), ax = g.axisX();</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        boolean zeroA = a == 0;</span>
+
+        // The formula and the legend go under the graph; their height is known before drawing.
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        List&lt;Row&gt; rows = detail.formula() ? formulaRows() : List.of();</span>
+<span class="fc" id="L183">        List&lt;double[]&gt; xLabels = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        double rowsBottom = detail.text() ? labelRows(xLabels) : g.plotBottom;</span>
+<span class="fc" id="L185">        double fxTop = rowsBottom + 26, rowH = pf.font() * 1.55;</span>
+<span class="fc" id="L186">        double legendY = fxTop + rows.size() * rowH + 20;</span>
+<span class="pc bpc" id="L187" title="1 of 4 branches missed.">        double height = detail.formula() ? legendY + (pf.width() &lt; 500 ? 3 : 1) * 17 + 8 : rowsBottom + 12;</span>
+
+        // Zones: translucent bands the full height of the plot, hatched where the swept amount does not exist.
+<span class="fc" id="L190">        layer(&quot;zones&quot;);</span>
+<span class="fc" id="L191">        double xoc = Math.min(xo, xZ);</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        Object[][] bands = zeroA</span>
+<span class="fc" id="L193">            ? new Object[][] {{xA, xl, Zone.SWEPT_IN_ZERO}, {xl, tMin, Zone.IN_NOMINAL_MIN}, {tMin, tMax, Zone.IN_RANGE},</span>
+<span class="fc" id="L194">                              {tMax, xr, Zone.IN_NOMINAL_MAX}, {xr, xoc, Zone.SWEPT_OUT}, {xoc, xZ, Zone.SWEPT_OUT_OVERFLOW}}</span>
+<span class="fc" id="L195">            : new Object[][] {{xA, xk, Zone.SWEPT_IN_PARTIAL}, {xk, xl, Zone.SWEPT_IN_FULL}, {xl, tMin, Zone.IN_NOMINAL_MIN},</span>
+<span class="fc" id="L196">                              {tMin, tMax, Zone.IN_RANGE}, {tMax, xr, Zone.IN_NOMINAL_MAX}, {xr, xoc, Zone.SWEPT_OUT},</span>
+<span class="fc" id="L197">                              {xoc, xZ, Zone.SWEPT_OUT_OVERFLOW}};</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        if (g.broken) {   // the cut of the x axis is filled when the same zone goes on behind it: unobtrusive</span>
+<span class="fc" id="L199">            Zone zl = s.at(Math.round(g.xs.get(0).d1())).zone(), zr = s.at(Math.round(g.xs.get(1).d0())).zone();</span>
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">            if (zl == zr) band(g.xs.get(0).q1(), Layout.GAP, zl);</span>
+        }
+<span class="fc" id="L202">        double wmY = g.plotTop + 0.1 * (g.plotBottom - g.plotTop);   // watermarks hang 10% below the top of the plot</span>
+<span class="fc" id="L203">        List&lt;Runnable&gt; watermarks = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L204" title="All 2 branches covered.">        for (Object[] b : bands) {</span>
+<span class="fc" id="L205">            Zone z = (Zone) b[2];</span>
+<span class="fc" id="L206">            double[] widest = null;</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">            for (Layout.Seg sx : g.xs) {</span>
+<span class="fc" id="L208">                double lo = Math.max((double) b[0], sx.d0()), hi = Math.min((double) b[1], sx.d1());</span>
+<span class="fc bfc" id="L209" title="All 2 branches covered.">                if (hi &lt;= lo) continue;</span>
+<span class="fc" id="L210">                double qa = sx.map(lo), w = sx.map(hi) - qa;</span>
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">                if (w &lt;= 0.5) continue;</span>
+<span class="fc bfc" id="L212" title="All 4 branches covered.">                if (widest == null || w &gt; widest[1]) widest = new double[] {qa, w};</span>
+<span class="fc" id="L213">                band(qa, w, z);</span>
+<span class="fc" id="L214">            }</span>
+<span class="pc bpc" id="L215" title="1 of 6 branches missed.">            if (widest != null &amp;&amp; widest[1] &gt;= pf.wmMin() &amp;&amp; detail.text()) {</span>
+<span class="fc" id="L216">                double cx = widest[0] + widest[1] / 2;</span>
+<span class="fc" id="L217">                watermarks.add(() -&gt; cur.add(shape(&quot;text&quot;, &quot;x&quot;, r(cx), &quot;y&quot;, r(wmY + 5), &quot;anchor&quot;, &quot;end&quot;,</span>
+<span class="fc" id="L218">                    &quot;transform&quot;, &quot;rotate(-90 &quot; + r(cx) + &quot; &quot; + r(wmY) + &quot;)&quot;,</span>
+<span class="fc" id="L219">                    &quot;cls&quot;, &quot;wm&quot;, &quot;style&quot;, &quot;font-size:&quot; + (pf.font() - 1) + &quot;px;fill:&quot; + z.ink()</span>
+<span class="fc bfc" id="L220" title="All 4 branches covered.">                        + &quot;;fill-opacity:&quot; + (z.zero() &amp;&amp; z != Zone.IN_RANGE ? &quot;.44&quot; : &quot;.36&quot;),</span>
+<span class="fc" id="L221">                    &quot;body&quot;, z.titleMarkup(800))));</span>
+            }
+        }
+<span class="fc" id="L224">        edges(bands);</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">        if (detail.text()) {</span>
+<span class="fc" id="L226">            layer(&quot;marks&quot;);</span>
+<span class="fc" id="L227">            watermarks.forEach(Runnable::run);</span>
+<span class="fc" id="L228">            statusLabels();</span>
+        }
+
+        // Axes, continuous; where they are cut, two short slanted strokes in the middle of the cut.
+<span class="fc" id="L232">        layer(&quot;axes&quot;);</span>
+<span class="fc" id="L233">        String axSt = stroke(&quot;var(--soft)&quot;, 1, null, 1);</span>
+<span class="fc" id="L234">        cur.add(shape(&quot;line&quot;, &quot;x1&quot;, r(pf.left()), &quot;y1&quot;, r(y0), &quot;x2&quot;, r(pf.right() + 12), &quot;y2&quot;, r(y0), &quot;style&quot;, axSt, &quot;markerEnd&quot;, &quot;url(#arrow)&quot;));</span>
+<span class="fc" id="L235">        cur.add(shape(&quot;line&quot;, &quot;x1&quot;, r(ax), &quot;y1&quot;, r(g.plotBottom), &quot;x2&quot;, r(ax), &quot;y2&quot;, r(g.plotTop - 12), &quot;style&quot;, axSt, &quot;markerEnd&quot;, &quot;url(#arrow)&quot;));</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        if (g.broken) {</span>
+<span class="fc" id="L237">            String br = stroke(&quot;var(--soft)&quot;, 1, null, 0.8);</span>
+<span class="fc" id="L238">            double cq = g.xs.get(0).q1() + Layout.GAP / 2, cy = g.ys.get(0).q1() - Layout.GAP / 2;</span>
+<span class="fc" id="L239">            line(cq - 4, y0 + 4, cq - 1, y0 - 4, br);</span>
+<span class="fc" id="L240">            line(cq + 1, y0 + 4, cq + 4, y0 - 4, br);</span>
+<span class="fc" id="L241">            line(ax - 4, cy + 1, ax + 4, cy - 2, br);</span>
+<span class="fc" id="L242">            line(ax - 4, cy + 4, ax + 4, cy + 1, br);</span>
+        }
+<span class="fc bfc" id="L244" title="All 2 branches covered.">        if (detail.text()) {</span>
+<span class="fc" id="L245">            cur.add(shape(&quot;text&quot;, &quot;x&quot;, r(ax + 10), &quot;y&quot;, r(g.plotTop - 6), &quot;cls&quot;, &quot;m&quot;, &quot;style&quot;, &quot;font-size:&quot; + (pf.font() - 1) + &quot;px;fill:var(--soft)&quot;,</span>
+                &quot;body&quot;, &quot;Swept amount, &lt;tspan style=\&quot;fill:&quot; + PURPLE + &quot;;font-style:normal;font-weight:700\&quot;&gt;$&lt;/tspan&gt;&quot;));
+        }
+
+        // Projections of the points of interest onto the y axis, then the function.
+<span class="fc" id="L250">        layer(&quot;function&quot;);</span>
+<span class="fc" id="L251">        String proj = stroke(GRAY, 0.6, &quot;1.5 3&quot;, 0.8);</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">        double axData = g.xs.get(0).has(0) ? 0 : xA;      // the y axis, in dollars</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">        if (!zeroA) line(ax, g.y(a), g.x(Math.max(xk, xA)), g.y(a), stroke(Zone.SWEPT_IN_PARTIAL.ink(), 1, &quot;1 3&quot;, 1));</span>
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">        if (g.visY(l)) line(ax, g.y(l), pf.right(), g.y(l), stroke(Zone.SWEPT_OUT_OVERFLOW.ink(), 1, &quot;1 3&quot;, 0.9));</span>
+<span class="fc bfc" id="L255" title="All 4 branches covered.">        if (nMin &gt; 0 &amp;&amp; !zeroA) seg(xl, nMin, axData, nMin, proj);</span>
+<span class="fc bfc" id="L256" title="All 2 branches covered.">        if (nMax &gt; 0) seg(xr, nMax, axData, nMax, proj);</span>
+
+        // Dashed in the zone's colour: what would happen without the nominals, the caps and the limit.
+<span class="fc" id="L259">        seg(xl, nMin, tMin, 0, stroke(Zone.IN_RANGE.ink(), 1.4, &quot;4 3&quot;, 0.85));</span>
+<span class="fc" id="L260">        seg(tMax, 0, xr, nMax, stroke(Zone.IN_RANGE.ink(), 1.4, &quot;4 3&quot;, 0.85));</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">        if (zeroA) seg(xA, tMin - xA, xl, nMin, stroke(Zone.SWEPT_IN_ZERO.ink(), 1.4, &quot;4 3&quot;, 0.7));</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">        else if (xk &gt; xA) seg(xA, tMin - xA, xk, a, stroke(Zone.SWEPT_IN_FULL.ink(), 1.4, &quot;4 3&quot;, 0.6));</span>
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">        if (xo &lt; xZ) seg(xo, l, xZ, xZ - tMax, stroke(Zone.SWEPT_OUT_OVERFLOW.ink(), 1.4, &quot;4 3&quot;, 0.75));</span>
+
+        // Solid: what happens. Red dashed on the axis: the terminal failures (∄).
+<span class="fc" id="L266">        double w = 2.75;</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">        if (zeroA) {</span>
+<span class="fc" id="L268">            seg(xA, 0, xl, 0, stroke(Zone.SWEPT_IN_ZERO.ink(), 3, &quot;6 4&quot;, 1));</span>
+        } else {
+<span class="pc bpc" id="L270" title="1 of 2 branches missed.">            if (xk &gt; xA) seg(xA, a, xk, a, stroke(Zone.SWEPT_IN_PARTIAL.ink(), w, null, 1));</span>
+<span class="fc" id="L271">            double a0 = Math.max(xk, xA);</span>
+<span class="pc bpc" id="L272" title="1 of 2 branches missed.">            if (xl &gt; xA) seg(a0, tMin - a0, xl, nMin, stroke(Zone.SWEPT_IN_FULL.ink(), w, null, 1));</span>
+<span class="fc" id="L273">            seg(xl, 0, xl, nMin, stroke(Zone.SWEPT_IN_FULL.ink(), 2, &quot;4 3&quot;, 1));</span>
+        }
+<span class="fc" id="L275">        seg(xl, 0, xr, 0, stroke(Zone.IN_RANGE.ink(), w, null, 1));</span>
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">        if (xr &lt; xZ) seg(xr, nMax, xoc, xoc - tMax, stroke(Zone.SWEPT_OUT.ink(), w, null, 1));</span>
+<span class="pc bpc" id="L277" title="1 of 4 branches missed.">        if (g.broken &amp;&amp; xr &lt; g.xs.get(0).d1()) {</span>
+            // Across the cut Swept out goes straight on, from corner to corner at 45°: only a faint dotted bridge,
+            // crossed by the same two grey slanted strokes as the axes (they only mark the cut), turned to the line.
+<span class="fc" id="L280">            double b0x = g.xs.get(0).q1(), b0y = g.ys.get(0).q1(), b1x = g.xs.get(1).q0(), b1y = g.ys.get(1).q0();</span>
+<span class="fc" id="L281">            line(b0x, b0y, b1x, b1y, stroke(Zone.SWEPT_OUT.ink(), w * 0.7, &quot;0.1 3.5&quot;, 0.35));</span>
+<span class="fc" id="L282">            double bl = Math.hypot(b1x - b0x, b1y - b0y), ux = (b1x - b0x) / bl, uy = (b1y - b0y) / bl;</span>
+<span class="fc" id="L283">            double vx = 1.5 * ux + 4 * uy, vy = 1.5 * uy - 4 * ux;   // as on the x axis: 1.5 along the line, 4 across it</span>
+<span class="fc bfc" id="L284" title="All 2 branches covered.">            for (double t : new double[] {-2.5, 2.5}) {</span>
+<span class="fc" id="L285">                double cx = (b0x + b1x) / 2 + t * ux, cy = (b0y + b1y) / 2 + t * uy;</span>
+<span class="fc" id="L286">                line(cx - vx, cy - vy, cx + vx, cy + vy, stroke(&quot;var(--soft)&quot;, 1, null, 0.8));</span>
+            }
+        }
+<span class="fc" id="L289">        seg(xr, 0, xr, nMax, stroke(Zone.SWEPT_OUT.ink(), 2, &quot;4 3&quot;, 1));</span>
+<span class="pc bpc" id="L290" title="1 of 2 branches missed.">        if (xo &lt; xZ) seg(xo, 0, xZ, 0, stroke(Zone.SWEPT_OUT_OVERFLOW.ink(), 3, &quot;6 4&quot;, 1));</span>
+
+        // Points: filled where the point belongs to the piece, open where the piece only comes close.
+<span class="fc" id="L293">        String red = Zone.SWEPT_OUT_OVERFLOW.ink(), open = &quot;fill:var(--bg);stroke-width:2;stroke:&quot;;</span>
+<span class="pc bpc" id="L294" title="1 of 4 branches missed.">        if (!zeroA &amp;&amp; xk &gt; xA) {   // T_min − A belongs to Swept In Full (filled in its colour), not to Partial (the ring)</span>
+<span class="fc" id="L295">            dot(xk, a, 4.5, &quot;fill:&quot; + Zone.SWEPT_IN_FULL.ink() + &quot;;stroke:&quot; + Zone.SWEPT_IN_PARTIAL.ink() + &quot;;stroke-width:2&quot;);</span>
+        }
+        // With τ = 0 there is no jump: T_min (T_max) itself needs nothing, so it is In Range, a filled blue point.
+<span class="fc" id="L298">        String blue = &quot;fill:&quot; + Zone.IN_RANGE.ink();</span>
+<span class="fc bfc" id="L299" title="All 2 branches covered.">        if (nMin == 0) {</span>
+<span class="fc" id="L300">            dot(xl, 0, 5, blue);</span>
+<span class="fc bfc" id="L301" title="All 2 branches covered.">        } else if (zeroA) {</span>
+<span class="fc" id="L302">            dot(xl, 0, 5, &quot;fill:&quot; + red);              // T_min − τ_min needs τ_min, which the empty account cannot give</span>
+        } else {
+<span class="fc" id="L304">            dot(xl, 0, 5, open + Zone.IN_RANGE.ink());</span>
+<span class="fc" id="L305">            dot(xl, nMin, 5, &quot;fill:&quot; + Zone.SWEPT_IN_FULL.ink());</span>
+        }
+<span class="fc bfc" id="L307" title="All 2 branches covered.">        if (nMax == 0) {</span>
+<span class="fc" id="L308">            dot(xr, 0, 5, blue);</span>
+        } else {
+<span class="fc" id="L310">            dot(xr, 0, 5, open + Zone.IN_RANGE.ink());</span>
+<span class="fc" id="L311">            dot(xr, nMax, 5, &quot;fill:&quot; + Zone.SWEPT_OUT.ink());</span>
+        }
+<span class="pc bpc" id="L313" title="1 of 2 branches missed.">        if (xo &lt; xZ) {</span>
+            // T_max + L is still allowed (a payment of exactly L): filled on the line; Overflow starts just after it.
+<span class="fc" id="L315">            dot(xo, l, 5, &quot;fill:&quot; + Zone.SWEPT_OUT.ink());</span>
+<span class="fc" id="L316">            dot(xo, 0, 5, open + red);</span>
+        }
+
+<span class="fc" id="L319">        Map&lt;String, Object&gt; tier = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L320">        tier.put(&quot;cls&quot;, &quot;tier t&quot; + detail.name());</span>
+<span class="fc" id="L321">        tier.put(&quot;boxW&quot;, &quot;100%&quot;);               // a sheet places the tiers side by side instead</span>
+<span class="fc" id="L322">        tier.put(&quot;boxH&quot;, &quot;100%&quot;);</span>
+<span class="fc" id="L323">        tier.put(&quot;layers&quot;, layers);</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">        if (!detail.text()) {           // the slices only: cropped to the plot and its arrows</span>
+<span class="fc" id="L325">            double x0 = pf.left() - 8, y0t = g.plotTop - 12;</span>
+<span class="fc" id="L326">            tier.put(&quot;width&quot;, r(pf.right() + 14 - x0));</span>
+<span class="fc" id="L327">            tier.put(&quot;height&quot;, r(g.plotBottom + 8 - y0t));</span>
+<span class="fc" id="L328">            tier.put(&quot;viewBox&quot;, r(x0) + &quot; &quot; + r(y0t) + &quot; &quot; + tier.get(&quot;width&quot;) + &quot; &quot; + tier.get(&quot;height&quot;));</span>
+<span class="fc" id="L329">            return tier;</span>
+        }
+
+        // Labels: amounts under the x axis (in rows, never overlapping) and by the y axis.
+<span class="fc" id="L333">        layer(&quot;labels&quot;);</span>
+<span class="fc bfc" id="L334" title="All 2 branches covered.">        for (double[] q : xLabels) {</span>
+<span class="fc" id="L335">            line(g.x(q[0]), g.y(q[1]) + 5, g.x(q[0]), q[3] - 12, proj);</span>
+<span class="fc bfc" id="L336" title="All 6 branches covered.">            String colour = zeroA &amp;&amp; nMin &gt; 0 &amp;&amp; q[0] == xl ? Zone.SWEPT_IN_ZERO.ink() : ink((int) q[4]);   // where Swept In Zero ends</span>
+<span class="fc" id="L337">            text(q[2], q[3], &quot;middle&quot;, colour, esc(Money.compact(q[0])), &quot;tx&quot;, pf.font());</span>
+<span class="fc" id="L338">        }</span>
+<span class="fc" id="L339">        yLabels(ax);</span>
+<span class="fc" id="L340">        text(pf.right() + 12, rowsBottom + 8, &quot;end&quot;, &quot;var(--soft)&quot;, &quot;Current balance, $&quot;, &quot;m&quot;, pf.font() - 1);</span>
+        // The origin: &quot;0&quot; below the x axis and left of the y axis, where no line crosses it.
+<span class="fc bfc" id="L342" title="All 2 branches covered.">        if (g.xs.get(0).has(0)) text(ax - 6, y0 + pf.font() + 1, &quot;end&quot;, &quot;var(--soft)&quot;, &quot;0&quot;, &quot;tx&quot;, pf.font());</span>
+
+        // The formula: one row per status, the status on the right (the frames highlight theirs and add the amount).
+<span class="fc bfc" id="L345" title="All 2 branches covered.">        if (detail.formula()) formula(rows, fxTop, rowH, legendY);</span>
+
+        // The frames.
+<span class="fc" id="L348">        frames(n, probe, rows, fxTop, rowH);</span>
+
+<span class="fc" id="L350">        tier.put(&quot;width&quot;, String.valueOf(pf.width()));</span>
+<span class="fc" id="L351">        tier.put(&quot;height&quot;, r(height));</span>
+<span class="fc" id="L352">        tier.put(&quot;viewBox&quot;, &quot;0 0 &quot; + pf.width() + &quot; &quot; + r(height));</span>
+<span class="fc" id="L353">        return tier;</span>
+    }
+
+    private void formula(List&lt;Row&gt; rows, double fxTop, double rowH, double legendY) {
+<span class="fc" id="L357">        layer(&quot;formula&quot;);</span>
+<span class="pc bpc" id="L358" title="1 of 2 branches missed.">        double fxLeft = 8, valX = valX(), colB = valX + (pf.width() &lt; 500 ? 128 : 150);</span>
+<span class="pc bpc" id="L359" title="1 of 2 branches missed.">        double braceX = fxLeft + (pf.width() &lt; 500 ? 46 : 62);</span>
+<span class="fc" id="L360">        text(fxLeft, fxTop + rows.size() * rowH / 2 + 4, null, &quot;var(--ink)&quot;, tex(&quot;y(x) =&quot;), &quot;tx&quot;, pf.font() + 1);</span>
+<span class="fc" id="L361">        double b1 = fxTop + 2, b2 = fxTop + rows.size() * rowH - 2, bm = (b1 + b2) / 2, bx = braceX + 6;</span>
+<span class="fc" id="L362">        cur.add(shape(&quot;path&quot;, &quot;style&quot;, &quot;fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round&quot;,</span>
+<span class="fc" id="L363">            &quot;d&quot;, &quot;M&quot; + r(bx + 6) + &quot; &quot; + r(b1) + &quot;Q&quot; + r(bx) + &quot; &quot; + r(b1) + &quot; &quot; + r(bx) + &quot; &quot; + r(b1 + 8) + &quot;V&quot; + r(bm - 7)</span>
+<span class="fc" id="L364">                + &quot;Q&quot; + r(bx) + &quot; &quot; + r(bm) + &quot; &quot; + r(bx - 6) + &quot; &quot; + r(bm) + &quot;Q&quot; + r(bx) + &quot; &quot; + r(bm) + &quot; &quot; + r(bx) + &quot; &quot; + r(bm + 7)</span>
+<span class="fc" id="L365">                + &quot;V&quot; + r(b2 - 8) + &quot;Q&quot; + r(bx) + &quot; &quot; + r(b2) + &quot; &quot; + r(bx + 6) + &quot; &quot; + r(b2)));</span>
+<span class="fc bfc" id="L366" title="All 2 branches covered.">        for (int i = 0; i &lt; rows.size(); i++) {</span>
+<span class="fc" id="L367">            Row row = rows.get(i);</span>
+<span class="fc" id="L368">            double yy = fxTop + (i + 0.72) * rowH;</span>
+<span class="fc bfc" id="L369" title="All 2 branches covered.">            String col = row.zone.terminal() ? row.zone.ink() : &quot;var(--ink)&quot;;   // no money moves: red, both of them</span>
+<span class="fc" id="L370">            text(valX, yy, null, col, tex(row.value), &quot;tx&quot;, pf.font());</span>
+<span class="fc" id="L371">            text(colB, yy, null, col, tex(row.cond), &quot;tx&quot;, pf.font());</span>
+<span class="pc bpc" id="L372" title="1 of 2 branches missed.">            if (pf.width() &gt;= 500) {</span>
+<span class="fc bfc" id="L373" title="All 2 branches covered.">                text(pf.width() - 8, yy, &quot;end&quot;, row.zone.ink(), row.zone.titleMarkup(700), null, pf.width() &lt; 700 ? 11.5 : 12.5);</span>
+            }
+        }
+<span class="fc" id="L376">        legend(legendY);</span>
+<span class="fc" id="L377">    }</span>
+
+    /** Where the values of the formula start. */
+    private double valX() {
+<span class="fc bfc" id="L381" title="All 2 branches covered.">        return 8 + (pf.width() &lt; 500 ? 70 : 84);</span>
+    }
+
+    // ---------------------------------------------------------------- frames
+
+    private void frames(int n, Long probe, List&lt;Row&gt; rows, double fxTop, double rowH) {
+<span class="fc" id="L387">        double valX = valX();</span>
+        // Sample balances evenly in pixels over all x pieces, snapped to the step of their piece.
+<span class="fc" id="L389">        List&lt;double[]&gt; samples = new ArrayList&lt;&gt;();       // {balance, pixel, seg index}</span>
+<span class="fc" id="L390">        double total = 0;</span>
+<span class="fc bfc" id="L391" title="All 2 branches covered.">        for (Layout.Seg sx : g.xs) total += sx.qHi() - sx.qLo();</span>
+<span class="fc bfc" id="L392" title="All 2 branches covered.">        for (int i = 0; i &lt; n; i++) {</span>
+<span class="fc" id="L393">            double q = (i + 0.5) * total / n;</span>
+<span class="pc bpc" id="L394" title="1 of 2 branches missed.">            for (int k = 0; k &lt; g.xs.size(); k++) {</span>
+<span class="fc" id="L395">                Layout.Seg sx = g.xs.get(k);</span>
+<span class="fc" id="L396">                double wdt = sx.qHi() - sx.qLo();</span>
+<span class="pc bpc" id="L397" title="1 of 4 branches missed.">                if (q &lt;= wdt || k == g.xs.size() - 1) {</span>
+<span class="fc" id="L398">                    double step = g.steps[k], x = Math.round(sx.unmap(sx.qLo() + Math.min(q, wdt)) / step) * step;</span>
+<span class="fc" id="L399">                    samples.add(new double[] {x, sx.map(x), k});</span>
+<span class="fc" id="L400">                    break;</span>
+                }
+<span class="fc" id="L402">                q -= wdt;</span>
+            }
+        }
+        // The default frame: the given probe, or about 30% into Swept out (as far as it is in view).
+<span class="pc bpc" id="L406" title="1 of 4 branches missed.">        if (samples.isEmpty() &amp;&amp; probe == null) {</span>
+<span class="nc" id="L407">            probe = Math.round(s.thresholdMax() + s.nominalMax() + 0.3 * (Math.min(s.sweptOutMax(), g.xs.get(0).d1()) - s.nominalMax()));</span>
+        }
+        int dflt;
+<span class="fc bfc" id="L410" title="All 2 branches covered.">        if (probe != null) {</span>
+<span class="fc" id="L411">            probe = Math.max(Math.round(g.xMin()), Math.min(Math.round(g.xMax()), probe));   // keep it in view</span>
+<span class="fc" id="L412">            int k = 0;</span>
+<span class="fc bfc" id="L413" title="All 4 branches covered.">            for (int i = 0; i &lt; g.xs.size(); i++) if (probe &gt;= g.xs.get(i).d0()) k = i;</span>
+<span class="fc bfc" id="L414" title="All 2 branches covered.">            if (!g.visX(probe)) probe = Math.round(g.xs.get(k).d1());                          // not in the cut</span>
+<span class="fc" id="L415">            samples.add(new double[] {probe, g.xs.get(k).map(probe), k});</span>
+<span class="pc" id="L416">            samples.sort(Comparator.comparingDouble(q -&gt; q[1]));</span>
+<span class="fc" id="L417">            dflt = 0;</span>
+<span class="pc bpc" id="L418" title="1 of 4 branches missed.">            for (int i = 0; i &lt; samples.size(); i++) if (samples.get(i)[0] == probe) dflt = i;</span>
+<span class="fc" id="L419">        } else {</span>
+<span class="fc" id="L420">            double outLo = s.thresholdMax() + s.nominalMax(), outHi = Math.min(s.thresholdMax() + s.sweptOutMax(), g.xs.get(0).d1());</span>
+<span class="fc" id="L421">            double target = outLo + 0.3 * (outHi - outLo);</span>
+<span class="fc" id="L422">            dflt = 0;</span>
+<span class="fc bfc" id="L423" title="All 2 branches covered.">            for (int i = 1; i &lt; samples.size(); i++) {</span>
+<span class="fc bfc" id="L424" title="All 2 branches covered.">                if (Math.abs(samples.get(i)[0] - target) &lt; Math.abs(samples.get(dflt)[0] - target)) dflt = i;</span>
+            }
+        }
+
+<span class="fc" id="L428">        Map&lt;String, Object&gt; framesLayer = layer(&quot;frames&quot;);</span>
+<span class="fc" id="L429">        List&lt;Map&lt;String, Object&gt;&gt; frames = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L430">        framesLayer.put(&quot;frames&quot;, frames);</span>
+<span class="fc bfc" id="L431" title="All 2 branches covered.">        for (int i = 0; i &lt; samples.size(); i++) {</span>
+<span class="fc" id="L432">            double[] sm = samples.get(i);</span>
+<span class="fc" id="L433">            Layout.Seg sx = g.xs.get((int) sm[2]);</span>
+<span class="fc bfc" id="L434" title="All 4 branches covered.">            double lo = i &gt; 0 &amp;&amp; samples.get(i - 1)[2] == sm[2] ? (samples.get(i - 1)[1] + sm[1]) / 2 : sx.qLo();</span>
+<span class="fc bfc" id="L435" title="All 4 branches covered.">            double hi = i &lt; samples.size() - 1 &amp;&amp; samples.get(i + 1)[2] == sm[2] ? (samples.get(i + 1)[1] + sm[1]) / 2 : sx.qHi();</span>
+<span class="fc" id="L436">            Sweep.Point p = s.at(Math.round(sm[0]));</span>
+<span class="fc" id="L437">            Map&lt;String, Object&gt; f = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L438" title="All 2 branches covered.">            f.put(&quot;cls&quot;, i == dflt ? &quot;f d&quot; : &quot;f&quot;);</span>
+<span class="fc" id="L439">            f.put(&quot;x&quot;, r(lo));</span>
+<span class="fc" id="L440">            f.put(&quot;y&quot;, r(g.plotTop));</span>
+<span class="fc" id="L441">            f.put(&quot;width&quot;, r(Math.max(hi - lo, 0.5)));</span>
+<span class="fc" id="L442">            f.put(&quot;height&quot;, r(g.plotBottom - g.plotTop));</span>
+<span class="fc" id="L443">            cur = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L444">            f.put(&quot;shapes&quot;, cur);</span>
+<span class="fc" id="L445">            line(sm[1], g.plotBottom, sm[1], g.plotTop, stroke(PURPLE, 1.4, &quot;5 4&quot;, 0.9));</span>
+<span class="pc bpc" id="L446" title="1 of 4 branches missed.">            if (p.amount() != null &amp;&amp; g.visY(p.amount())) {</span>
+<span class="fc" id="L447">                double py = g.y(p.amount());</span>
+<span class="fc" id="L448">                line(g.axisX(), py, sm[1], py, stroke(PURPLE, 1.1, &quot;3 3&quot;, 0.8));</span>
+<span class="fc" id="L449">                dot(sm[0], p.amount(), 7, &quot;fill:&quot; + PURPLE + &quot;;fill-opacity:.18;stroke:&quot; + PURPLE + &quot;;stroke-width:1.4&quot;);</span>
+<span class="fc" id="L450">                dot(sm[0], p.amount(), 3.2, &quot;fill:&quot; + PURPLE);</span>
+            }
+<span class="fc" id="L452">            statusLine(p);</span>
+<span class="fc bfc" id="L453" title="All 2 branches covered.">            for (int k = 0; k &lt; rows.size(); k++) {</span>
+<span class="fc" id="L454">                Row row = rows.get(k);</span>
+<span class="fc bfc" id="L455" title="All 2 branches covered.">                if (row.zone == p.zone()) {</span>
+                    // the row of this balance: highlighted, with the value of y right after its expression
+<span class="fc" id="L457">                    cur.add(shape(&quot;rect&quot;, &quot;x&quot;, r(valX - 8), &quot;y&quot;, r(fxTop + k * rowH + 1), &quot;width&quot;, r(pf.width() - valX + 4),</span>
+<span class="fc" id="L458">                        &quot;height&quot;, r(rowH - 2), &quot;rx&quot;, &quot;5&quot;, &quot;style&quot;, &quot;fill:&quot; + p.zone().fill() + &quot;;fill-opacity:.18&quot;));</span>
+<span class="fc bfc" id="L459" title="All 2 branches covered.">                    if (p.amount() != null) {                  // ∄ needs no &quot;= ∄&quot;</span>
+<span class="pc bpc" id="L460" title="1 of 2 branches missed.">                        String v = pf.width() &lt; 500 ? Money.compact(p.amount()) : Money.full(p.amount());</span>
+<span class="fc" id="L461">                        cur.add(shape(&quot;text&quot;, &quot;x&quot;, r(valX + plainWidth(row.value) + 10), &quot;y&quot;, r(fxTop + (k + 0.72) * rowH), &quot;style&quot;,</span>
+<span class="fc" id="L462">                            &quot;font-size:&quot; + (pf.font() - 1) + &quot;px;font-weight:600;fill:&quot; + PURPLE, &quot;body&quot;, esc(&quot;= &quot; + v)));</span>
+                    }
+                }
+            }
+<span class="fc" id="L466">            frames.add(f);</span>
+        }
+<span class="fc" id="L468">    }</span>
+
+    // ---------------------------------------------------------------- the two status lines
+
+    private static final String LABEL = &quot;font-size:12.5px;fill:var(--soft)&quot;;
+
+    /** &quot;threshold:&quot; or, when T_min = T_max, &quot;target balance:&quot; — the label of the first status line. */
+    static String thresholdLabel(Sweep s) {
+<span class="fc bfc" id="L476" title="All 2 branches covered.">        return s.singleThreshold() ? &quot;target balance:&quot; : &quot;threshold:&quot;;</span>
+    }
+
+    /**
+     * The threshold with its nominals: &quot;−$8k [$40k ; $60k] +$10k&quot;, just &quot;[$50k]&quot; for a target balance; a nominal of 0
+     * is left out (no &quot;−$0&quot; or &quot;+$0&quot;).
+     */
+    static String thresholdClosed(Sweep s) {
+<span class="fc bfc" id="L484" title="All 2 branches covered.">        String core = s.singleThreshold() ? &quot;[&quot; + Money.compact(s.thresholdMin()) + &quot;]&quot;</span>
+<span class="fc" id="L485">            : &quot;[&quot; + Money.compact(s.thresholdMin()) + &quot; ; &quot; + Money.compact(s.thresholdMax()) + &quot;]&quot;;</span>
+<span class="fc bfc" id="L486" title="All 2 branches covered.">        return (s.nominalMin() &gt; 0 ? &quot;−&quot; + Money.compact(s.nominalMin()) + &quot; &quot; : &quot;&quot;) + core</span>
+<span class="fc bfc" id="L487" title="All 2 branches covered.">            + (s.nominalMax() &gt; 0 ? &quot; +&quot; + Money.compact(s.nominalMax()) : &quot;&quot;);</span>
+    }
+
+    /** The same as an open interval: &quot;($32k ; $70k)&quot;, the balances where nothing is swept. */
+    static String thresholdOpen(Sweep s) {
+<span class="fc" id="L492">        return &quot;(&quot; + Money.compact(s.thresholdMin() - s.nominalMin()) + &quot; ; &quot; + Money.compact(s.thresholdMax() + s.nominalMax()) + &quot;)&quot;;</span>
+    }
+
+    private static final double LABEL_W = 100;
+
+    private void statusLabels() {
+<span class="fc" id="L498">        cur.add(shape(&quot;text&quot;, &quot;x&quot;, &quot;0&quot;, &quot;y&quot;, &quot;17&quot;, &quot;cls&quot;, &quot;m&quot;, &quot;style&quot;, LABEL, &quot;body&quot;, esc(thresholdLabel(s))));</span>
+<span class="fc" id="L499">        cur.add(shape(&quot;text&quot;, &quot;x&quot;, r(LABEL_W), &quot;y&quot;, &quot;17&quot;, &quot;style&quot;, &quot;font-size:13px;fill:var(--ink)&quot;,</span>
+<span class="fc bfc" id="L500" title="All 2 branches covered.">            &quot;body&quot;, esc(thresholdClosed(s)) + (pf.width() &gt;= 500</span>
+<span class="fc" id="L501">                ? &quot;&lt;tspan dx=\&quot;12\&quot; style=\&quot;fill:var(--soft)\&quot;&gt;&quot; + esc(thresholdOpen(s)) + &quot;&lt;/tspan&gt;&quot; : &quot;&quot;)));</span>
+<span class="fc" id="L502">        cur.add(shape(&quot;text&quot;, &quot;x&quot;, &quot;0&quot;, &quot;y&quot;, &quot;45&quot;, &quot;cls&quot;, &quot;m&quot;, &quot;style&quot;, LABEL, &quot;body&quot;, &quot;sweep status:&quot;));</span>
+<span class="fc" id="L503">    }</span>
+
+    /** The second status line, one per frame: the zone as a badge, the balance → the amount, which way the money goes. */
+    private void statusLine(Sweep.Point p) {
+<span class="fc" id="L507">        Zone z = p.zone();</span>
+<span class="fc bfc" id="L508" title="All 2 branches covered.">        String title = z.title() + (z.terminal() ? &quot; ⏚&quot; : &quot;&quot;);</span>
+<span class="fc" id="L509">        double bw = title.length() * 7.1 + 18, y0 = 30;</span>
+<span class="fc" id="L510">        cur.add(shape(&quot;rect&quot;, &quot;x&quot;, r(LABEL_W), &quot;y&quot;, r(y0), &quot;width&quot;, r(bw), &quot;height&quot;, &quot;22&quot;, &quot;rx&quot;, &quot;7&quot;,</span>
+<span class="fc" id="L511">            &quot;style&quot;, &quot;fill:&quot; + z.fill() + &quot;;fill-opacity:.18&quot;));</span>
+<span class="fc" id="L512">        text(LABEL_W + bw / 2, y0 + 15, &quot;middle&quot;, z.ink(), z.titleMarkup(700), null, 12);</span>
+<span class="fc bfc" id="L513" title="All 2 branches covered.">        String y = p.amount() == null ? &quot;∄ (terminal failure)&quot; : Money.full(p.amount());</span>
+<span class="fc" id="L514">        cur.add(shape(&quot;text&quot;, &quot;x&quot;, r(LABEL_W + bw + 10), &quot;y&quot;, r(y0 + 15), &quot;style&quot;, &quot;font-size:13px;fill:var(--soft)&quot;,</span>
+<span class="fc" id="L515">            &quot;body&quot;, &quot;&lt;tspan style=\&quot;fill:&quot; + PURPLE + &quot;;font-weight:600\&quot;&gt;&quot; + Money.full(p.balance()) + &quot;&lt;/tspan&gt; → &quot;</span>
+<span class="fc" id="L516">                + &quot;&lt;tspan style=\&quot;fill:&quot; + PURPLE + &quot;;font-weight:600\&quot;&gt;&quot; + esc(y) + &quot;&lt;/tspan&gt;&quot;));</span>
+<span class="fc" id="L517">        String dir = direction(z);</span>
+<span class="fc bfc" id="L518" title="All 2 branches covered.">        if (!dir.isEmpty()) {</span>
+<span class="fc bfc" id="L519" title="All 2 branches covered.">            boolean below = pf.width() &lt; 500;          // on S the direction gets a line of its own</span>
+<span class="fc bfc" id="L520" title="All 4 branches covered.">            cur.add(shape(&quot;text&quot;, &quot;x&quot;, below ? r(LABEL_W) : r(pf.width()), &quot;y&quot;, r(below ? y0 + 38 : y0 + 15),</span>
+<span class="fc bfc" id="L521" title="All 2 branches covered.">                &quot;anchor&quot;, below ? null : &quot;end&quot;, &quot;cls&quot;, &quot;m&quot;, &quot;style&quot;, &quot;font-size:12.5px;fill:var(--soft)&quot;, &quot;body&quot;, dir));</span>
+        }
+<span class="fc" id="L523">    }</span>
+
+    /** Which way the money goes in a zone; empty for the terminal failures. */
+    static String direction(Zone z) {
+<span class="fc bfc" id="L527" title="All 4 branches covered.">        return switch (z) {</span>
+<span class="fc" id="L528">            case SWEPT_IN_PARTIAL, SWEPT_IN_FULL -&gt; &quot;from Investment-Account to DDA&quot;;</span>
+<span class="fc" id="L529">            case SWEPT_OUT -&gt; &quot;from DDA to Investment-Account&quot;;</span>
+<span class="fc" id="L530">            case SWEPT_IN_ZERO, SWEPT_OUT_OVERFLOW -&gt; &quot;&quot;;</span>
+<span class="fc" id="L531">            default -&gt; &quot;nothing to transfer&quot;;</span>
+        };
+    }
+
+    // ---------------------------------------------------------------- labels, formula, legend
+
+    /** Places the x labels in rows; fills {x, y of the point, centre, baseline, colour index}; returns the bottom. */
+    private double labelRows(List&lt;double[]&gt; out) {
+<span class="fc" id="L539">        double tMin = s.thresholdMin(), tMax = s.thresholdMax(), nMin = s.nominalMin(), nMax = s.nominalMax();</span>
+<span class="fc" id="L540">        double a = s.sweptInMax(), l = s.sweptOutMax();</span>
+<span class="fc" id="L541">        List&lt;double[]&gt; xs = new ArrayList&lt;&gt;();          // {x, y, pri, colour index}</span>
+<span class="fc" id="L542">        xs.add(new double[] {tMin, 0, 1, 0});</span>
+<span class="fc bfc" id="L543" title="All 2 branches covered.">        if (!s.singleThreshold()) xs.add(new double[] {tMax, 0, 1, 0});</span>
+<span class="fc bfc" id="L544" title="All 4 branches covered.">        if (nMin &gt; 0) xs.add(new double[] {tMin - nMin, a == 0 ? 0 : nMin, 2, 1});</span>
+<span class="fc bfc" id="L545" title="All 2 branches covered.">        if (nMax &gt; 0) xs.add(new double[] {tMax + nMax, nMax, 2, 2});</span>
+<span class="fc bfc" id="L546" title="All 2 branches covered.">        if (a &gt; 0) xs.add(new double[] {tMin - a, a, 2, 3});</span>
+<span class="fc" id="L547">        xs.add(new double[] {tMax + l, l, 1, 4});</span>
+<span class="pc bpc" id="L548" title="2 of 6 branches missed.">        xs.removeIf(q -&gt; q[2] &gt; pf.pri() || !g.visX(q[0]) || !g.visY(q[1]));</span>
+<span class="fc" id="L549">        xs.sort(Comparator.comparingDouble(q -&gt; q[0]));</span>
+<span class="fc" id="L550">        List&lt;Double&gt; rowEnds = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L551">        double bottom = g.plotBottom + 18;</span>
+<span class="fc bfc" id="L552" title="All 2 branches covered.">        for (double[] q : xs) {</span>
+<span class="fc" id="L553">            double w = Money.compact(q[0]).length() * 7.4 * pf.font() / 14 + 4;</span>
+<span class="fc" id="L554">            double cx = Math.min(Math.max(g.x(q[0]), w / 2 + 2), pf.width() - 2 - w / 2);</span>
+<span class="fc" id="L555">            int row = 0;</span>
+<span class="fc bfc" id="L556" title="All 4 branches covered.">            while (row &lt; rowEnds.size() &amp;&amp; cx - w / 2 &lt; rowEnds.get(row) + 9) row++;</span>
+<span class="fc bfc" id="L557" title="All 2 branches covered.">            if (row == rowEnds.size()) rowEnds.add(0.0);</span>
+<span class="fc" id="L558">            rowEnds.set(row, cx + w / 2);</span>
+<span class="fc" id="L559">            double base = g.plotBottom + 18 + row * pf.rowGap();</span>
+<span class="fc" id="L560">            bottom = Math.max(bottom, base);</span>
+<span class="fc" id="L561">            out.add(new double[] {q[0], q[1], cx, base, q[3]});</span>
+<span class="fc" id="L562">        }</span>
+<span class="fc" id="L563">        return bottom + 14;</span>
+    }
+
+    private String ink(int i) {
+<span class="fc bfc" id="L567" title="All 5 branches covered.">        return switch (i) {</span>
+<span class="fc" id="L568">            case 1 -&gt; Zone.SWEPT_IN_FULL.ink();</span>
+<span class="fc" id="L569">            case 2 -&gt; Zone.SWEPT_OUT.ink();</span>
+<span class="fc" id="L570">            case 3 -&gt; Zone.SWEPT_IN_PARTIAL.ink();</span>
+<span class="fc" id="L571">            case 4 -&gt; Zone.SWEPT_OUT_OVERFLOW.ink();</span>
+<span class="fc" id="L572">            default -&gt; &quot;var(--ink)&quot;;</span>
+        };
+    }
+
+    private void yLabels(double ax) {
+<span class="fc" id="L577">        List&lt;double[]&gt; ys = new ArrayList&lt;&gt;();          // {y, colour index}</span>
+<span class="fc bfc" id="L578" title="All 2 branches covered.">        if (s.sweptInMax() &gt; 0) ys.add(new double[] {s.sweptInMax(), 3});</span>
+<span class="fc" id="L579">        ys.add(new double[] {s.sweptOutMax(), 4});</span>
+<span class="fc bfc" id="L580" title="All 6 branches covered.">        if (pf.pri() &gt;= 2 &amp;&amp; s.nominalMin() &gt; 0 &amp;&amp; s.sweptInMax() &gt; 0) ys.add(new double[] {s.nominalMin(), 1});</span>
+<span class="fc bfc" id="L581" title="All 4 branches covered.">        if (pf.pri() &gt;= 2 &amp;&amp; s.nominalMax() &gt; 0) ys.add(new double[] {s.nominalMax(), 2});</span>
+<span class="pc bpc" id="L582" title="1 of 2 branches missed.">        ys.removeIf(q -&gt; !g.visY(q[0]));</span>
+<span class="fc" id="L583">        java.util.Set&lt;Double&gt; seen = new java.util.HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L584" title="All 2 branches covered.">        ys.removeIf(q -&gt; !seen.add(q[0]));             // τ_min = τ_max: one label is enough</span>
+<span class="fc" id="L585">        ys.sort(Comparator.comparingDouble(q -&gt; -g.y(q[0])));</span>
+<span class="fc" id="L586">        double prev = Double.MAX_VALUE;</span>
+<span class="fc bfc" id="L587" title="All 2 branches covered.">        for (double[] q : ys) {</span>
+<span class="fc" id="L588">            double cy = Math.min(g.y(q[0]), prev - 15);</span>
+<span class="fc" id="L589">            prev = cy;</span>
+<span class="fc" id="L590">            line(ax - 3, g.y(q[0]), ax + 3, g.y(q[0]), stroke(ink((int) q[1]), 1.2, null, 1));</span>
+<span class="fc" id="L591">            text(ax + 7, cy - 4, null, ink((int) q[1]), esc(Money.compact(q[0])), &quot;tx&quot;, pf.font());</span>
+<span class="fc" id="L592">        }</span>
+<span class="fc" id="L593">    }</span>
+
+    /** One row of the formula: its value, its condition and its status. */
+<span class="fc" id="L596">    private record Row(String value, String cond, Zone zone) {</span>
+    }
+
+    /** Roughly how wide a formula text is drawn (for the amount after it). */
+    private double plainWidth(String t) {
+<span class="fc" id="L601">        return t.replace(&quot;_min&quot;, &quot;mi&quot;).replace(&quot;_max&quot;, &quot;ma&quot;).length() * pf.font() * 0.56;</span>
+    }
+
+    /** One row per status, in the order of x; rows that cannot happen (τ = 0, T_min = T_max) are left out. */
+    private List&lt;Row&gt; formulaRows() {
+<span class="fc" id="L606">        boolean t = s.singleThreshold();</span>
+<span class="fc bfc" id="L607" title="All 4 branches covered.">        String tn = t ? &quot;T&quot; : &quot;T_min&quot;, tx = t ? &quot;T&quot; : &quot;T_max&quot;;</span>
+<span class="fc bfc" id="L608" title="All 4 branches covered.">        boolean n0 = s.nominalMin() == 0, m0 = s.nominalMax() == 0;</span>
+<span class="fc bfc" id="L609" title="All 2 branches covered.">        String inEdge = n0 ? &quot;x &lt; &quot; + tn : &quot;x ≤ &quot; + tn + &quot; − τ_min&quot;;            // where a sweep In is needed</span>
+<span class="fc" id="L610">        List&lt;Row&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L611" title="All 2 branches covered.">        if (s.sweptInMax() == 0) {</span>
+<span class="fc" id="L612">            rows.add(new Row(&quot;∄ ⏚&quot;, inEdge, Zone.SWEPT_IN_ZERO));</span>
+        } else {
+<span class="fc" id="L614">            rows.add(new Row(&quot;A&quot;, &quot;x &lt; &quot; + tn + &quot; − A&quot;, Zone.SWEPT_IN_PARTIAL));</span>
+<span class="fc" id="L615">            rows.add(new Row(tn + &quot; − x&quot;, tn + &quot; − A ≤ &quot; + inEdge, Zone.SWEPT_IN_FULL));</span>
+        }
+<span class="fc bfc" id="L617" title="All 2 branches covered.">        if (!n0) rows.add(new Row(&quot;0&quot;, tn + &quot; − τ_min &lt; x &lt; &quot; + tn, Zone.IN_NOMINAL_MIN));</span>
+<span class="fc bfc" id="L618" title="All 2 branches covered.">        rows.add(new Row(&quot;0&quot;, t ? &quot;x = T&quot; : tn + &quot; ≤ x ≤ &quot; + tx, Zone.IN_RANGE));</span>
+<span class="fc bfc" id="L619" title="All 2 branches covered.">        if (!m0) rows.add(new Row(&quot;0&quot;, tx + &quot; &lt; x &lt; &quot; + tx + &quot; + τ_max&quot;, Zone.IN_NOMINAL_MAX));</span>
+<span class="fc bfc" id="L620" title="All 2 branches covered.">        rows.add(new Row(&quot;x − &quot; + tx, (m0 ? tx + &quot; &lt; x&quot; : tx + &quot; + τ_max ≤ x&quot;) + &quot; ≤ &quot; + tx + &quot; + L&quot;, Zone.SWEPT_OUT));</span>
+<span class="fc" id="L621">        rows.add(new Row(&quot;∄ ⏚&quot;, &quot;x &gt; &quot; + tx + &quot; + L&quot;, Zone.SWEPT_OUT_OVERFLOW));</span>
+<span class="fc" id="L622">        return rows;</span>
+    }
+
+    private void legend(double y) {
+<span class="fc" id="L626">        boolean single = s.singleThreshold();</span>
+<span class="fc" id="L627">        List&lt;String[]&gt; items = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L628" title="All 2 branches covered.">        if (single) {</span>
+<span class="fc" id="L629">            items.add(new String[] {&quot;T&quot;, Money.full(s.thresholdMin())});</span>
+        } else {
+<span class="fc" id="L631">            items.add(new String[] {&quot;T_min&quot;, Money.full(s.thresholdMin())});</span>
+<span class="fc" id="L632">            items.add(new String[] {&quot;T_max&quot;, Money.full(s.thresholdMax())});</span>
+        }
+<span class="fc" id="L634">        items.add(new String[] {&quot;τ_min&quot;, Money.full(s.nominalMin())});</span>
+<span class="fc" id="L635">        items.add(new String[] {&quot;τ_max&quot;, Money.full(s.nominalMax())});</span>
+<span class="fc" id="L636">        items.add(new String[] {&quot;A&quot;, Money.full(s.sweptInMax())});</span>
+<span class="fc" id="L637">        items.add(new String[] {&quot;L&quot;, Money.full(s.sweptOutMax())});</span>
+<span class="pc bpc" id="L638" title="1 of 2 branches missed.">        int perLine = pf.width() &lt; 500 ? 2 : 6;</span>
+<span class="fc" id="L639">        double colW = (pf.width() - 16) / (double) perLine;</span>
+<span class="fc bfc" id="L640" title="All 2 branches covered.">        for (int i = 0; i &lt; items.size(); i++) {</span>
+<span class="fc" id="L641">            double x = 8 + (i % perLine) * colW, yy = y + (i / perLine) * 17;</span>
+<span class="fc" id="L642">            cur.add(shape(&quot;text&quot;, &quot;x&quot;, r(x), &quot;y&quot;, r(yy), &quot;style&quot;, &quot;font-size:12px;fill:var(--soft)&quot;,</span>
+<span class="fc" id="L643">                &quot;body&quot;, &quot;&lt;tspan class=\&quot;tx\&quot; style=\&quot;font-size:13px;fill:var(--ink)\&quot;&gt;&quot; + tex(items.get(i)[0]) + &quot;&lt;/tspan&gt;&quot;</span>
+<span class="fc" id="L644">                    + &quot;&lt;tspan dx=\&quot;4\&quot;&gt;&quot; + items.get(i)[1] + &quot;&lt;/tspan&gt;&quot;));</span>
+        }
+<span class="fc" id="L646">    }</span>
+
+    // ---------------------------------------------------------------- primitives
+
+    private Map&lt;String, Object&gt; layer(String cls) {
+<span class="fc" id="L651">        Map&lt;String, Object&gt; layer = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L652">        layer.put(&quot;cls&quot;, cls);</span>
+<span class="fc" id="L653">        cur = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L654">        layer.put(&quot;shapes&quot;, cur);</span>
+<span class="fc" id="L655">        layers.add(layer);</span>
+<span class="fc" id="L656">        return layer;</span>
+    }
+
+    /** A shape: its tag and attributes; null values are left out (and so leave out the attribute). */
+    static Map&lt;String, Object&gt; shape(String tag, String... kv) {
+<span class="fc" id="L661">        Map&lt;String, Object&gt; m = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L662">        m.put(&quot;tag&quot;, tag);</span>
+<span class="fc bfc" id="L663" title="All 4 branches covered.">        for (int i = 0; i + 1 &lt; kv.length; i += 2) if (kv[i + 1] != null) m.put(kv[i], kv[i + 1]);</span>
+<span class="fc" id="L664">        return m;</span>
+    }
+
+    /**
+     * Who owns the edge between two slices: the zone of the balance exactly at the boundary (its interval is closed
+     * there). The owner's edge is an &lt;b&gt;extremal edge&lt;/b&gt;: its surface turns away from the viewer, so the shading
+     * darkens towards the edge along it, with a thin highlight ridge just inside; the neighbour's surface is simply
+     * cut there, in a faint shadow (Ghose and Palmer, 2015: the side with the extremal edge is seen as the nearer one,
+     * the one the border belongs to). A target balance [T] owns a point of its own: a narrow ridge, shaded on both
+     * sides. Built from thin rectangles, so the template needs no gradients.
+     */
+    private void edges(Object[][] bands) {
+<span class="fc" id="L676">        java.util.Set&lt;Long&gt; seen = new java.util.TreeSet&lt;&gt;();</span>
+<span class="fc bfc" id="L677" title="All 2 branches covered.">        for (int i = 0; i + 1 &lt; bands.length; i++) seen.add(Math.round((double) bands[i][1]));</span>
+<span class="fc bfc" id="L678" title="All 2 branches covered.">        for (long v : seen) {</span>
+<span class="pc bpc" id="L679" title="2 of 4 branches missed.">            if (v &lt;= g.xMin() || v &gt;= g.xMax()) continue;</span>
+<span class="fc" id="L680">            boolean visible = false;</span>
+<span class="fc bfc" id="L681" title="All 6 branches covered.">            for (Layout.Seg sx : g.xs) visible |= v &gt; sx.d0() &amp;&amp; v &lt; sx.d1();</span>
+<span class="pc bpc" id="L682" title="1 of 2 branches missed.">            if (!visible) continue;</span>
+<span class="fc" id="L683">            Zone own = s.at(v).zone(), zl = s.at(v - 1).zone(), zr = s.at(v + 1).zone();</span>
+<span class="pc bpc" id="L684" title="3 of 4 branches missed.">            if (zl == zr &amp;&amp; own == zl) continue;</span>
+<span class="fc" id="L685">            double x = g.x(v);</span>
+<span class="fc bfc" id="L686" title="All 2 branches covered.">            if (own == zl) extremal(x, -1, own);</span>
+<span class="fc bfc" id="L687" title="All 2 branches covered.">            else if (own == zr) extremal(x, 1, own);</span>
+            else {                                      // a point of its own: [T]
+<span class="fc" id="L689">                extremal(x - 2.5, 1, own);</span>
+<span class="fc" id="L690">                extremal(x + 2.5, -1, own);</span>
+<span class="fc" id="L691">                cur.add(shape(&quot;rect&quot;, &quot;x&quot;, r(x - 2.5), &quot;y&quot;, r(g.plotTop), &quot;width&quot;, &quot;5&quot;, &quot;height&quot;, r(g.plotBottom - g.plotTop),</span>
+<span class="fc" id="L692">                    &quot;style&quot;, &quot;fill:&quot; + own.fill() + &quot;;fill-opacity:.10&quot;));</span>
+            }
+<span class="fc" id="L694">        }</span>
+<span class="fc" id="L695">    }</span>
+
+    /** The owner's extremal edge at {@code x}, the owner on side {@code d} (-1: left, 1: right). */
+    private void extremal(double x, int d, Zone owner) {
+<span class="fc" id="L699">        String y = r(g.plotTop), h = r(g.plotBottom - g.plotTop);</span>
+<span class="fc" id="L700">        double step = 1.5;</span>
+<span class="fc bfc" id="L701" title="All 2 branches covered.">        for (int i = 0; i &lt; 6; i++) {                   // the surface turning away: darker towards the edge</span>
+<span class="fc" id="L702">            double o = 0.28 * Math.pow(1 - i / 6.0, 1.6);</span>
+<span class="fc bfc" id="L703" title="All 2 branches covered.">            double qx = d &lt; 0 ? x - (i + 1) * step : x + i * step;</span>
+<span class="fc" id="L704">            cur.add(shape(&quot;rect&quot;, &quot;x&quot;, r(qx), &quot;y&quot;, y, &quot;width&quot;, r(step), &quot;height&quot;, h,</span>
+<span class="fc" id="L705">                &quot;style&quot;, &quot;fill:&quot; + owner.fill() + &quot;;fill-opacity:&quot; + String.format(java.util.Locale.ROOT, &quot;%.3f&quot;, o)));</span>
+        }
+<span class="fc" id="L707">        double hx = x + d * 3.5;                        // the highlight ridge</span>
+<span class="fc" id="L708">        cur.add(shape(&quot;line&quot;, &quot;x1&quot;, r(hx), &quot;y1&quot;, y, &quot;x2&quot;, r(hx), &quot;y2&quot;, r(g.plotBottom),</span>
+            &quot;style&quot;, &quot;stroke:#fff;stroke-opacity:.55;stroke-width:1&quot;));
+<span class="fc bfc" id="L710" title="All 2 branches covered.">        for (int i = 0; i &lt; 4; i++) {                   // the neighbour, cut, in a faint shadow</span>
+<span class="fc" id="L711">            double o = 0.09 * (1 - i / 4.0);</span>
+<span class="fc bfc" id="L712" title="All 2 branches covered.">            double qx = d &lt; 0 ? x + i * step : x - (i + 1) * step;</span>
+<span class="fc" id="L713">            cur.add(shape(&quot;rect&quot;, &quot;x&quot;, r(qx), &quot;y&quot;, y, &quot;width&quot;, r(step), &quot;height&quot;, h,</span>
+<span class="fc" id="L714">                &quot;style&quot;, &quot;fill:#000;fill-opacity:&quot; + String.format(java.util.Locale.ROOT, &quot;%.3f&quot;, o)));</span>
+        }
+<span class="fc" id="L716">    }</span>
+
+    private void band(double qa, double w, Zone z) {
+<span class="fc" id="L719">        String x = r(qa), y = r(g.plotTop), wd = r(w), ht = r(g.plotBottom - g.plotTop);</span>
+<span class="fc" id="L720">        cur.add(shape(&quot;rect&quot;, &quot;x&quot;, x, &quot;y&quot;, y, &quot;width&quot;, wd, &quot;height&quot;, ht, &quot;style&quot;, &quot;fill:&quot; + z.fill() + &quot;;fill-opacity:&quot; + z.opacity()));</span>
+<span class="fc bfc" id="L721" title="All 2 branches covered.">        if (z.terminal()) cur.add(shape(&quot;rect&quot;, &quot;x&quot;, x, &quot;y&quot;, y, &quot;width&quot;, wd, &quot;height&quot;, ht, &quot;fill&quot;, &quot;url(#hatch)&quot;));</span>
+<span class="fc" id="L722">    }</span>
+
+<span class="fc" id="L724">    private static final Pattern SUB = Pattern.compile(&quot;([A-Za-zα-ω]+)(?:_([a-z]+))?&quot;);</span>
+
+    /**
+     * &quot;T_min − τ_min&quot; → as TeX sets it: math-italic letters (class &quot;mi&quot;), upright subscripts a little below the
+     * baseline, upright digits and operators (escaped markup).
+     */
+    static String tex(String t) {
+<span class="fc" id="L731">        StringBuilder o = new StringBuilder();</span>
+<span class="fc" id="L732">        Matcher m = SUB.matcher(t);</span>
+<span class="fc" id="L733">        int i = 0;</span>
+<span class="fc" id="L734">        boolean shifted = false;</span>
+<span class="fc" id="L735">        String up = &quot;-0.2em&quot;, dn = &quot;0.2em&quot;;</span>
+<span class="fc bfc" id="L736" title="All 2 branches covered.">        while (m.find()) {</span>
+<span class="fc" id="L737">            String pre = esc(t.substring(i, m.start()));</span>
+<span class="fc bfc" id="L738" title="All 2 branches covered.">            if (!pre.isEmpty()) {</span>
+<span class="fc bfc" id="L739" title="All 2 branches covered.">                o.append(&quot;&lt;tspan dy=\&quot;&quot;).append(shifted ? up : &quot;0&quot;).append(&quot;\&quot;&gt;&quot;).append(pre).append(&quot;&lt;/tspan&gt;&quot;);</span>
+<span class="fc" id="L740">                shifted = false;</span>
+            }
+<span class="pc bpc" id="L742" title="1 of 2 branches missed.">            o.append(&quot;&lt;tspan class=\&quot;mi\&quot; dy=\&quot;&quot;).append(shifted ? up : &quot;0&quot;).append(&quot;\&quot;&gt;&quot;).append(m.group(1)).append(&quot;&lt;/tspan&gt;&quot;);</span>
+<span class="fc bfc" id="L743" title="All 2 branches covered.">            shifted = m.group(2) != null;</span>
+<span class="fc bfc" id="L744" title="All 2 branches covered.">            if (shifted) o.append(&quot;&lt;tspan dy=\&quot;&quot;).append(dn).append(&quot;\&quot; style=\&quot;font-size:0.7em\&quot;&gt;&quot;).append(m.group(2)).append(&quot;&lt;/tspan&gt;&quot;);</span>
+<span class="fc" id="L745">            i = m.end();</span>
+<span class="fc" id="L746">        }</span>
+<span class="fc" id="L747">        String post = esc(t.substring(i));</span>
+<span class="pc bpc" id="L748" title="1 of 4 branches missed.">        if (!post.isEmpty()) o.append(&quot;&lt;tspan dy=\&quot;&quot;).append(shifted ? up : &quot;0&quot;).append(&quot;\&quot;&gt;&quot;).append(post).append(&quot;&lt;/tspan&gt;&quot;);</span>
+<span class="fc" id="L749">        return o.toString();</span>
+    }
+
+    private void seg(double x1, double y1, double x2, double y2, String st) {
+<span class="fc bfc" id="L753" title="All 2 branches covered.">        for (Layout.Seg sx : g.xs) {</span>
+<span class="fc bfc" id="L754" title="All 2 branches covered.">            for (Layout.Seg sy : g.ys) {</span>
+<span class="fc" id="L755">                double[] c = Layout.clip(x1, y1, x2, y2, sx.d0(), sx.d1(), sy.d0(), sy.d1());</span>
+<span class="fc bfc" id="L756" title="All 2 branches covered.">                if (c != null) line(sx.map(c[0]), sy.map(c[1]), sx.map(c[2]), sy.map(c[3]), st);</span>
+<span class="fc" id="L757">            }</span>
+<span class="fc" id="L758">        }</span>
+<span class="fc" id="L759">    }</span>
+
+    private void dot(double x, double y, double radius, String st) {
+<span class="pc bpc" id="L762" title="2 of 4 branches missed.">        if (g.visX(x) &amp;&amp; g.visY(y)) {</span>
+<span class="fc" id="L763">            cur.add(shape(&quot;circle&quot;, &quot;cx&quot;, r(g.x(x)), &quot;cy&quot;, r(g.y(y)), &quot;r&quot;, r(radius), &quot;style&quot;, st));</span>
+        }
+<span class="fc" id="L765">    }</span>
+
+    private void line(double a, double b, double c, double d, String st) {
+<span class="fc" id="L768">        cur.add(shape(&quot;line&quot;, &quot;x1&quot;, r(a), &quot;y1&quot;, r(b), &quot;x2&quot;, r(c), &quot;y2&quot;, r(d), &quot;style&quot;, st));</span>
+<span class="fc" id="L769">    }</span>
+
+    /** A text; {@code body} is markup (escaped text or tspans). */
+    private void text(double x, double y, String anchor, String colour, String body, String cls, double size) {
+<span class="fc" id="L773">        cur.add(shape(&quot;text&quot;, &quot;x&quot;, r(x), &quot;y&quot;, r(y), &quot;anchor&quot;, anchor, &quot;cls&quot;, cls,</span>
+<span class="fc" id="L774">            &quot;style&quot;, &quot;font-size:&quot; + r(size) + &quot;px;fill:&quot; + colour, &quot;body&quot;, body));</span>
+<span class="fc" id="L775">    }</span>
+
+    private static String stroke(String col, double w, String dash, double op) {
+<span class="fc bfc" id="L778" title="All 2 branches covered.">        return &quot;stroke:&quot; + col + &quot;;stroke-width:&quot; + w + (dash != null ? &quot;;stroke-dasharray:&quot; + dash : &quot;&quot;)</span>
+<span class="fc bfc" id="L779" title="All 2 branches covered.">            + (op != 1 ? &quot;;stroke-opacity:&quot; + op : &quot;&quot;) + &quot;;stroke-linecap:round;fill:none&quot;;</span>
+    }
+
+    static String r(double v) {
+<span class="fc" id="L783">        return String.format(Locale.ROOT, &quot;%.2f&quot;, v).replaceAll(&quot;\\.?0+$&quot;, &quot;&quot;);</span>
+    }
+
+    static String esc(String t) {
+<span class="fc" id="L787">        return t.replace(&quot;&amp;&quot;, &quot;&amp;amp;&quot;).replace(&quot;&lt;&quot;, &quot;&amp;lt;&quot;).replace(&quot;&gt;&quot;, &quot;&amp;gt;&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

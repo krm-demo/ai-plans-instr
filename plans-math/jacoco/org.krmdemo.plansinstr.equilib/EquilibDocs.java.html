@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EquilibDocs.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">plans-math</a> &gt; <a href="index.source.html" class="el_package">org.krmdemo.plansinstr.equilib</a> &gt; <span class="el_source">EquilibDocs.java</span></div><h1>EquilibDocs.java</h1><pre class="source lang-java linenums">package org.krmdemo.plansinstr.equilib;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+/**
+ * Writes the example pictures (adaptive SVGs) into the given directory, {@code plans-math/docs/} by default:
+ * &lt;pre&gt;mvn -pl plans-math compile exec:java@docs&lt;/pre&gt;
+ * (or {@code java -cp plans-math/target/classes org.krmdemo.plansinstr.equilib.EquilibDocs plans-math/docs}).
+ */
+public final class EquilibDocs {
+
+    private EquilibDocs() {
+    }
+
+    public static void main(String[] args) throws IOException {
+<span class="nc bnc" id="L19" title="All 2 branches missed.">        Path dir = Path.of(args.length &gt; 0 ? args[0] : &quot;plans-math/docs&quot;);</span>
+<span class="nc" id="L20">        Files.createDirectories(dir);</span>
+<span class="nc" id="L21">        write(dir, &quot;equilib-thousands.svg&quot;, new Sweep(40_000, 60_000, 8_000, 10_000, 25_000, 30_000));</span>
+<span class="nc" id="L22">        write(dir, &quot;equilib-millions.svg&quot;, Sweep.DEMO);</span>
+<span class="nc" id="L23">        write(dir, &quot;equilib-swept-in-zero.svg&quot;, new Sweep(40_000, 60_000, 8_000, 10_000, 0, 30_000));</span>
+<span class="nc" id="L24">        write(dir, &quot;equilib-target-balance.svg&quot;, new Sweep(50_000, 50_000, 5_000, 5_000, 20_000, 25_000));</span>
+<span class="nc" id="L25">    }</span>
+
+    private static void write(Path dir, String name, Sweep s) throws IOException {
+<span class="nc" id="L28">        Files.writeString(dir.resolve(name), SvgRenderer.render(s), StandardCharsets.UTF_8);</span>
+<span class="nc" id="L29">        System.out.println(&quot;wrote &quot; + dir.resolve(name));</span>
+<span class="nc" id="L30">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

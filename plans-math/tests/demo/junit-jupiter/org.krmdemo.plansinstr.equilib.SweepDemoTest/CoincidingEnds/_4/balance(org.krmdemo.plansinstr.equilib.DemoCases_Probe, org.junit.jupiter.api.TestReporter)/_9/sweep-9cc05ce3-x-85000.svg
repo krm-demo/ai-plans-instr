@@ -1,0 +1,3161 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="Balances Equilibrium: swept amount per current balance" viewBox="0 0 1748 942.72" width="1748" height="942.72">
+<!-- Balances Equilibrium (plans-math) · generated 2026-11-23T19:05:21Z · Java 21.0.13+9-LTS · Thymeleaf 3.1.5.RELEASE -->
+<!--
+  Balances Equilibrium: the swept amount per current balance (krm-demo/ai-plans-instr, plans-math).
+  The Thymeleaf template (XML mode) behind every picture; the geometry comes from SvgRenderer as layers of shapes.
+  Tiers: nested <svg> elements, one per level of detail; the media queries below show the one that fits the width
+  the picture is shown at (in <img> or <object> that is the width of the picture itself).
+  Frames: one per sampled balance; CSS :hover shows the frame under the mouse, or the default one.
+-->
+<title>Balances Equilibrium: swept amount per current balance</title>
+<style>
+svg{--ink:#18212c;--soft:#5a6777;--rule:#d6dde7;--bg:#fbfcfe}
+@media (prefers-color-scheme: dark){svg{--ink:#e6ebf2;--soft:#9aa7b8;--rule:#3a4452;--bg:#141a22}}
+.tier{display:none}.one{display:inline}
+@media (max-width:79.98px){.icon-s{display:inline}}
+@media (min-width:80px) and (max-width:199.98px){.icon{display:inline}}
+@media (min-width:200px) and (max-width:339.98px){.tMINI{display:inline}}
+@media (min-width:340px) and (max-width:539.98px){.tS{display:inline}}
+@media (min-width:540px) and (max-width:739.98px){.tM{display:inline}}
+@media (min-width:740px){.tL{display:inline}}
+.on{pointer-events:none}.f .on{visibility:hidden}.f:hover .on{visibility:visible}.frames:not(:hover) .d .on{visibility:visible}
+.hit{fill:#000;fill-opacity:0;pointer-events:all}.f:hover .hit{fill:#8B5CF6;fill-opacity:.05}
+text{font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}
+.m{font-family:Georgia,'Times New Roman',serif;font-style:italic}
+.tx{font-family:'Latin Modern Roman','CMU Serif','STIX Two Text','Cambria Math',Cambria,'Times New Roman',serif}
+.mi{font-family:'Latin Modern Math','STIX Two Math','Cambria Math',Cambria,'Times New Roman',serif;font-style:italic}
+.wm{font-family:'Avenir Next','Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,Roboto,'Helvetica Neue',Arial,sans-serif;font-weight:600;letter-spacing:.2px}
+</style>
+<defs>
+  <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="6" style="stroke:#E24B4A;stroke-width:1;stroke-opacity:.35"/>
+  </pattern>
+  <marker id="arrow" viewBox="0 0 12 10" refX="11" refY="5" markerWidth="12" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+    <path d="M1 1L11 5L1 9L3.5 5Z" style="fill:var(--soft)"/>
+  </marker>
+</defs>
+
+<svg preserveAspectRatio="xMidYMin meet" class="tier tS one" viewBox="0 0 380 419.95" x="0" width="380" height="419.95">
+<rect width="100%" height="100%" style="fill:var(--bg)"/>
+<g class="zones">
+  
+    
+    <rect x="14" y="92" width="39.68" height="283.95" style="fill:#A8692A;fill-opacity:0.11"/>
+    
+    
+    
+  
+  
+    
+    <rect x="53.68" y="92" width="58.79" height="283.95" style="fill:#378ADD;fill-opacity:0.04"/>
+    
+    
+    
+  
+  
+    
+    <rect x="112.47" y="92" width="73.49" height="283.95" style="fill:#378ADD;fill-opacity:0.04"/>
+    
+    
+    
+  
+  
+    
+    <rect x="185.96" y="92" width="146.97" height="283.95" style="fill:#1D9E75;fill-opacity:0.09"/>
+    
+    
+    
+  
+  
+    
+    <rect x="332.93" y="92" width="33.07" height="283.95" style="fill:#E24B4A;fill-opacity:0.07"/>
+    
+    
+    
+  
+  
+    
+    <rect x="332.93" y="92" width="33.07" height="283.95" fill="url(#hatch)"/>
+    
+    
+    
+  
+  
+    
+    <rect x="51.18" y="92" width="1.5" height="283.95" style="fill:#EF9F27;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="52.68" y="92" width="1.5" height="283.95" style="fill:#EF9F27;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="54.18" y="92" width="1.5" height="283.95" style="fill:#EF9F27;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="55.68" y="92" width="1.5" height="283.95" style="fill:#EF9F27;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="57.18" y="92" width="1.5" height="283.95" style="fill:#EF9F27;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="58.68" y="92" width="1.5" height="283.95" style="fill:#EF9F27;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="54.68" y1="92" x2="54.68" y2="375.95" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="49.68" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="48.18" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="46.68" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="45.18" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="54.68" y="92" width="1.5" height="283.95" style="fill:#EF9F27;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="53.18" y="92" width="1.5" height="283.95" style="fill:#EF9F27;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="51.68" y="92" width="1.5" height="283.95" style="fill:#EF9F27;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="50.18" y="92" width="1.5" height="283.95" style="fill:#EF9F27;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="48.68" y="92" width="1.5" height="283.95" style="fill:#EF9F27;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="47.18" y="92" width="1.5" height="283.95" style="fill:#EF9F27;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="52.68" y1="92" x2="52.68" y2="375.95" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="56.18" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="57.68" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="59.18" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="60.68" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="51.18" y="92" width="5" height="283.95" style="fill:#EF9F27;fill-opacity:.10"/>
+    
+    
+    
+  
+  
+    
+    <rect x="109.97" y="92" width="1.5" height="283.95" style="fill:#378ADD;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="111.47" y="92" width="1.5" height="283.95" style="fill:#378ADD;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="112.97" y="92" width="1.5" height="283.95" style="fill:#378ADD;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="114.47" y="92" width="1.5" height="283.95" style="fill:#378ADD;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="115.97" y="92" width="1.5" height="283.95" style="fill:#378ADD;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="117.47" y="92" width="1.5" height="283.95" style="fill:#378ADD;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="113.47" y1="92" x2="113.47" y2="375.95" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="108.47" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="106.97" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="105.47" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="103.97" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="113.47" y="92" width="1.5" height="283.95" style="fill:#378ADD;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="111.97" y="92" width="1.5" height="283.95" style="fill:#378ADD;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="110.47" y="92" width="1.5" height="283.95" style="fill:#378ADD;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="108.97" y="92" width="1.5" height="283.95" style="fill:#378ADD;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="107.47" y="92" width="1.5" height="283.95" style="fill:#378ADD;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="105.97" y="92" width="1.5" height="283.95" style="fill:#378ADD;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="111.47" y1="92" x2="111.47" y2="375.95" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="114.97" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="116.47" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="117.97" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="119.47" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="109.97" y="92" width="5" height="283.95" style="fill:#378ADD;fill-opacity:.10"/>
+    
+    
+    
+  
+  
+    
+    <rect x="185.96" y="92" width="1.5" height="283.95" style="fill:#1D9E75;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="187.46" y="92" width="1.5" height="283.95" style="fill:#1D9E75;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="188.96" y="92" width="1.5" height="283.95" style="fill:#1D9E75;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="190.46" y="92" width="1.5" height="283.95" style="fill:#1D9E75;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="191.96" y="92" width="1.5" height="283.95" style="fill:#1D9E75;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="193.46" y="92" width="1.5" height="283.95" style="fill:#1D9E75;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="189.46" y1="92" x2="189.46" y2="375.95" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="184.46" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="182.96" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="181.46" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="179.96" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="331.43" y="92" width="1.5" height="283.95" style="fill:#1D9E75;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="329.93" y="92" width="1.5" height="283.95" style="fill:#1D9E75;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="328.43" y="92" width="1.5" height="283.95" style="fill:#1D9E75;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="326.93" y="92" width="1.5" height="283.95" style="fill:#1D9E75;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="325.43" y="92" width="1.5" height="283.95" style="fill:#1D9E75;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="323.93" y="92" width="1.5" height="283.95" style="fill:#1D9E75;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="329.43" y1="92" x2="329.43" y2="375.95" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="332.93" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="334.43" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="335.93" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="337.43" y="92" width="1.5" height="283.95" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+</g>
+<g class="marks">
+  
+    
+    
+    
+    
+    <text x="33.84" y="125.4" text-anchor="end" class="wm" transform="rotate(-90 33.84 120.4)" style="font-size:12px;fill:#8A5418;fill-opacity:.36">Swept <tspan style="font-weight:800">In</tspan> Partial</text>
+  
+  
+    
+    
+    
+    
+    <text x="83.08" y="125.4" text-anchor="end" class="wm" transform="rotate(-90 83.08 120.4)" style="font-size:12px;fill:#378ADD;fill-opacity:.44"><tspan style="font-weight:800">In</tspan> Nominal Min</text>
+  
+  
+    
+    
+    
+    
+    <text x="149.22" y="125.4" text-anchor="end" class="wm" transform="rotate(-90 149.22 120.4)" style="font-size:12px;fill:#378ADD;fill-opacity:.44"><tspan style="font-weight:800">In</tspan> Nominal Max</text>
+  
+  
+    
+    
+    
+    
+    <text x="259.44" y="125.4" text-anchor="end" class="wm" transform="rotate(-90 259.44 120.4)" style="font-size:12px;fill:#1D9E75;fill-opacity:.36">Swept <tspan style="font-weight:800">Out</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="349.47" y="125.4" text-anchor="end" class="wm" transform="rotate(-90 349.47 120.4)" style="font-size:12px;fill:#E24B4A;fill-opacity:.36">Swept <tspan style="font-weight:800">Out</tspan> Overflow ⏚</text>
+  
+  
+    
+    
+    
+    
+    <text x="0" y="17" class="m" style="font-size:12.5px;fill:var(--soft)">target balance:</text>
+  
+  
+    
+    
+    
+    
+    <text x="100" y="17" style="font-size:13px;fill:var(--ink)">−$8k [$50k] +$10k</text>
+  
+  
+    
+    
+    
+    
+    <text x="0" y="45" class="m" style="font-size:12.5px;fill:var(--soft)">sweep status:</text>
+  
+  
+</g>
+<g class="axes">
+  
+    <line x1="14" y1="345.53" x2="378" y2="345.53" style="stroke:var(--soft);stroke-width:1.0;stroke-linecap:round;fill:none" marker-end="url(#arrow)"/>
+    
+    
+    
+    
+  
+  
+    <line x1="14" y1="375.95" x2="14" y2="80" style="stroke:var(--soft);stroke-width:1.0;stroke-linecap:round;fill:none" marker-end="url(#arrow)"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="24" y="86" class="m" style="font-size:12px;fill:var(--soft)">Swept amount, <tspan style="fill:#8B5CF6;font-style:normal;font-weight:700">$</tspan></text>
+  
+  
+</g>
+<g class="function">
+  
+    <line x1="14" y1="286.74" x2="53.68" y2="286.74" style="stroke:#8A5418;stroke-width:1.0;stroke-dasharray:1 3;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="14" y1="125.07" x2="366" y2="125.07" style="stroke:#E24B4A;stroke-width:1.0;stroke-dasharray:1 3;stroke-opacity:0.9;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="53.68" y1="286.74" x2="14" y2="286.74" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="185.96" y1="272.04" x2="14" y2="272.04" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="53.68" y1="286.74" x2="112.47" y2="345.53" style="stroke:#378ADD;stroke-width:1.4;stroke-dasharray:4 3;stroke-opacity:0.85;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="112.47" y1="345.53" x2="185.96" y2="272.04" style="stroke:#378ADD;stroke-width:1.4;stroke-dasharray:4 3;stroke-opacity:0.85;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="14" y1="247.06" x2="53.68" y2="286.74" style="stroke:#BA7517;stroke-width:1.4;stroke-dasharray:4 3;stroke-opacity:0.6;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="332.93" y1="125.07" x2="366" y2="92" style="stroke:#E24B4A;stroke-width:1.4;stroke-dasharray:4 3;stroke-opacity:0.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="14" y1="286.74" x2="53.68" y2="286.74" style="stroke:#8A5418;stroke-width:2.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="53.68" y1="286.74" x2="53.68" y2="286.74" style="stroke:#BA7517;stroke-width:2.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="53.68" y1="345.53" x2="53.68" y2="286.74" style="stroke:#BA7517;stroke-width:2.0;stroke-dasharray:4 3;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="53.68" y1="345.53" x2="185.96" y2="345.53" style="stroke:#378ADD;stroke-width:2.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="185.96" y1="272.04" x2="332.93" y2="125.07" style="stroke:#1D9E75;stroke-width:2.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="185.96" y1="345.53" x2="185.96" y2="272.04" style="stroke:#1D9E75;stroke-width:2.0;stroke-dasharray:4 3;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="332.93" y1="345.53" x2="366" y2="345.53" style="stroke:#E24B4A;stroke-width:3.0;stroke-dasharray:6 4;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    <circle cx="53.68" cy="286.74" r="4.5" style="fill:#BA7517;stroke:#8A5418;stroke-width:2"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="53.68" cy="345.53" r="5" style="fill:var(--bg);stroke-width:2;stroke:#378ADD"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="53.68" cy="286.74" r="5" style="fill:#BA7517"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="185.96" cy="345.53" r="5" style="fill:var(--bg);stroke-width:2;stroke:#378ADD"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="185.96" cy="272.04" r="5" style="fill:#1D9E75"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="332.93" cy="125.07" r="5" style="fill:#1D9E75"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="332.93" cy="345.53" r="5" style="fill:var(--bg);stroke-width:2;stroke:#E24B4A"/>
+    
+    
+  
+  
+</g>
+<g class="labels">
+  
+    <line x1="112.47" y1="350.53" x2="112.47" y2="381.95" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="112.47" y="393.95" text-anchor="middle" class="tx" style="font-size:13px;fill:var(--ink)">$50k</text>
+  
+  
+    <line x1="332.93" y1="130.07" x2="332.93" y2="381.95" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="332.93" y="393.95" text-anchor="middle" class="tx" style="font-size:13px;fill:#E24B4A">$80k</text>
+  
+  
+    <line x1="11" y1="286.74" x2="17" y2="286.74" style="stroke:#8A5418;stroke-width:1.2;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="21" y="282.74" class="tx" style="font-size:13px;fill:#8A5418">$8k</text>
+  
+  
+    <line x1="11" y1="125.07" x2="17" y2="125.07" style="stroke:#E24B4A;stroke-width:1.2;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="21" y="121.07" class="tx" style="font-size:13px;fill:#E24B4A">$30k</text>
+  
+  
+    
+    
+    
+    
+    <text x="378" y="415.95" text-anchor="end" class="m" style="font-size:12px;fill:var(--soft)">Current balance, $</text>
+  
+  
+</g>
+<g class="frames">
+  
+  <g class="f d">
+    <rect class="hit" x="14" y="92" width="352" height="283.95"/>
+    <g class="on">
+      
+        <line x1="366" y1="375.95" x2="366" y2="92" style="stroke:#8B5CF6;stroke-width:1.4;stroke-dasharray:5 4;stroke-opacity:0.9;stroke-linecap:round;fill:none"/>
+        
+        
+        
+        
+      
+      
+        
+        <rect x="100" y="30" width="160" height="22" rx="7" style="fill:#E24B4A;fill-opacity:.18"/>
+        
+        
+        
+      
+      
+        
+        
+        
+        
+        <text x="180" y="45" text-anchor="middle" style="font-size:12px;fill:#E24B4A">Swept <tspan style="font-weight:700">Out</tspan> Overflow ⏚</text>
+      
+      
+        
+        
+        
+        
+        <text x="270" y="45" style="font-size:13px;fill:var(--soft)"><tspan style="fill:#8B5CF6;font-weight:600">$84,500</tspan> → <tspan style="fill:#8B5CF6;font-weight:600">∄ (terminal failure)</tspan></text>
+      
+    </g>
+  </g>
+</g>
+</svg>
+<svg preserveAspectRatio="xMidYMin meet" class="tier tM one" viewBox="0 0 560 771.99" x="404" width="560" height="771.99">
+<rect width="100%" height="100%" style="fill:var(--bg)"/>
+<g class="zones">
+  
+    
+    <rect x="18" y="78" width="58.85" height="421.09" style="fill:#A8692A;fill-opacity:0.11"/>
+    
+    
+    
+  
+  
+    
+    <rect x="76.85" y="78" width="87.18" height="421.09" style="fill:#378ADD;fill-opacity:0.04"/>
+    
+    
+    
+  
+  
+    
+    <rect x="164.03" y="78" width="108.98" height="421.09" style="fill:#378ADD;fill-opacity:0.04"/>
+    
+    
+    
+  
+  
+    
+    <rect x="273.01" y="78" width="217.95" height="421.09" style="fill:#1D9E75;fill-opacity:0.09"/>
+    
+    
+    
+  
+  
+    
+    <rect x="490.96" y="78" width="49.04" height="421.09" style="fill:#E24B4A;fill-opacity:0.07"/>
+    
+    
+    
+  
+  
+    
+    <rect x="490.96" y="78" width="49.04" height="421.09" fill="url(#hatch)"/>
+    
+    
+    
+  
+  
+    
+    <rect x="74.35" y="78" width="1.5" height="421.09" style="fill:#EF9F27;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="75.85" y="78" width="1.5" height="421.09" style="fill:#EF9F27;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="77.35" y="78" width="1.5" height="421.09" style="fill:#EF9F27;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="78.85" y="78" width="1.5" height="421.09" style="fill:#EF9F27;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="80.35" y="78" width="1.5" height="421.09" style="fill:#EF9F27;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="81.85" y="78" width="1.5" height="421.09" style="fill:#EF9F27;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="77.85" y1="78" x2="77.85" y2="499.09" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="72.85" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="71.35" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="69.85" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="68.35" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="77.85" y="78" width="1.5" height="421.09" style="fill:#EF9F27;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="76.35" y="78" width="1.5" height="421.09" style="fill:#EF9F27;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="74.85" y="78" width="1.5" height="421.09" style="fill:#EF9F27;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="73.35" y="78" width="1.5" height="421.09" style="fill:#EF9F27;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="71.85" y="78" width="1.5" height="421.09" style="fill:#EF9F27;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="70.35" y="78" width="1.5" height="421.09" style="fill:#EF9F27;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="75.85" y1="78" x2="75.85" y2="499.09" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="79.35" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="80.85" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="82.35" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="83.85" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="74.35" y="78" width="5" height="421.09" style="fill:#EF9F27;fill-opacity:.10"/>
+    
+    
+    
+  
+  
+    
+    <rect x="161.53" y="78" width="1.5" height="421.09" style="fill:#378ADD;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="163.03" y="78" width="1.5" height="421.09" style="fill:#378ADD;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="164.53" y="78" width="1.5" height="421.09" style="fill:#378ADD;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="166.03" y="78" width="1.5" height="421.09" style="fill:#378ADD;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="167.53" y="78" width="1.5" height="421.09" style="fill:#378ADD;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="169.03" y="78" width="1.5" height="421.09" style="fill:#378ADD;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="165.03" y1="78" x2="165.03" y2="499.09" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="160.03" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="158.53" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="157.03" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="155.53" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="165.03" y="78" width="1.5" height="421.09" style="fill:#378ADD;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="163.53" y="78" width="1.5" height="421.09" style="fill:#378ADD;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="162.03" y="78" width="1.5" height="421.09" style="fill:#378ADD;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="160.53" y="78" width="1.5" height="421.09" style="fill:#378ADD;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="159.03" y="78" width="1.5" height="421.09" style="fill:#378ADD;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="157.53" y="78" width="1.5" height="421.09" style="fill:#378ADD;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="163.03" y1="78" x2="163.03" y2="499.09" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="166.53" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="168.03" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="169.53" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="171.03" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="161.53" y="78" width="5" height="421.09" style="fill:#378ADD;fill-opacity:.10"/>
+    
+    
+    
+  
+  
+    
+    <rect x="273.01" y="78" width="1.5" height="421.09" style="fill:#1D9E75;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="274.51" y="78" width="1.5" height="421.09" style="fill:#1D9E75;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="276.01" y="78" width="1.5" height="421.09" style="fill:#1D9E75;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="277.51" y="78" width="1.5" height="421.09" style="fill:#1D9E75;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="279.01" y="78" width="1.5" height="421.09" style="fill:#1D9E75;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="280.51" y="78" width="1.5" height="421.09" style="fill:#1D9E75;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="276.51" y1="78" x2="276.51" y2="499.09" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="271.51" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="270.01" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="268.51" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="267.01" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="489.46" y="78" width="1.5" height="421.09" style="fill:#1D9E75;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="487.96" y="78" width="1.5" height="421.09" style="fill:#1D9E75;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="486.46" y="78" width="1.5" height="421.09" style="fill:#1D9E75;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="484.96" y="78" width="1.5" height="421.09" style="fill:#1D9E75;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="483.46" y="78" width="1.5" height="421.09" style="fill:#1D9E75;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="481.96" y="78" width="1.5" height="421.09" style="fill:#1D9E75;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="487.46" y1="78" x2="487.46" y2="499.09" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="490.96" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="492.46" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="493.96" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="495.46" y="78" width="1.5" height="421.09" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+</g>
+<g class="marks">
+  
+    
+    
+    
+    
+    <text x="47.42" y="125.11" text-anchor="end" class="wm" transform="rotate(-90 47.42 120.11)" style="font-size:13px;fill:#8A5418;fill-opacity:.36">Swept <tspan style="font-weight:800">In</tspan> Partial</text>
+  
+  
+    
+    
+    
+    
+    <text x="120.44" y="125.11" text-anchor="end" class="wm" transform="rotate(-90 120.44 120.11)" style="font-size:13px;fill:#378ADD;fill-opacity:.44"><tspan style="font-weight:800">In</tspan> Nominal Min</text>
+  
+  
+    
+    
+    
+    
+    <text x="218.52" y="125.11" text-anchor="end" class="wm" transform="rotate(-90 218.52 120.11)" style="font-size:13px;fill:#378ADD;fill-opacity:.44"><tspan style="font-weight:800">In</tspan> Nominal Max</text>
+  
+  
+    
+    
+    
+    
+    <text x="381.98" y="125.11" text-anchor="end" class="wm" transform="rotate(-90 381.98 120.11)" style="font-size:13px;fill:#1D9E75;fill-opacity:.36">Swept <tspan style="font-weight:800">Out</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="515.48" y="125.11" text-anchor="end" class="wm" transform="rotate(-90 515.48 120.11)" style="font-size:13px;fill:#E24B4A;fill-opacity:.36">Swept <tspan style="font-weight:800">Out</tspan> Overflow ⏚</text>
+  
+  
+    
+    
+    
+    
+    <text x="0" y="17" class="m" style="font-size:12.5px;fill:var(--soft)">target balance:</text>
+  
+  
+    
+    
+    
+    
+    <text x="100" y="17" style="font-size:13px;fill:var(--ink)">−$8k [$50k] +$10k<tspan dx="12" style="fill:var(--soft)">($42k ; $60k)</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="0" y="45" class="m" style="font-size:12.5px;fill:var(--soft)">sweep status:</text>
+  
+  
+</g>
+<g class="axes">
+  
+    <line x1="18" y1="453.97" x2="552" y2="453.97" style="stroke:var(--soft);stroke-width:1.0;stroke-linecap:round;fill:none" marker-end="url(#arrow)"/>
+    
+    
+    
+    
+  
+  
+    <line x1="18" y1="499.09" x2="18" y2="66" style="stroke:var(--soft);stroke-width:1.0;stroke-linecap:round;fill:none" marker-end="url(#arrow)"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="28" y="72" class="m" style="font-size:13px;fill:var(--soft)">Swept amount, <tspan style="fill:#8B5CF6;font-style:normal;font-weight:700">$</tspan></text>
+  
+  
+</g>
+<g class="function">
+  
+    <line x1="18" y1="366.79" x2="76.85" y2="366.79" style="stroke:#8A5418;stroke-width:1.0;stroke-dasharray:1 3;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="18" y1="127.04" x2="540" y2="127.04" style="stroke:#E24B4A;stroke-width:1.0;stroke-dasharray:1 3;stroke-opacity:0.9;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="76.85" y1="366.79" x2="18" y2="366.79" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="273.01" y1="344.99" x2="18" y2="344.99" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="76.85" y1="366.79" x2="164.03" y2="453.97" style="stroke:#378ADD;stroke-width:1.4;stroke-dasharray:4 3;stroke-opacity:0.85;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="164.03" y1="453.97" x2="273.01" y2="344.99" style="stroke:#378ADD;stroke-width:1.4;stroke-dasharray:4 3;stroke-opacity:0.85;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="18" y1="307.94" x2="76.85" y2="366.79" style="stroke:#BA7517;stroke-width:1.4;stroke-dasharray:4 3;stroke-opacity:0.6;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="490.96" y1="127.04" x2="540" y2="78" style="stroke:#E24B4A;stroke-width:1.4;stroke-dasharray:4 3;stroke-opacity:0.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="18" y1="366.79" x2="76.85" y2="366.79" style="stroke:#8A5418;stroke-width:2.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="76.85" y1="366.79" x2="76.85" y2="366.79" style="stroke:#BA7517;stroke-width:2.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="76.85" y1="453.97" x2="76.85" y2="366.79" style="stroke:#BA7517;stroke-width:2.0;stroke-dasharray:4 3;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="76.85" y1="453.97" x2="273.01" y2="453.97" style="stroke:#378ADD;stroke-width:2.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="273.01" y1="344.99" x2="490.96" y2="127.04" style="stroke:#1D9E75;stroke-width:2.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="273.01" y1="453.97" x2="273.01" y2="344.99" style="stroke:#1D9E75;stroke-width:2.0;stroke-dasharray:4 3;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="490.96" y1="453.97" x2="540" y2="453.97" style="stroke:#E24B4A;stroke-width:3.0;stroke-dasharray:6 4;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    <circle cx="76.85" cy="366.79" r="4.5" style="fill:#BA7517;stroke:#8A5418;stroke-width:2"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="76.85" cy="453.97" r="5" style="fill:var(--bg);stroke-width:2;stroke:#378ADD"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="76.85" cy="366.79" r="5" style="fill:#BA7517"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="273.01" cy="453.97" r="5" style="fill:var(--bg);stroke-width:2;stroke:#378ADD"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="273.01" cy="344.99" r="5" style="fill:#1D9E75"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="490.96" cy="127.04" r="5" style="fill:#1D9E75"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="490.96" cy="453.97" r="5" style="fill:var(--bg);stroke-width:2;stroke:#E24B4A"/>
+    
+    
+  
+  
+</g>
+<g class="labels">
+  
+    <line x1="76.85" y1="371.79" x2="76.85" y2="505.09" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="76.85" y="517.09" text-anchor="middle" class="tx" style="font-size:14px;fill:#BA7517">$42k</text>
+  
+  
+    <line x1="76.85" y1="371.79" x2="76.85" y2="523.09" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="76.85" y="535.09" text-anchor="middle" class="tx" style="font-size:14px;fill:#8A5418">$42k</text>
+  
+  
+    <line x1="164.03" y1="458.97" x2="164.03" y2="505.09" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="164.03" y="517.09" text-anchor="middle" class="tx" style="font-size:14px;fill:var(--ink)">$50k</text>
+  
+  
+    <line x1="273.01" y1="349.99" x2="273.01" y2="505.09" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="273.01" y="517.09" text-anchor="middle" class="tx" style="font-size:14px;fill:#1D9E75">$60k</text>
+  
+  
+    <line x1="490.96" y1="132.04" x2="490.96" y2="505.09" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="490.96" y="517.09" text-anchor="middle" class="tx" style="font-size:14px;fill:#E24B4A">$80k</text>
+  
+  
+    <line x1="15" y1="366.79" x2="21" y2="366.79" style="stroke:#8A5418;stroke-width:1.2;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="25" y="362.79" class="tx" style="font-size:14px;fill:#8A5418">$8k</text>
+  
+  
+    <line x1="15" y1="344.99" x2="21" y2="344.99" style="stroke:#1D9E75;stroke-width:1.2;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="25" y="340.99" class="tx" style="font-size:14px;fill:#1D9E75">$10k</text>
+  
+  
+    <line x1="15" y1="127.04" x2="21" y2="127.04" style="stroke:#E24B4A;stroke-width:1.2;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="25" y="123.04" class="tx" style="font-size:14px;fill:#E24B4A">$30k</text>
+  
+  
+    
+    
+    
+    
+    <text x="552" y="557.09" text-anchor="end" class="m" style="font-size:13px;fill:var(--soft)">Current balance, $</text>
+  
+  
+</g>
+<g class="formula">
+  
+    
+    
+    
+    
+    <text x="8" y="655.04" class="tx" style="font-size:15px;fill:var(--ink)"><tspan class="mi" dy="0">y</tspan><tspan dy="0">(</tspan><tspan class="mi" dy="0">x</tspan><tspan dy="0">) =</tspan></text>
+  
+  
+    
+    
+    
+    <path d="M82 577.09Q76 577.09 76 585.09V644.04Q76 651.04 70 651.04Q76 651.04 76 658.04V716.99Q76 724.99 82 724.99" style="fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round"/>
+    
+  
+  
+    
+    
+    
+    
+    <text x="92" y="590.71" class="tx" style="font-size:14px;fill:var(--ink)"><tspan class="mi" dy="0">A</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="590.71" class="tx" style="font-size:14px;fill:var(--ink)"><tspan class="mi" dy="0">x</tspan><tspan dy="0"> &lt; </tspan><tspan class="mi" dy="0">T</tspan><tspan dy="0"> − </tspan><tspan class="mi" dy="0">A</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="552" y="590.71" text-anchor="end" style="font-size:11.5px;fill:#8A5418">Swept <tspan style="font-weight:700">In</tspan> Partial</text>
+  
+  
+    
+    
+    
+    
+    <text x="92" y="612.41" class="tx" style="font-size:14px;fill:var(--ink)"><tspan class="mi" dy="0">T</tspan><tspan dy="0"> − </tspan><tspan class="mi" dy="0">x</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="612.41" class="tx" style="font-size:14px;fill:var(--ink)"><tspan class="mi" dy="0">T</tspan><tspan dy="0"> − </tspan><tspan class="mi" dy="0">A</tspan><tspan dy="0"> ≤ </tspan><tspan class="mi" dy="0">x</tspan><tspan dy="0"> ≤ </tspan><tspan class="mi" dy="0">T</tspan><tspan dy="0"> − </tspan><tspan class="mi" dy="0">τ</tspan><tspan dy="0.2em" style="font-size:0.7em">min</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="552" y="612.41" text-anchor="end" style="font-size:11.5px;fill:#BA7517">Swept <tspan style="font-weight:700">In</tspan> Full</text>
+  
+  
+    
+    
+    
+    
+    <text x="92" y="634.11" class="tx" style="font-size:14px;fill:var(--ink)"><tspan dy="0">0</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="634.11" class="tx" style="font-size:14px;fill:var(--ink)"><tspan class="mi" dy="0">T</tspan><tspan dy="0"> − </tspan><tspan class="mi" dy="0">τ</tspan><tspan dy="0.2em" style="font-size:0.7em">min</tspan><tspan dy="-0.2em"> &lt; </tspan><tspan class="mi" dy="0">x</tspan><tspan dy="0"> &lt; </tspan><tspan class="mi" dy="0">T</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="552" y="634.11" text-anchor="end" style="font-size:11.5px;fill:#378ADD"><tspan style="font-weight:700">In</tspan> Nominal Min</text>
+  
+  
+    
+    
+    
+    
+    <text x="92" y="655.81" class="tx" style="font-size:14px;fill:var(--ink)"><tspan dy="0">0</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="655.81" class="tx" style="font-size:14px;fill:var(--ink)"><tspan class="mi" dy="0">x</tspan><tspan dy="0"> = </tspan><tspan class="mi" dy="0">T</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="552" y="655.81" text-anchor="end" style="font-size:11.5px;fill:#378ADD"><tspan style="font-weight:700">In</tspan> Range</text>
+  
+  
+    
+    
+    
+    
+    <text x="92" y="677.51" class="tx" style="font-size:14px;fill:var(--ink)"><tspan dy="0">0</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="677.51" class="tx" style="font-size:14px;fill:var(--ink)"><tspan class="mi" dy="0">T</tspan><tspan dy="0"> &lt; </tspan><tspan class="mi" dy="0">x</tspan><tspan dy="0"> &lt; </tspan><tspan class="mi" dy="0">T</tspan><tspan dy="0"> + </tspan><tspan class="mi" dy="0">τ</tspan><tspan dy="0.2em" style="font-size:0.7em">max</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="552" y="677.51" text-anchor="end" style="font-size:11.5px;fill:#378ADD"><tspan style="font-weight:700">In</tspan> Nominal Max</text>
+  
+  
+    
+    
+    
+    
+    <text x="92" y="699.21" class="tx" style="font-size:14px;fill:var(--ink)"><tspan class="mi" dy="0">x</tspan><tspan dy="0"> − </tspan><tspan class="mi" dy="0">T</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="699.21" class="tx" style="font-size:14px;fill:var(--ink)"><tspan class="mi" dy="0">T</tspan><tspan dy="0"> + </tspan><tspan class="mi" dy="0">τ</tspan><tspan dy="0.2em" style="font-size:0.7em">max</tspan><tspan dy="-0.2em"> ≤ </tspan><tspan class="mi" dy="0">x</tspan><tspan dy="0"> ≤ </tspan><tspan class="mi" dy="0">T</tspan><tspan dy="0"> + </tspan><tspan class="mi" dy="0">L</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="552" y="699.21" text-anchor="end" style="font-size:11.5px;fill:#1D9E75">Swept <tspan style="font-weight:700">Out</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="92" y="720.91" class="tx" style="font-size:14px;fill:#E24B4A"><tspan dy="0">∄ ⏚</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="720.91" class="tx" style="font-size:14px;fill:#E24B4A"><tspan class="mi" dy="0">x</tspan><tspan dy="0"> &gt; </tspan><tspan class="mi" dy="0">T</tspan><tspan dy="0"> + </tspan><tspan class="mi" dy="0">L</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="552" y="720.91" text-anchor="end" style="font-size:11.5px;fill:#E24B4A">Swept <tspan style="font-weight:700">Out</tspan> Overflow ⏚</text>
+  
+  
+    
+    
+    
+    
+    <text x="8" y="746.99" style="font-size:12px;fill:var(--soft)"><tspan class="tx" style="font-size:13px;fill:var(--ink)"><tspan class="mi" dy="0">T</tspan></tspan><tspan dx="4">$50,000</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="98.67" y="746.99" style="font-size:12px;fill:var(--soft)"><tspan class="tx" style="font-size:13px;fill:var(--ink)"><tspan class="mi" dy="0">τ</tspan><tspan dy="0.2em" style="font-size:0.7em">min</tspan></tspan><tspan dx="4">$8,000</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="189.33" y="746.99" style="font-size:12px;fill:var(--soft)"><tspan class="tx" style="font-size:13px;fill:var(--ink)"><tspan class="mi" dy="0">τ</tspan><tspan dy="0.2em" style="font-size:0.7em">max</tspan></tspan><tspan dx="4">$10,000</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="280" y="746.99" style="font-size:12px;fill:var(--soft)"><tspan class="tx" style="font-size:13px;fill:var(--ink)"><tspan class="mi" dy="0">A</tspan></tspan><tspan dx="4">$8,000</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="370.67" y="746.99" style="font-size:12px;fill:var(--soft)"><tspan class="tx" style="font-size:13px;fill:var(--ink)"><tspan class="mi" dy="0">L</tspan></tspan><tspan dx="4">$30,000</tspan></text>
+  
+  
+</g>
+<g class="frames">
+  
+  <g class="f d">
+    <rect class="hit" x="18" y="78" width="522" height="421.09"/>
+    <g class="on">
+      
+        <line x1="540" y1="499.09" x2="540" y2="78" style="stroke:#8B5CF6;stroke-width:1.4;stroke-dasharray:5 4;stroke-opacity:0.9;stroke-linecap:round;fill:none"/>
+        
+        
+        
+        
+      
+      
+        
+        <rect x="100" y="30" width="160" height="22" rx="7" style="fill:#E24B4A;fill-opacity:.18"/>
+        
+        
+        
+      
+      
+        
+        
+        
+        
+        <text x="180" y="45" text-anchor="middle" style="font-size:12px;fill:#E24B4A">Swept <tspan style="font-weight:700">Out</tspan> Overflow ⏚</text>
+      
+      
+        
+        
+        
+        
+        <text x="270" y="45" style="font-size:13px;fill:var(--soft)"><tspan style="fill:#8B5CF6;font-weight:600">$84,500</tspan> → <tspan style="fill:#8B5CF6;font-weight:600">∄ (terminal failure)</tspan></text>
+      
+      
+        
+        <rect x="84" y="706.29" width="472" height="19.7" rx="5" style="fill:#E24B4A;fill-opacity:.18"/>
+        
+        
+        
+      
+    </g>
+  </g>
+</g>
+</svg>
+<svg preserveAspectRatio="xMidYMin meet" class="tier tL one" viewBox="0 0 760 942.72" x="988" width="760" height="942.72">
+<rect width="100%" height="100%" style="fill:var(--bg)"/>
+<g class="zones">
+  
+    
+    <rect x="22" y="82" width="80.49" height="575.97" style="fill:#A8692A;fill-opacity:0.11"/>
+    
+    
+    
+  
+  
+    
+    <rect x="102.49" y="82" width="119.25" height="575.97" style="fill:#378ADD;fill-opacity:0.04"/>
+    
+    
+    
+  
+  
+    
+    <rect x="221.74" y="82" width="149.06" height="575.97" style="fill:#378ADD;fill-opacity:0.04"/>
+    
+    
+    
+  
+  
+    
+    <rect x="370.8" y="82" width="298.12" height="575.97" style="fill:#1D9E75;fill-opacity:0.09"/>
+    
+    
+    
+  
+  
+    
+    <rect x="668.92" y="82" width="67.08" height="575.97" style="fill:#E24B4A;fill-opacity:0.07"/>
+    
+    
+    
+  
+  
+    
+    <rect x="668.92" y="82" width="67.08" height="575.97" fill="url(#hatch)"/>
+    
+    
+    
+  
+  
+    
+    <rect x="99.99" y="82" width="1.5" height="575.97" style="fill:#EF9F27;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="101.49" y="82" width="1.5" height="575.97" style="fill:#EF9F27;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="102.99" y="82" width="1.5" height="575.97" style="fill:#EF9F27;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="104.49" y="82" width="1.5" height="575.97" style="fill:#EF9F27;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="105.99" y="82" width="1.5" height="575.97" style="fill:#EF9F27;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="107.49" y="82" width="1.5" height="575.97" style="fill:#EF9F27;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="103.49" y1="82" x2="103.49" y2="657.97" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="98.49" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="96.99" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="95.49" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="93.99" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="103.49" y="82" width="1.5" height="575.97" style="fill:#EF9F27;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="101.99" y="82" width="1.5" height="575.97" style="fill:#EF9F27;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="100.49" y="82" width="1.5" height="575.97" style="fill:#EF9F27;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="98.99" y="82" width="1.5" height="575.97" style="fill:#EF9F27;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="97.49" y="82" width="1.5" height="575.97" style="fill:#EF9F27;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="95.99" y="82" width="1.5" height="575.97" style="fill:#EF9F27;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="101.49" y1="82" x2="101.49" y2="657.97" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="104.99" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="106.49" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="107.99" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="109.49" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="99.99" y="82" width="5" height="575.97" style="fill:#EF9F27;fill-opacity:.10"/>
+    
+    
+    
+  
+  
+    
+    <rect x="219.24" y="82" width="1.5" height="575.97" style="fill:#378ADD;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="220.74" y="82" width="1.5" height="575.97" style="fill:#378ADD;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="222.24" y="82" width="1.5" height="575.97" style="fill:#378ADD;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="223.74" y="82" width="1.5" height="575.97" style="fill:#378ADD;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="225.24" y="82" width="1.5" height="575.97" style="fill:#378ADD;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="226.74" y="82" width="1.5" height="575.97" style="fill:#378ADD;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="222.74" y1="82" x2="222.74" y2="657.97" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="217.74" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="216.24" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="214.74" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="213.24" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="222.74" y="82" width="1.5" height="575.97" style="fill:#378ADD;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="221.24" y="82" width="1.5" height="575.97" style="fill:#378ADD;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="219.74" y="82" width="1.5" height="575.97" style="fill:#378ADD;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="218.24" y="82" width="1.5" height="575.97" style="fill:#378ADD;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="216.74" y="82" width="1.5" height="575.97" style="fill:#378ADD;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="215.24" y="82" width="1.5" height="575.97" style="fill:#378ADD;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="220.74" y1="82" x2="220.74" y2="657.97" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="224.24" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="225.74" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="227.24" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="228.74" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="219.24" y="82" width="5" height="575.97" style="fill:#378ADD;fill-opacity:.10"/>
+    
+    
+    
+  
+  
+    
+    <rect x="370.8" y="82" width="1.5" height="575.97" style="fill:#1D9E75;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="372.3" y="82" width="1.5" height="575.97" style="fill:#1D9E75;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="373.8" y="82" width="1.5" height="575.97" style="fill:#1D9E75;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="375.3" y="82" width="1.5" height="575.97" style="fill:#1D9E75;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="376.8" y="82" width="1.5" height="575.97" style="fill:#1D9E75;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="378.3" y="82" width="1.5" height="575.97" style="fill:#1D9E75;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="374.3" y1="82" x2="374.3" y2="657.97" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="369.3" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="367.8" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="366.3" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="364.8" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+    
+    <rect x="667.42" y="82" width="1.5" height="575.97" style="fill:#1D9E75;fill-opacity:0.280"/>
+    
+    
+    
+  
+  
+    
+    <rect x="665.92" y="82" width="1.5" height="575.97" style="fill:#1D9E75;fill-opacity:0.209"/>
+    
+    
+    
+  
+  
+    
+    <rect x="664.42" y="82" width="1.5" height="575.97" style="fill:#1D9E75;fill-opacity:0.146"/>
+    
+    
+    
+  
+  
+    
+    <rect x="662.92" y="82" width="1.5" height="575.97" style="fill:#1D9E75;fill-opacity:0.092"/>
+    
+    
+    
+  
+  
+    
+    <rect x="661.42" y="82" width="1.5" height="575.97" style="fill:#1D9E75;fill-opacity:0.048"/>
+    
+    
+    
+  
+  
+    
+    <rect x="659.92" y="82" width="1.5" height="575.97" style="fill:#1D9E75;fill-opacity:0.016"/>
+    
+    
+    
+  
+  
+    <line x1="665.42" y1="82" x2="665.42" y2="657.97" style="stroke:#fff;stroke-opacity:.55;stroke-width:1"/>
+    
+    
+    
+    
+  
+  
+    
+    <rect x="668.92" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.090"/>
+    
+    
+    
+  
+  
+    
+    <rect x="670.42" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.068"/>
+    
+    
+    
+  
+  
+    
+    <rect x="671.92" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.045"/>
+    
+    
+    
+  
+  
+    
+    <rect x="673.42" y="82" width="1.5" height="575.97" style="fill:#000;fill-opacity:0.023"/>
+    
+    
+    
+  
+  
+</g>
+<g class="marks">
+  
+    
+    
+    
+    
+    <text x="62.25" y="144.6" text-anchor="end" class="wm" transform="rotate(-90 62.25 139.6)" style="font-size:14px;fill:#8A5418;fill-opacity:.36">Swept <tspan style="font-weight:800">In</tspan> Partial</text>
+  
+  
+    
+    
+    
+    
+    <text x="162.12" y="144.6" text-anchor="end" class="wm" transform="rotate(-90 162.12 139.6)" style="font-size:14px;fill:#378ADD;fill-opacity:.44"><tspan style="font-weight:800">In</tspan> Nominal Min</text>
+  
+  
+    
+    
+    
+    
+    <text x="296.27" y="144.6" text-anchor="end" class="wm" transform="rotate(-90 296.27 139.6)" style="font-size:14px;fill:#378ADD;fill-opacity:.44"><tspan style="font-weight:800">In</tspan> Nominal Max</text>
+  
+  
+    
+    
+    
+    
+    <text x="519.86" y="144.6" text-anchor="end" class="wm" transform="rotate(-90 519.86 139.6)" style="font-size:14px;fill:#1D9E75;fill-opacity:.36">Swept <tspan style="font-weight:800">Out</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="702.46" y="144.6" text-anchor="end" class="wm" transform="rotate(-90 702.46 139.6)" style="font-size:14px;fill:#E24B4A;fill-opacity:.36">Swept <tspan style="font-weight:800">Out</tspan> Overflow ⏚</text>
+  
+  
+    
+    
+    
+    
+    <text x="0" y="17" class="m" style="font-size:12.5px;fill:var(--soft)">target balance:</text>
+  
+  
+    
+    
+    
+    
+    <text x="100" y="17" style="font-size:13px;fill:var(--ink)">−$8k [$50k] +$10k<tspan dx="12" style="fill:var(--soft)">($42k ; $60k)</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="0" y="45" class="m" style="font-size:12.5px;fill:var(--soft)">sweep status:</text>
+  
+  
+</g>
+<g class="axes">
+  
+    <line x1="22" y1="596.26" x2="748" y2="596.26" style="stroke:var(--soft);stroke-width:1.0;stroke-linecap:round;fill:none" marker-end="url(#arrow)"/>
+    
+    
+    
+    
+  
+  
+    <line x1="22" y1="657.97" x2="22" y2="70" style="stroke:var(--soft);stroke-width:1.0;stroke-linecap:round;fill:none" marker-end="url(#arrow)"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="32" y="76" class="m" style="font-size:14px;fill:var(--soft)">Swept amount, <tspan style="fill:#8B5CF6;font-style:normal;font-weight:700">$</tspan></text>
+  
+  
+</g>
+<g class="function">
+  
+    <line x1="22" y1="477.01" x2="102.49" y2="477.01" style="stroke:#8A5418;stroke-width:1.0;stroke-dasharray:1 3;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="22" y1="149.08" x2="736" y2="149.08" style="stroke:#E24B4A;stroke-width:1.0;stroke-dasharray:1 3;stroke-opacity:0.9;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="102.49" y1="477.01" x2="22" y2="477.01" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="370.8" y1="447.2" x2="22" y2="447.2" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="102.49" y1="477.01" x2="221.74" y2="596.26" style="stroke:#378ADD;stroke-width:1.4;stroke-dasharray:4 3;stroke-opacity:0.85;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="221.74" y1="596.26" x2="370.8" y2="447.2" style="stroke:#378ADD;stroke-width:1.4;stroke-dasharray:4 3;stroke-opacity:0.85;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="22" y1="396.52" x2="102.49" y2="477.01" style="stroke:#BA7517;stroke-width:1.4;stroke-dasharray:4 3;stroke-opacity:0.6;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="668.92" y1="149.08" x2="736" y2="82" style="stroke:#E24B4A;stroke-width:1.4;stroke-dasharray:4 3;stroke-opacity:0.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="22" y1="477.01" x2="102.49" y2="477.01" style="stroke:#8A5418;stroke-width:2.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="102.49" y1="477.01" x2="102.49" y2="477.01" style="stroke:#BA7517;stroke-width:2.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="102.49" y1="596.26" x2="102.49" y2="477.01" style="stroke:#BA7517;stroke-width:2.0;stroke-dasharray:4 3;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="102.49" y1="596.26" x2="370.8" y2="596.26" style="stroke:#378ADD;stroke-width:2.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="370.8" y1="447.2" x2="668.92" y2="149.08" style="stroke:#1D9E75;stroke-width:2.75;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="370.8" y1="596.26" x2="370.8" y2="447.2" style="stroke:#1D9E75;stroke-width:2.0;stroke-dasharray:4 3;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    <line x1="668.92" y1="596.26" x2="736" y2="596.26" style="stroke:#E24B4A;stroke-width:3.0;stroke-dasharray:6 4;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    <circle cx="102.49" cy="477.01" r="4.5" style="fill:#BA7517;stroke:#8A5418;stroke-width:2"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="102.49" cy="596.26" r="5" style="fill:var(--bg);stroke-width:2;stroke:#378ADD"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="102.49" cy="477.01" r="5" style="fill:#BA7517"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="370.8" cy="596.26" r="5" style="fill:var(--bg);stroke-width:2;stroke:#378ADD"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="370.8" cy="447.2" r="5" style="fill:#1D9E75"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="668.92" cy="149.08" r="5" style="fill:#1D9E75"/>
+    
+    
+  
+  
+    
+    
+    <circle cx="668.92" cy="596.26" r="5" style="fill:var(--bg);stroke-width:2;stroke:#E24B4A"/>
+    
+    
+  
+  
+</g>
+<g class="labels">
+  
+    <line x1="102.49" y1="482.01" x2="102.49" y2="663.97" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="102.49" y="675.97" text-anchor="middle" class="tx" style="font-size:15px;fill:#BA7517">$42k</text>
+  
+  
+    <line x1="102.49" y1="482.01" x2="102.49" y2="682.97" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="102.49" y="694.97" text-anchor="middle" class="tx" style="font-size:15px;fill:#8A5418">$42k</text>
+  
+  
+    <line x1="221.74" y1="601.26" x2="221.74" y2="663.97" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="221.74" y="675.97" text-anchor="middle" class="tx" style="font-size:15px;fill:var(--ink)">$50k</text>
+  
+  
+    <line x1="370.8" y1="452.2" x2="370.8" y2="663.97" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="370.8" y="675.97" text-anchor="middle" class="tx" style="font-size:15px;fill:#1D9E75">$60k</text>
+  
+  
+    <line x1="668.92" y1="154.08" x2="668.92" y2="663.97" style="stroke:#888780;stroke-width:0.6;stroke-dasharray:1.5 3;stroke-opacity:0.8;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="668.92" y="675.97" text-anchor="middle" class="tx" style="font-size:15px;fill:#E24B4A">$80k</text>
+  
+  
+    <line x1="19" y1="477.01" x2="25" y2="477.01" style="stroke:#8A5418;stroke-width:1.2;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="29" y="473.01" class="tx" style="font-size:15px;fill:#8A5418">$8k</text>
+  
+  
+    <line x1="19" y1="447.2" x2="25" y2="447.2" style="stroke:#1D9E75;stroke-width:1.2;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="29" y="443.2" class="tx" style="font-size:15px;fill:#1D9E75">$10k</text>
+  
+  
+    <line x1="19" y1="149.08" x2="25" y2="149.08" style="stroke:#E24B4A;stroke-width:1.2;stroke-linecap:round;fill:none"/>
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    <text x="29" y="145.08" class="tx" style="font-size:15px;fill:#E24B4A">$30k</text>
+  
+  
+    
+    
+    
+    
+    <text x="748" y="716.97" text-anchor="end" class="m" style="font-size:14px;fill:var(--soft)">Current balance, $</text>
+  
+  
+</g>
+<g class="formula">
+  
+    
+    
+    
+    
+    <text x="8" y="820.34" class="tx" style="font-size:16px;fill:var(--ink)"><tspan class="mi" dy="0">y</tspan><tspan dy="0">(</tspan><tspan class="mi" dy="0">x</tspan><tspan dy="0">) =</tspan></text>
+  
+  
+    
+    
+    
+    <path d="M82 736.97Q76 736.97 76 744.97V809.34Q76 816.34 70 816.34Q76 816.34 76 823.34V887.72Q76 895.72 82 895.72" style="fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round"/>
+    
+  
+  
+    
+    
+    
+    
+    <text x="92" y="751.71" class="tx" style="font-size:15px;fill:var(--ink)"><tspan class="mi" dy="0">A</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="751.71" class="tx" style="font-size:15px;fill:var(--ink)"><tspan class="mi" dy="0">x</tspan><tspan dy="0"> &lt; </tspan><tspan class="mi" dy="0">T</tspan><tspan dy="0"> − </tspan><tspan class="mi" dy="0">A</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="752" y="751.71" text-anchor="end" style="font-size:12.5px;fill:#8A5418">Swept <tspan style="font-weight:700">In</tspan> Partial</text>
+  
+  
+    
+    
+    
+    
+    <text x="92" y="774.96" class="tx" style="font-size:15px;fill:var(--ink)"><tspan class="mi" dy="0">T</tspan><tspan dy="0"> − </tspan><tspan class="mi" dy="0">x</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="774.96" class="tx" style="font-size:15px;fill:var(--ink)"><tspan class="mi" dy="0">T</tspan><tspan dy="0"> − </tspan><tspan class="mi" dy="0">A</tspan><tspan dy="0"> ≤ </tspan><tspan class="mi" dy="0">x</tspan><tspan dy="0"> ≤ </tspan><tspan class="mi" dy="0">T</tspan><tspan dy="0"> − </tspan><tspan class="mi" dy="0">τ</tspan><tspan dy="0.2em" style="font-size:0.7em">min</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="752" y="774.96" text-anchor="end" style="font-size:12.5px;fill:#BA7517">Swept <tspan style="font-weight:700">In</tspan> Full</text>
+  
+  
+    
+    
+    
+    
+    <text x="92" y="798.21" class="tx" style="font-size:15px;fill:var(--ink)"><tspan dy="0">0</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="798.21" class="tx" style="font-size:15px;fill:var(--ink)"><tspan class="mi" dy="0">T</tspan><tspan dy="0"> − </tspan><tspan class="mi" dy="0">τ</tspan><tspan dy="0.2em" style="font-size:0.7em">min</tspan><tspan dy="-0.2em"> &lt; </tspan><tspan class="mi" dy="0">x</tspan><tspan dy="0"> &lt; </tspan><tspan class="mi" dy="0">T</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="752" y="798.21" text-anchor="end" style="font-size:12.5px;fill:#378ADD"><tspan style="font-weight:700">In</tspan> Nominal Min</text>
+  
+  
+    
+    
+    
+    
+    <text x="92" y="821.46" class="tx" style="font-size:15px;fill:var(--ink)"><tspan dy="0">0</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="821.46" class="tx" style="font-size:15px;fill:var(--ink)"><tspan class="mi" dy="0">x</tspan><tspan dy="0"> = </tspan><tspan class="mi" dy="0">T</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="752" y="821.46" text-anchor="end" style="font-size:12.5px;fill:#378ADD"><tspan style="font-weight:700">In</tspan> Range</text>
+  
+  
+    
+    
+    
+    
+    <text x="92" y="844.71" class="tx" style="font-size:15px;fill:var(--ink)"><tspan dy="0">0</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="844.71" class="tx" style="font-size:15px;fill:var(--ink)"><tspan class="mi" dy="0">T</tspan><tspan dy="0"> &lt; </tspan><tspan class="mi" dy="0">x</tspan><tspan dy="0"> &lt; </tspan><tspan class="mi" dy="0">T</tspan><tspan dy="0"> + </tspan><tspan class="mi" dy="0">τ</tspan><tspan dy="0.2em" style="font-size:0.7em">max</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="752" y="844.71" text-anchor="end" style="font-size:12.5px;fill:#378ADD"><tspan style="font-weight:700">In</tspan> Nominal Max</text>
+  
+  
+    
+    
+    
+    
+    <text x="92" y="867.96" class="tx" style="font-size:15px;fill:var(--ink)"><tspan class="mi" dy="0">x</tspan><tspan dy="0"> − </tspan><tspan class="mi" dy="0">T</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="867.96" class="tx" style="font-size:15px;fill:var(--ink)"><tspan class="mi" dy="0">T</tspan><tspan dy="0"> + </tspan><tspan class="mi" dy="0">τ</tspan><tspan dy="0.2em" style="font-size:0.7em">max</tspan><tspan dy="-0.2em"> ≤ </tspan><tspan class="mi" dy="0">x</tspan><tspan dy="0"> ≤ </tspan><tspan class="mi" dy="0">T</tspan><tspan dy="0"> + </tspan><tspan class="mi" dy="0">L</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="752" y="867.96" text-anchor="end" style="font-size:12.5px;fill:#1D9E75">Swept <tspan style="font-weight:700">Out</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="92" y="891.21" class="tx" style="font-size:15px;fill:#E24B4A"><tspan dy="0">∄ ⏚</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="242" y="891.21" class="tx" style="font-size:15px;fill:#E24B4A"><tspan class="mi" dy="0">x</tspan><tspan dy="0"> &gt; </tspan><tspan class="mi" dy="0">T</tspan><tspan dy="0"> + </tspan><tspan class="mi" dy="0">L</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="752" y="891.21" text-anchor="end" style="font-size:12.5px;fill:#E24B4A">Swept <tspan style="font-weight:700">Out</tspan> Overflow ⏚</text>
+  
+  
+    
+    
+    
+    
+    <text x="8" y="917.72" style="font-size:12px;fill:var(--soft)"><tspan class="tx" style="font-size:13px;fill:var(--ink)"><tspan class="mi" dy="0">T</tspan></tspan><tspan dx="4">$50,000</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="132" y="917.72" style="font-size:12px;fill:var(--soft)"><tspan class="tx" style="font-size:13px;fill:var(--ink)"><tspan class="mi" dy="0">τ</tspan><tspan dy="0.2em" style="font-size:0.7em">min</tspan></tspan><tspan dx="4">$8,000</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="256" y="917.72" style="font-size:12px;fill:var(--soft)"><tspan class="tx" style="font-size:13px;fill:var(--ink)"><tspan class="mi" dy="0">τ</tspan><tspan dy="0.2em" style="font-size:0.7em">max</tspan></tspan><tspan dx="4">$10,000</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="380" y="917.72" style="font-size:12px;fill:var(--soft)"><tspan class="tx" style="font-size:13px;fill:var(--ink)"><tspan class="mi" dy="0">A</tspan></tspan><tspan dx="4">$8,000</tspan></text>
+  
+  
+    
+    
+    
+    
+    <text x="504" y="917.72" style="font-size:12px;fill:var(--soft)"><tspan class="tx" style="font-size:13px;fill:var(--ink)"><tspan class="mi" dy="0">L</tspan></tspan><tspan dx="4">$30,000</tspan></text>
+  
+  
+</g>
+<g class="frames">
+  
+  <g class="f d">
+    <rect class="hit" x="22" y="82" width="714" height="575.97"/>
+    <g class="on">
+      
+        <line x1="736" y1="657.97" x2="736" y2="82" style="stroke:#8B5CF6;stroke-width:1.4;stroke-dasharray:5 4;stroke-opacity:0.9;stroke-linecap:round;fill:none"/>
+        
+        
+        
+        
+      
+      
+        
+        <rect x="100" y="30" width="160" height="22" rx="7" style="fill:#E24B4A;fill-opacity:.18"/>
+        
+        
+        
+      
+      
+        
+        
+        
+        
+        <text x="180" y="45" text-anchor="middle" style="font-size:12px;fill:#E24B4A">Swept <tspan style="font-weight:700">Out</tspan> Overflow ⏚</text>
+      
+      
+        
+        
+        
+        
+        <text x="270" y="45" style="font-size:13px;fill:var(--soft)"><tspan style="fill:#8B5CF6;font-weight:600">$84,500</tspan> → <tspan style="fill:#8B5CF6;font-weight:600">∄ (terminal failure)</tspan></text>
+      
+      
+        
+        <rect x="84" y="875.47" width="672" height="21.25" rx="5" style="fill:#E24B4A;fill-opacity:.18"/>
+        
+        
+        
+      
+    </g>
+  </g>
+</g>
+</svg>
+</svg>

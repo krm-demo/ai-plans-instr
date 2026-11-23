@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo page · plans-math · Balances Equilibrium</title>
+    <meta name="description" content="Balances Equilibrium: the swept amount of a cash sweep per current balance. The interactive graph, the Java library's SVG pictures and its test and coverage reports.">
+    <link rel="icon" href="icon-small.svg" type="image/svg+xml">
+    <link href="page.css" rel="stylesheet">
+    <!-- KaTeX typesets the formula under the graph; without it a plain table is shown. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.js"></script>
+    <link href="swept-amount-math.css" rel="stylesheet">
+    <script defer src="swept-amount-math.js"></script>
+    <script defer src="page.js"></script>
+</head>
+<body>
+<main>
+    <header class="head">
+        <h1><img src="icon.svg" width="84" height="48" alt=""> Balances Equilibrium</h1>
+        <p class="sub"><a href="https://github.com/krm-demo/ai-plans-instr/tree/main/plans-math">plans-math</a>, a Java library of
+            <a href="https://github.com/krm-demo/ai-plans-instr">krm-demo/ai-plans-instr</a> ·
+            <a href="https://krm-demo.org/">krm-demo.org</a></p>
+        <p class="badges">
+            <a href="https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml"><img alt="plans-math workflow" src="https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml/badge.svg"></a>
+            <a href="demo-tests.html"><img alt="tests" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkrm-demo.github.io%2Fai-plans-instr%2Fplans-math%2Fbadges%2Ftests.json"></a>
+            <a href="jacoco/index.html"><img alt="coverage" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkrm-demo.github.io%2Fai-plans-instr%2Fplans-math%2Fbadges%2Fcoverage.json"></a>
+        </p>
+    </header>
+
+    <p>A <b>cash sweep</b> keeps the balance <i>x</i> of a current account (a <b>DDA</b>, demand deposit account) between
+        <i>T</i><sub>min</sub> and <i>T</i><sub>max</sub>, or at one target balance <i>T</i>, by moving money <b>In</b> from
+        and <b>Out</b> to an investment account. The graph shows the swept amount <i>y</i> for every current balance <i>x</i>.
+        Drag the handles; <b>T</b> switches to one target balance, <b>$</b> to amounts.</p>
+
+    <div data-swept-amount-math data-xs="svg/equilib-thousands.svg">
+        <noscript><img src="svg/equilib-thousands.svg" alt="Balances Equilibrium: swept amount per current balance" style="max-width:100%"></noscript>
+    </div>
+
+    <h2>Sweep statuses</h2>
+    <div><ul class="statuses">
+  <li><span class="st" data-zone="SWEPT_IN_ZERO" style="color:#E24B4A">Swept <b>In</b> Zero ⏚</span> — a sweep In is needed, but the investment account is empty (<i>A</i> = 0): terminal failure ⏚. Like a yellow card: on the next round the plan is cancelled or paused.</li>
+  <li><span class="st" data-zone="SWEPT_IN_PARTIAL" style="color:#8A5418">Swept <b>In</b> Partial</span> — far below <i>T</i><sub>min</sub>: all of <i>A</i> comes back and the balance is still short; the investment account is emptied.</li>
+  <li><span class="st" data-zone="SWEPT_IN_FULL" style="color:#BA7517">Swept <b>In</b> Full</span> — exactly the missing <i>T</i><sub>min</sub> − <i>x</i> comes back from the investment account, at least <i>τ</i><sub>min</sub> (at <i>T</i><sub>min</sub> − <i>A</i> that is all of <i>A</i>: emptied to the cent).</li>
+  <li><span class="st" data-zone="IN_NOMINAL_MIN" style="color:#378ADD"><b>In</b> Nominal Min</span> — below <i>T</i><sub>min</sub> by less than <i>τ</i><sub>min</sub>: not worth a transfer.</li>
+  <li><span class="st" data-zone="IN_RANGE" style="color:#378ADD"><b>In</b> Range</span> — between <i>T</i><sub>min</sub> and <i>T</i><sub>max</sub> (or right at the target <i>T</i>): nothing to transfer.</li>
+  <li><span class="st" data-zone="IN_NOMINAL_MAX" style="color:#378ADD"><b>In</b> Nominal Max</span> — above <i>T</i><sub>max</sub> by less than <i>τ</i><sub>max</sub>: not worth a transfer.</li>
+  <li><span class="st" data-zone="SWEPT_OUT" style="color:#1D9E75">Swept <b>Out</b></span> — the excess <i>x</i> − <i>T</i><sub>max</sub>, at least <i>τ</i><sub>max</sub>, goes from the DDA to the investment account; exactly <i>L</i> is still allowed.</li>
+  <li><span class="st" data-zone="SWEPT_OUT_OVERFLOW" style="color:#E24B4A">Swept <b>Out</b> Overflow ⏚</span> — the excess is above <i>L</i>, the largest single payment the investment account accepts: terminal failure ⏚.</li>
+</ul>
+</div>
+
+    <h2 id="palette">Colours of Swept <b>In</b></h2>
+    <p>Three softer, coffee-and-cream variants of the two Swept <b>In</b> slices to choose from; everything else stays the same.
+        The choice changes the graph above and the status names (the pictures of the library below keep the current colours).</p>
+    <div class="palettes" id="palettes"></div>
+
+    <h2>The same without JavaScript</h2>
+    <p>The library draws one SVG per set of parameters (Java and a <a href="https://www.thymeleaf.org/">Thymeleaf</a> template, no
+        JavaScript inside). The picture adapts to the width it is shown at: the small cart icon, the icon with the $ in the cart,
+        the coloured slices only, then the graph with more and more detail. Below: the same file at six widths.</p>
+    <div class="tiers">
+        <figure><img src="svg/equilib-thousands.svg" width="56" alt=""><figcaption>56 px</figcaption></figure>
+        <figure><img src="svg/equilib-thousands.svg" width="150" alt=""><figcaption>150 px</figcaption></figure>
+        <figure><img src="svg/equilib-thousands.svg" width="290" alt=""><figcaption>290 px</figcaption></figure>
+    </div>
+    <div class="tiers">
+        <figure><img src="svg/equilib-thousands.svg" width="400" alt=""><figcaption>400 px: S</figcaption></figure>
+        <figure><img src="svg/equilib-thousands.svg" width="600" alt=""><figcaption>600 px: M</figcaption></figure>
+    </div>
+    <p>In full size (760 px and wider), as an <code>&lt;object&gt;</code>: move the mouse over the graph. The frames are plain CSS
+        <code>:hover</code>; an <code>&lt;img&gt;</code> shows the picture but does not pass the mouse to it.</p>
+    <object class="full" data="svg/equilib-thousands.svg" type="image/svg+xml" aria-label="Balances Equilibrium, the full graph"></object>
+    <p>More pictures: <a href="svg/equilib-thousands.svg">thousands</a>, <a href="svg/equilib-millions.svg">millions (broken axes)</a>,
+        <a href="svg/equilib-swept-in-zero.svg">Swept <b>In</b> Zero</a>, <a href="svg/equilib-target-balance.svg">target balance</a>
+        (open one and make the window narrower).</p>
+
+    <h2>Reports</h2>
+    <ul>
+        <li><a href="demo-tests.html">Demo tests</a> (also <a href="tests/demo/index.html">as a test report</a>): everything this page can show, without moving a handle —
+            six groups of parameters, the balances in increasing order, each with its status, amount and picture
+            (S, M and L side by side).</li>
+        <li><a href="tests/tech/index.html">Technical tests</a> (Open Test Reporting) and the
+            <a href="jacoco/index.html">coverage report</a> (JaCoCo): <span>189 JUnit tests passed</span>,
+            <span>95.1%</span> of lines.</li>
+        <li><a href="apidocs/index.html">JavaDoc</a> of the library.</li>
+    </ul>
+</main>
+<footer>Built from <a href="https://github.com/krm-demo/ai-plans-instr/commit/03995e96fd5c27ec192cc1dddf42f396c24c0d61">03995e9</a>
+    on <span>2026-11-23 19:05 UTC</span> by the
+    <a href="https://github.com/krm-demo/ai-plans-instr/actions/workflows/plans-math.yml">plans-math workflow</a>.</footer>
+</body>
+</html>

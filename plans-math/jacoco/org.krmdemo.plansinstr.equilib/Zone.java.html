@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Zone.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">plans-math</a> &gt; <a href="index.source.html" class="el_package">org.krmdemo.plansinstr.equilib</a> &gt; <span class="el_source">Zone.java</span></div><h1>Zone.java</h1><pre class="source lang-java linenums">package org.krmdemo.plansinstr.equilib;
+
+/**
+ * The sweep status of a current balance, from the far left of the x axis to the far right.
+ * &lt;p&gt;
+ * &quot;In&quot; and &quot;Out&quot; are the key words of every title and are always capitalised (on the pictures they are also a bit
+ * bolder). Two statuses are a &lt;b&gt;terminal failure&lt;/b&gt; (⏚, the mark of the AuditStatus state charts): the swept amount
+ * does not exist there (∄), one sweep cannot restore the balance.
+ * &lt;p&gt;
+ * {@link #description()} is the one and only explanation of each status: the list under the picture in the README
+ * (and, word for word, on the site) is checked against it by a test.
+ */
+<span class="fc" id="L13">public enum Zone {</span>
+
+<span class="fc" id="L15">    SWEPT_IN_ZERO(&quot;Swept In Zero&quot;, &quot;#E24B4A&quot;, &quot;#E24B4A&quot;, 0.07, true,</span>
+        &quot;a sweep In is needed, but the investment account is empty (A = 0): terminal failure ⏚. &quot;
+            + &quot;Like a yellow card: on the next round the plan is cancelled or paused.&quot;),
+<span class="fc" id="L18">    SWEPT_IN_PARTIAL(&quot;Swept In Partial&quot;, &quot;#A8692A&quot;, &quot;#8A5418&quot;, 0.11, false,</span>
+        &quot;far below T_min: all of A comes back and the balance is still short; the investment account is emptied.&quot;),
+<span class="fc" id="L20">    SWEPT_IN_FULL(&quot;Swept In Full&quot;, &quot;#EF9F27&quot;, &quot;#BA7517&quot;, 0.09, false,</span>
+        &quot;exactly the missing T_min − x comes back from the investment account, at least τ_min &quot;
+            + &quot;(at T_min − A that is all of A: emptied to the cent).&quot;),
+<span class="fc" id="L23">    IN_NOMINAL_MIN(&quot;In Nominal Min&quot;, Zone.BLUE, Zone.BLUE, 0.04, false,</span>
+        &quot;below T_min by less than τ_min: not worth a transfer.&quot;),
+<span class="fc" id="L25">    IN_RANGE(&quot;In Range&quot;, Zone.BLUE, Zone.BLUE, 0.10, false,</span>
+        &quot;between T_min and T_max (or right at the target T): nothing to transfer.&quot;),
+<span class="fc" id="L27">    IN_NOMINAL_MAX(&quot;In Nominal Max&quot;, Zone.BLUE, Zone.BLUE, 0.04, false,</span>
+        &quot;above T_max by less than τ_max: not worth a transfer.&quot;),
+<span class="fc" id="L29">    SWEPT_OUT(&quot;Swept Out&quot;, &quot;#1D9E75&quot;, &quot;#1D9E75&quot;, 0.09, false,</span>
+        &quot;the excess x − T_max, at least τ_max, goes from the DDA to the investment account; exactly L is still allowed.&quot;),
+<span class="fc" id="L31">    SWEPT_OUT_OVERFLOW(&quot;Swept Out Overflow&quot;, &quot;#E24B4A&quot;, &quot;#E24B4A&quot;, 0.07, true,</span>
+        &quot;the excess is above L, the largest single payment the investment account accepts: terminal failure ⏚.&quot;);
+
+    private static final String BLUE = &quot;#378ADD&quot;;
+
+    private final String title;
+    private final String fill;
+    private final String ink;
+    private final double opacity;
+    private final boolean terminal;
+    private final String description;
+
+<span class="fc" id="L43">    Zone(String title, String fill, String ink, double opacity, boolean terminal, String description) {</span>
+<span class="fc" id="L44">        this.title = title;</span>
+<span class="fc" id="L45">        this.fill = fill;</span>
+<span class="fc" id="L46">        this.ink = ink;</span>
+<span class="fc" id="L47">        this.opacity = opacity;</span>
+<span class="fc" id="L48">        this.terminal = terminal;</span>
+<span class="fc" id="L49">        this.description = description;</span>
+<span class="fc" id="L50">    }</span>
+
+    /** &quot;Swept In Full&quot;, &quot;Swept Out Overflow&quot;... — the same titles everywhere: pictures, README, site. */
+<span class="fc" id="L53">    public String title() { return title; }</span>
+
+    /** What the status means, in one sentence (symbols written as T_min, τ_max...). */
+<span class="nc" id="L56">    public String description() { return description; }</span>
+
+    /** Colour of the zone's band (drawn translucent). */
+<span class="fc" id="L59">    public String fill() { return fill; }</span>
+
+    /** Colour of the zone's line, label and watermark. */
+<span class="fc" id="L62">    public String ink() { return ink; }</span>
+
+    /** Opacity of the band. */
+<span class="fc" id="L65">    public double opacity() { return opacity; }</span>
+
+    /** True when the swept amount does not exist here: a terminal failure (⏚). */
+<span class="fc" id="L68">    public boolean terminal() { return terminal; }</span>
+
+    /** One of the three zero zones between the sweeps. */
+<span class="fc bfc" id="L71" title="All 6 branches covered.">    public boolean zero() { return this == IN_NOMINAL_MIN || this == IN_RANGE || this == IN_NOMINAL_MAX; }</span>
+
+    /** The title as SVG markup: &quot;In&quot; and &quot;Out&quot; in their own, bolder tspan; ⏚ after a terminal one. */
+    String titleMarkup(int weight) {
+<span class="fc" id="L75">        String t = (&quot; &quot; + title + &quot; &quot;).replace(&quot; In &quot;, &quot; &lt;tspan style=\&quot;font-weight:&quot; + weight + &quot;\&quot;&gt;In&lt;/tspan&gt; &quot;)</span>
+<span class="fc" id="L76">            .replace(&quot; Out &quot;, &quot; &lt;tspan style=\&quot;font-weight:&quot; + weight + &quot;\&quot;&gt;Out&lt;/tspan&gt; &quot;).trim();</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        return t + (terminal ? &quot; ⏚&quot; : &quot;&quot;);</span>
+    }
+
+    /**
+     * The statuses as a Markdown list, &quot;In&quot; and &quot;Out&quot; in bold, symbols in italics with subscripts: the list under the
+     * picture in the README (a test checks it is there word for word) and, translated to HTML, on the site.
+     */
+    public static String statusListMarkdown() {
+<span class="fc" id="L85">        StringBuilder md = new StringBuilder();</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        for (Zone z : values()) {</span>
+<span class="fc" id="L87">            String title = (&quot; &quot; + z.title + &quot; &quot;).replace(&quot; In &quot;, &quot; **In** &quot;).replace(&quot; Out &quot;, &quot; **Out** &quot;).trim();</span>
+<span class="fc" id="L88">            md.append(&quot;- &quot;).append(title).append(&quot; — &quot;).append(symbols(z.description)).append('\n');</span>
+        }
+<span class="fc" id="L90">        return md.toString();</span>
+    }
+
+    /**
+     * The same list as HTML for the GitHub Pages of the project: each status name in the colour of its slice (&quot;In&quot; and
+     * &quot;Out&quot; in bold, ⏚ after a terminal one), {@code data-zone} for pages that recolour it.
+     */
+    public static String statusListHtml() {
+<span class="nc" id="L98">        StringBuilder h = new StringBuilder(&quot;&lt;ul class=\&quot;statuses\&quot;&gt;\n&quot;);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        for (Zone z : values()) {</span>
+<span class="nc" id="L100">            String title = (&quot; &quot; + z.title + &quot; &quot;).replace(&quot; In &quot;, &quot; &lt;b&gt;In&lt;/b&gt; &quot;).replace(&quot; Out &quot;, &quot; &lt;b&gt;Out&lt;/b&gt; &quot;).trim();</span>
+<span class="nc" id="L101">            h.append(&quot;  &lt;li&gt;&lt;span class=\&quot;st\&quot; data-zone=\&quot;&quot;).append(z.name()).append(&quot;\&quot; style=\&quot;color:&quot;).append(z.ink).append(&quot;\&quot;&gt;&quot;)</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                .append(title).append(z.terminal ? &quot; ⏚&quot; : &quot;&quot;).append(&quot;&lt;/span&gt; — &quot;)</span>
+<span class="nc" id="L103">                .append(symbols(SvgRenderer.esc(z.description)).replaceAll(&quot;\\*([^*]+)\\*&quot;, &quot;&lt;i&gt;$1&lt;/i&gt;&quot;)).append(&quot;&lt;/li&gt;\n&quot;);</span>
+        }
+<span class="nc" id="L105">        return h.append(&quot;&lt;/ul&gt;\n&quot;).toString();</span>
+    }
+
+    private static String symbols(String t) {
+<span class="fc" id="L109">        return t.replaceAll(&quot;(?&lt;!\\w)([Tτ])_(min|max)(?!\\w)&quot;, &quot;*$1*&lt;sub&gt;$2&lt;/sub&gt;&quot;)</span>
+<span class="fc" id="L110">            .replaceAll(&quot;(?&lt;![\\w*&gt;])([ALTx])(?![\\w*&lt;])&quot;, &quot;*$1*&quot;)</span>
+<span class="fc" id="L111">            .replaceAll(&quot;(?&lt;![\\w*&gt;])τ(?![\\w*&lt;])&quot;, &quot;*τ*&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

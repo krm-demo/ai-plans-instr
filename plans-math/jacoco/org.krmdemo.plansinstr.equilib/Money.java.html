@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Money.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">plans-math</a> &gt; <a href="index.source.html" class="el_package">org.krmdemo.plansinstr.equilib</a> &gt; <span class="el_source">Money.java</span></div><h1>Money.java</h1><pre class="source lang-java linenums">package org.krmdemo.plansinstr.equilib;
+
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
+
+/** Dollar amounts as text: &quot;$40,000&quot; in full, &quot;$40k&quot; or &quot;$2.1M&quot; where room is short. */
+final class Money {
+
+    private Money() {
+    }
+
+    static String full(double v) {
+<span class="fc" id="L14">        DecimalFormat f = new DecimalFormat(&quot;#,##0&quot;, DecimalFormatSymbols.getInstance(Locale.US));</span>
+<span class="fc bfc" id="L15" title="All 2 branches covered.">        return (v &lt; 0 ? &quot;−&quot; : &quot;&quot;) + &quot;$&quot; + f.format(Math.abs(Math.round(v)));</span>
+    }
+
+    static String compact(double v) {
+<span class="fc" id="L19">        double a = Math.abs(v);</span>
+<span class="pc bpc" id="L20" title="1 of 2 branches missed.">        String sign = v &lt; 0 ? &quot;−&quot; : &quot;&quot;;</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        if (a &gt;= 1e6) return sign + &quot;$&quot; + oneDecimal(a / 1e6) + &quot;M&quot;;</span>
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        if (a &gt;= 1e3) return sign + &quot;$&quot; + oneDecimal(a / 1e3) + &quot;k&quot;;</span>
+<span class="fc" id="L23">        return sign + &quot;$&quot; + Math.round(a);</span>
+    }
+
+    private static String oneDecimal(double v) {
+<span class="fc" id="L27">        double r = Math.round(v * 10) / 10.0;</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        return r == Math.rint(r) ? String.valueOf((long) r) : String.valueOf(r);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
