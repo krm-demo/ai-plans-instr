@@ -274,8 +274,17 @@ public final class SvgRenderer {
         }
         seg(xl, 0, xr, 0, stroke(Zone.IN_RANGE.ink(), w, null, 1));
         if (xr < xZ) seg(xr, nMax, xoc, xoc - tMax, stroke(Zone.SWEPT_OUT.ink(), w, null, 1));
-        if (g.broken && xr < g.xs.get(0).d1()) {       // across the cut: from corner to corner, at 45°
-            line(g.xs.get(0).q1(), g.ys.get(0).q1(), g.xs.get(1).q0(), g.ys.get(1).q0(), stroke(Zone.SWEPT_OUT.ink(), w, null, 1));
+        if (g.broken && xr < g.xs.get(0).d1()) {
+            // Across the cut Swept out goes straight on, from corner to corner at 45°: only a faint dotted bridge,
+            // crossed by the same two grey slanted strokes as the axes (they only mark the cut), turned to the line.
+            double b0x = g.xs.get(0).q1(), b0y = g.ys.get(0).q1(), b1x = g.xs.get(1).q0(), b1y = g.ys.get(1).q0();
+            line(b0x, b0y, b1x, b1y, stroke(Zone.SWEPT_OUT.ink(), w * 0.7, "0.1 3.5", 0.35));
+            double bl = Math.hypot(b1x - b0x, b1y - b0y), ux = (b1x - b0x) / bl, uy = (b1y - b0y) / bl;
+            double vx = 1.5 * ux + 4 * uy, vy = 1.5 * uy - 4 * ux;   // as on the x axis: 1.5 along the line, 4 across it
+            for (double t : new double[] {-2.5, 2.5}) {
+                double cx = (b0x + b1x) / 2 + t * ux, cy = (b0y + b1y) / 2 + t * uy;
+                line(cx - vx, cy - vy, cx + vx, cy + vy, stroke("var(--soft)", 1, null, 0.8));
+            }
         }
         seg(xr, 0, xr, nMax, stroke(Zone.SWEPT_OUT.ink(), 2, "4 3", 1));
         if (xo < xZ) seg(xo, 0, xZ, 0, stroke(Zone.SWEPT_OUT_OVERFLOW.ink(), 3, "6 4", 1));

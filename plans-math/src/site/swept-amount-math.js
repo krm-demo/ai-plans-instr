@@ -408,8 +408,18 @@
     if (!zeroA && xl > xA) { var a0 = Math.max(xk, xA); h += seg(a0, tmin - a0, xl, nmin, stroke(Z.in.ink, W)); }
     h += seg(xl, 0, xr, 0, stroke(BLUE, W));
     if (xr < xZ) h += seg(xr, nmax, xoc, xoc - tmax, stroke(Z.out.ink, W));
-    // Across the cut Swept out goes straight on: from the corner of the pan to the corner of the handle, 45°.
-    if (gap && xr < GX[0].d1) h += line(GX[0].q1, GY[0].q1, GX[1].q0, GY[1].q0, stroke(Z.out.ink, W));
+    // Across the cut Swept out goes straight on, from the corner of the pan to the corner of the handle at 45°:
+    // only a faint dotted bridge, crossed by the same two grey slanted strokes as the axes (they only mark the cut), turned to the line.
+    if (gap && xr < GX[0].d1) {
+      var b0x = GX[0].q1, b0y = GY[0].q1, b1x = GX[1].q0, b1y = GY[1].q0;
+      h += line(b0x, b0y, b1x, b1y, stroke(Z.out.ink, W * 0.7, '0.1 3.5', 0.35));
+      var bl = Math.hypot(b1x - b0x, b1y - b0y), ux = (b1x - b0x) / bl, uy = (b1y - b0y) / bl;
+      var vx = 1.5 * ux + 4 * uy, vy = 1.5 * uy - 4 * ux;   // as on the x axis: 1.5 along the line, 4 across it
+      [-2.5, 2.5].forEach(function (t) {
+        var cx = (b0x + b1x) / 2 + t * ux, cyy = (b0y + b1y) / 2 + t * uy;
+        h += line(cx - vx, cyy - vy, cx + vx, cyy + vy, stroke(th.soft, 1, null, 0.8));
+      });
+    }
     // The jumps at the nominals, dashed in the colour of the sweep they belong to.
     if (!zeroA) h += seg(xl, 0, xl, nmin, stroke(Z.in.ink, 2, '4 3'));
     h += seg(xr, 0, xr, nmax, stroke(Z.out.ink, 2, '4 3'));
