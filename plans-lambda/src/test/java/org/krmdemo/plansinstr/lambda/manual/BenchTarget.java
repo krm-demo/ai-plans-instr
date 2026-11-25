@@ -1,0 +1,69 @@
+package org.krmdemo.plansinstr.lambda.manual;
+
+import org.krmdemo.plansinstr.core.model.PlanInstructions;
+import org.krmdemo.plansinstr.core.model.enums.PlanStatus;
+import org.krmdemo.plansinstr.core.model.enums.PlanType;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.UUID;
+
+/**
+ * One database under the CRUD benchmark ({@link CrudBenchmarkTest}): the same operations on
+ * {@link PlanInstructions}, whatever stores them.
+ */
+interface BenchTarget extends AutoCloseable {
+
+    /** Where the database runs; the report keeps the two kinds apart. */
+    enum Kind {
+        /** In the JVM of the test (or on the same machine): for local games and unit tests. */
+        LOCAL,
+        /** A real managed database in AWS, reached over the network from the GitHub runner. */
+        CLOUD
+    }
+
+    /** Short name for the report, for example {@code embedded-postgres}. */
+    String name();
+
+    Kind kind();
+
+    /** One line about where it runs, for the report. */
+    String about();
+
+    /**
+     * The cheapest request there is ({@code SELECT 1}, reading a key that does not exist): the
+     * round trip to the database. The rest of the report minus this is the database itself.
+     */
+    void ping();
+
+    /** A new plan: {@code planId} and {@code version} are null; returns the stored plan. */
+    PlanInstructions create(PlanInstructions plan);
+
+    Optional<PlanInstructions> load(UUID planId);
+
+    /** Optimistic update: the plan's {@code version} must be the stored one. */
+    PlanInstructions update(PlanInstructions plan);
+
+    boolean delete(UUID planId);
+
+    /** The user's most recently updated plan of the type that is not cancelled. */
+    Optional<PlanInstructions> lookup(String userId, PlanType planType);
+
+    /** The user's plans, newest first; {@code status} null means any. */
+    List<PlanInstructions> byUser(String userId, PlanStatus status);
+
+    /** The plans funded from a DDA account. */
+    List<PlanInstructions> byDdaAccount(String ddaAccNum);
+
+    /**
+     * The newest plan of every user whose id starts with the prefix ({@code DISTINCT ON} in
+     * Postgres); returns how many there are, or empty when the target cannot do it in one query.
+     */
+    default OptionalInt latestPlanPerUser(String userIdPrefix) {
+        return OptionalInt.empty();
+    }
+
+    @Override
+    void close();
+}

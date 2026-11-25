@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  plans: the databases of the manual tests (.github/workflows/manual-tests.yml).
+  Aurora Serverless v2 PostgreSQL that pauses itself when idle (0 ACU: only storage is paid),
+  and a DynamoDB table on demand. The workflow deploys this stack itself (a no-op when nothing
+  changed), so a deleted stack comes back on the next run.
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The default VPC of the region (its subnets are public)
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Two or more subnets of that VPC in different availability zones
+  EngineVersion:
+    Type: String
+    Default: '17.6'   # the same as the embedded Postgres of the tests (Zonky)
+    Description: aurora-postgresql version that can scale to 0 ACU
+  MaxCapacity:
+    Type: Number
+    Default: 2
+    Description: Upper limit of the Aurora capacity units (1 ACU is about 2 GiB of memory)
+  SecondsUntilAutoPause:
+    Type: Number
+    Default: 900
+    MinValue: 300
+    MaxValue: 86400
+    Description: Idle seconds (no connections) before Aurora pauses itself
+  TableName:
+    Type: String
+    Default: plans-manual-tests
+
+Resources:
+  # No inbound rules here. The workflow adds one rule for its own IP (/32) for the length of a
+  # run and removes it afterwards, so nobody else can even reach the port.
+  DbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: plans manual tests - Postgres; port 5432 is opened per run for the runner IP only
+      VpcId: !Ref VpcId
+      Tags:
+        - { Key: Name, Value: plans-manual-tests-db }
+
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: plans manual tests
+      SubnetIds: !Ref SubnetIds
+
+  DbCluster:
+    Type: AWS::RDS::DBCluster
+    DeletionPolicy: Delete          # test data only: no final snapshot
+    UpdateReplacePolicy: Delete
+    Properties:
+      DBClusterIdentifier: plans-manual-tests
+      Engine: aurora-postgresql
+      EngineVersion: !Ref EngineVersion
+      DatabaseName: plansdb      # "plans" is a reserved word for aurora-postgresql
+      MasterUsername: plans_admin
+      # The password is generated and kept by Secrets Manager; the workflow reads it there.
+      ManageMasterUserPassword: true
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: 0
+        MaxCapacity: !Ref MaxCapacity
+        SecondsUntilAutoPause: !Ref SecondsUntilAutoPause
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      VpcSecurityGroupIds: [!GetAtt DbSecurityGroup.GroupId]
+      StorageEncrypted: true
+      BackupRetentionPeriod: 1
+      DeletionProtection: false
+      # RDS Data API: SQL over HTTPS with IAM, handy for a quick look without opening the port
+      EnableHttpEndpoint: true
+
+  DbInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      DBInstanceIdentifier: plans-manual-tests-1
+      DBClusterIdentifier: !Ref DbCluster
+      DBInstanceClass: db.serverless
+      Engine: aurora-postgresql
+      PubliclyAccessible: true      # reachable from GitHub runners; the security group decides who
+      EnablePerformanceInsights: false
+
+  # The same plans in DynamoDB: the key is the UUIDv7 as text (sorts by creation time),
+  # the payload is a native map. The indexes serve the searches of the benchmark.
+  PlansTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: !Ref TableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: id, AttributeType: S }
+        - { AttributeName: userId, AttributeType: S }
+        - { AttributeName: ddaAccNum, AttributeType: S }
+      KeySchema:
+        - { AttributeName: id, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: byUser
+          KeySchema:
+            - { AttributeName: userId, KeyType: HASH }
+            - { AttributeName: id, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+        - IndexName: byDda
+          KeySchema:
+            - { AttributeName: ddaAccNum, KeyType: HASH }
+            - { AttributeName: id, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+
+Outputs:
+  ClusterId:
+    Value: !Ref DbCluster
+  Endpoint:
+    Value: !GetAtt DbCluster.Endpoint.Address
+  Port:
+    Value: !GetAtt DbCluster.Endpoint.Port
+  SecretArn:
+    Value: !GetAtt DbCluster.MasterUserSecret.SecretArn
+  SecurityGroupId:
+    Value: !GetAtt DbSecurityGroup.GroupId
+  TableName:
+    Value: !Ref PlansTable

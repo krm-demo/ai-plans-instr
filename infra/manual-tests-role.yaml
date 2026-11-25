@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  plans: one-time setup for the manual-tests workflow. A role that GitHub Actions of one
+  repository assume through OIDC (no stored keys). It may deploy the stack plans-manual-tests,
+  open and close the Postgres port for its runner, read the generated password and use the
+  DynamoDB table. Save the output RoleArn as the repository variable MANUAL_TESTS_ROLE_ARN.
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: krm-demo/ai-plans-instr
+  GitHubRepoWithIds:
+    Type: String
+    Default: krm-demo@149853618/ai-plans-instr@1458467325
+    Description: >-
+      The same repository as owner@ownerId/name@repoId: the form of the OIDC subject when the
+      account uses immutable ids (gh api repos/OWNER/REPO --jq '.owner.id, .id')
+  CreateOidcProvider:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: false when the account already has token.actions.githubusercontent.com
+
+Conditions:
+  CreateProvider: !Equals [!Ref CreateOidcProvider, 'true']
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+      ThumbprintList: [6938fd4d98bab03faadb97b34396831e3780aea1]
+
+  ManualTestsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: plans-manual-tests
+      Tags:
+        # also makes the role wait for the provider when this stack creates it
+        # (a DependsOn would fail when the provider already exists and is not created here)
+        - Key: oidc-provider
+          Value: !If [CreateProvider, !Ref GitHubOidcProvider, existing]
+      MaxSessionDuration: 7200
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Sub arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                # any branch of this repository: the workflows only start by hand
+                token.actions.githubusercontent.com:sub:
+                  - !Sub repo:${GitHubRepo}:ref:refs/heads/*
+                  - !Sub repo:${GitHubRepoWithIds}:ref:refs/heads/*
+      Policies:
+        - PolicyName: manual-tests
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: TheStack
+                Effect: Allow
+                Action: cloudformation:*
+                Resource:
+                  - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:stack/plans-manual-tests/*
+                  - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:changeSet/*
+              - Sid: Templates
+                Effect: Allow
+                Action: [cloudformation:ValidateTemplate, cloudformation:GetTemplateSummary]
+                Resource: '*'
+              # what the stack creates, updates and deletes
+              - Sid: Aurora
+                Effect: Allow
+                Action: rds:*
+                Resource:
+                  - !Sub arn:aws:rds:*:${AWS::AccountId}:cluster:plans-manual-tests
+                  - !Sub arn:aws:rds:*:${AWS::AccountId}:db:plans-manual-tests-*
+                  - !Sub arn:aws:rds:*:${AWS::AccountId}:subgrp:plans-manual-tests-*
+                  - !Sub arn:aws:rds:*:${AWS::AccountId}:cluster-pg:*
+                  - !Sub arn:aws:rds:*:${AWS::AccountId}:pg:*
+                  - !Sub arn:aws:rds:*:${AWS::AccountId}:cluster-snapshot:*
+              - Sid: AuroraDescribe
+                Effect: Allow
+                Action: [rds:Describe*, rds:ListTagsForResource]
+                Resource: '*'
+              - Sid: Network
+                Effect: Allow
+                Action:
+                  - ec2:Describe*
+                  - ec2:CreateSecurityGroup
+                  - ec2:DeleteSecurityGroup
+                  - ec2:AuthorizeSecurityGroupIngress
+                  - ec2:RevokeSecurityGroupIngress
+                  - ec2:CreateTags
+                Resource: '*'
+              - Sid: Dynamo
+                Effect: Allow
+                Action: dynamodb:*
+                Resource:
+                  - !Sub arn:aws:dynamodb:*:${AWS::AccountId}:table/plans-manual-tests
+                  - !Sub arn:aws:dynamodb:*:${AWS::AccountId}:table/plans-manual-tests/*
+              # the master password that RDS generates and rotates (rds!cluster-…)
+              - Sid: Password
+                Effect: Allow
+                Action: secretsmanager:*
+                Resource: !Sub arn:aws:secretsmanager:*:${AWS::AccountId}:secret:rds!*
+              - Sid: PasswordCreate
+                Effect: Allow
+                Action: [secretsmanager:CreateSecret, secretsmanager:TagResource]
+                Resource: '*'
+              - Sid: Keys
+                Effect: Allow
+                Action: [kms:DescribeKey, kms:CreateGrant, kms:Decrypt, kms:GenerateDataKey]
+                Resource: '*'
+              - Sid: ServiceLinkedRole
+                Effect: Allow
+                Action: iam:CreateServiceLinkedRole
+                Resource: '*'
+                Condition:
+                  StringLike:
+                    iam:AWSServiceName: [rds.amazonaws.com]
+
+Outputs:
+  RoleArn:
+    Description: Save as the repository variable MANUAL_TESTS_ROLE_ARN
+    Value: !GetAtt ManualTestsRole.Arn
